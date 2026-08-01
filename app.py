@@ -38,7 +38,18 @@ index = st.session_state.index
 name, url = birds[index]
 
 st.caption(f"{index + 1} of {total}")
-st.header(name)
+
+col_prev, col_heading, col_next = st.columns([1, 4, 1], vertical_alignment="center")
+with col_prev:
+    if st.button("←", use_container_width=True, disabled=index == 0, help="Previous"):
+        st.session_state.index -= 1
+        st.rerun()
+with col_heading:
+    st.markdown(f"## [{name}]({url})")
+with col_next:
+    if st.button("→", use_container_width=True, disabled=index == total - 1, help="Next"):
+        st.session_state.index += 1
+        st.rerun()
 
 images = image_cache.get(name, [])
 if images:
@@ -48,18 +59,6 @@ if images:
             st.image(image_url, use_container_width=True)
 else:
     st.info("No photos cached yet. Run `python fetch_images.py`.")
-
-st.link_button("Open on eBird", url, use_container_width=True)
-
-col_prev, col_next = st.columns(2)
-with col_prev:
-    if st.button("← Previous", use_container_width=True, disabled=index == 0):
-        st.session_state.index -= 1
-        st.rerun()
-with col_next:
-    if st.button("Next →", use_container_width=True, disabled=index == total - 1):
-        st.session_state.index += 1
-        st.rerun()
 
 selected = st.selectbox(
     "Jump to bird",
