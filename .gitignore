@@ -8,3 +8,9 @@ build/
 *.log
 .idea/
 .vscode/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.streamlit/secrets.toml
+
