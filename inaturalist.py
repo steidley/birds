@@ -8,6 +8,7 @@ BirdNET.
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
@@ -19,6 +20,21 @@ CACHE_PATH = ROOT / "inaturalist_cache.json"
 GALLERY_CACHE_PATH = ROOT / "inaturalist_gallery_cache.json"
 BIRDNET_API_URL = "https://birdnet.cornell.edu/taxonomy/api/species"
 INAT_API_URL = "https://api.inaturalist.org/v1/taxa"
+INAT_OBS_API_URL = "https://api.inaturalist.org/v1/observations"
+INAT_SIMILAR_API_URL = "https://api.inaturalist.org/v1/identifications/similar_species"
+GALLERY_CACHE_VERSION = 3
+DEFAULT_MAX_PHOTOS = 200
+SIMILAR_CACHE_PATH = ROOT / "inaturalist_similar_cache.json"
+
+
+def _log_timing(label: str, started: float, **details: Any) -> None:
+    """Print API/cache timing to the console for gallery performance work."""
+    elapsed_ms = (time.perf_counter() - started) * 1000
+    extras = " ".join(
+        f"{key}={value}" for key, value in details.items() if value is not None
+    )
+    suffix = f" {extras}" if extras else ""
+    print(f"[timing] {label}: {elapsed_ms:.0f}ms{suffix}", flush=True)
 
 
 class INaturalistClient:
@@ -27,23 +43,35 @@ class INaturalistClient:
         self.session.headers.update({"Accept": "application/json"})
 
     def birdnet_species(self, ebird_code: str) -> dict[str, Any] | None:
+        started = time.perf_counter()
         response = self.session.get(
             f"{BIRDNET_API_URL}/{quote(ebird_code, safe='')}",
             timeout=20,
         )
         if response.status_code == 404:
+            _log_timing("birdnet_species", started, code=ebird_code, status=404)
             return None
         response.raise_for_status()
         data = response.json()
+        _log_timing("birdnet_species", started, code=ebird_code, status=response.status_code)
         return data if isinstance(data, dict) else None
 
     def taxon(self, taxon_id: int) -> dict[str, Any] | None:
+        started = time.perf_counter()
         response = self.session.get(f"{INAT_API_URL}/{taxon_id}", timeout=20)
         response.raise_for_status()
         results = response.json().get("results", [])
+        taxon_photos = len((results[0] or {}).get("taxon_photos") or []) if results else 0
+        _log_timing(
+            "inat_taxon",
+            started,
+            taxon_id=taxon_id,
+            taxon_photos=taxon_photos,
+        )
         return results[0] if results else None
 
     def search_taxon(self, scientific_name: str) -> dict[str, Any] | None:
+        started = time.perf_counter()
         response = self.session.get(
             INAT_API_URL,
             params={"q": scientific_name, "rank": "species", "per_page": 30},
@@ -59,7 +87,147 @@ class INaturalistClient:
             ),
             None,
         )
-        return exact or (results[0] if results else None)
+        match = exact or (results[0] if results else None)
+        _log_timing(
+            "inat_search_taxon",
+            started,
+            q=scientific_name,
+            hits=len(results),
+            matched=bool(match),
+        )
+        return match
+
+    def observation_photos(
+        self,
+        taxon_id: int,
+        *,
+        max_photos: int,
+        seen_urls: set[str] | None = None,
+    ) -> list[dict[str, Any]]:
+        """Fetch research-grade observation photos for a taxon."""
+        photos: list[dict[str, Any]] = []
+        seen = seen_urls if seen_urls is not None else set()
+        page = 1
+        per_page = 100
+        max_pages = max(1, (max_photos + per_page - 1) // per_page)
+        total_started = time.perf_counter()
+
+        while len(photos) < max_photos and page <= max_pages:
+            page_started = time.perf_counter()
+            response = self.session.get(
+                INAT_OBS_API_URL,
+                params={
+                    "taxon_id": taxon_id,
+                    "photos": "true",
+                    "quality_grade": "research",
+                    "per_page": per_page,
+                    "page": page,
+                    "order_by": "votes",
+                },
+                timeout=30,
+            )
+            response.raise_for_status()
+            results = response.json().get("results") or []
+            before = len(photos)
+            if not results:
+                _log_timing(
+                    "inat_observations_page",
+                    page_started,
+                    taxon_id=taxon_id,
+                    page=page,
+                    obs=0,
+                    added=0,
+                )
+                break
+            for obs in results:
+                for photo in obs.get("photos") or []:
+                    entry = _photo_entry(
+                        photo if isinstance(photo, dict) else {},
+                        photo_kind="observation",
+                    )
+                    if not entry or entry["image_url"] in seen:
+                        continue
+                    seen.add(entry["image_url"])
+                    photos.append(entry)
+                    if len(photos) >= max_photos:
+                        break
+                if len(photos) >= max_photos:
+                    break
+            _log_timing(
+                "inat_observations_page",
+                page_started,
+                taxon_id=taxon_id,
+                page=page,
+                obs=len(results),
+                added=len(photos) - before,
+                photos_so_far=len(photos),
+            )
+            if len(photos) >= max_photos:
+                break
+            if len(results) < per_page:
+                break
+            page += 1
+
+        _log_timing(
+            "inat_observations_total",
+            total_started,
+            taxon_id=taxon_id,
+            photos=len(photos),
+            pages=page,
+            max_photos=max_photos,
+        )
+        return photos
+
+    def similar_species(
+        self,
+        taxon_id: int,
+        *,
+        limit: int = 12,
+    ) -> list[dict[str, Any]]:
+        """Return species often confused with this taxon (iNaturalist)."""
+        started = time.perf_counter()
+        response = self.session.get(
+            INAT_SIMILAR_API_URL,
+            params={"taxon_id": taxon_id, "per_page": limit},
+            timeout=30,
+        )
+        response.raise_for_status()
+        results = response.json().get("results") or []
+        similar: list[dict[str, Any]] = []
+        for row in results:
+            taxon = row.get("taxon") or {}
+            if not taxon.get("id"):
+                continue
+            rank = str(taxon.get("rank") or "").casefold()
+            if rank and rank not in {"species", "subspecies"}:
+                continue
+            photo = taxon.get("default_photo") or {}
+            entry = _photo_entry(photo, photo_kind="taxon")
+            similar.append(
+                {
+                    "taxon_id": taxon.get("id"),
+                    "scientific_name": taxon.get("name") or "",
+                    "common_name": taxon.get("preferred_common_name")
+                    or taxon.get("english_common_name")
+                    or taxon.get("name")
+                    or "",
+                    "image_url": (entry or {}).get("image_url"),
+                    "attribution": (entry or {}).get("attribution")
+                    or photo.get("attribution"),
+                    "license": (entry or {}).get("license") or photo.get("license_code"),
+                    "taxon_url": f"https://www.inaturalist.org/taxa/{taxon.get('id')}",
+                    "count": row.get("count"),
+                }
+            )
+            if len(similar) >= limit:
+                break
+        _log_timing(
+            "inat_similar_species",
+            started,
+            taxon_id=taxon_id,
+            results=len(similar),
+        )
+        return similar
 
 
 def _load_json_cache(path: Path) -> dict[str, dict[str, Any]]:
@@ -81,7 +249,11 @@ def _binomial(scientific_name: str) -> str:
     return " ".join(parts[:2]) if len(parts) >= 2 else scientific_name
 
 
-def _photo_entry(photo: dict[str, Any]) -> dict[str, Any] | None:
+def _photo_entry(
+    photo: dict[str, Any],
+    *,
+    photo_kind: str = "taxon",
+) -> dict[str, Any] | None:
     url = (
         photo.get("large_url")
         or photo.get("medium_url")
@@ -93,12 +265,18 @@ def _photo_entry(photo: dict[str, Any]) -> dict[str, Any] | None:
     # Prefer larger variants when only a square URL is present.
     if "/square." in url:
         url = url.replace("/square.", "/large.")
+    kind_label = {
+        "taxon": "iNaturalist taxon photo",
+        "observation": "iNaturalist observation",
+        "birdnet": "BirdNET taxonomy",
+    }.get(photo_kind, "iNaturalist")
     return {
         "image_url": url,
         "attribution": photo.get("attribution"),
         "license": photo.get("license_code"),
         "author": photo.get("attribution_name"),
-        "source": "iNaturalist",
+        "source": kind_label,
+        "photo_kind": photo_kind,
     }
 
 
@@ -143,8 +321,10 @@ def species_photo(
     ``scientific_name`` is an optional fallback when BirdNET does not know the
     code (common for eBird subspecies/issf forms).
     """
+    started = time.perf_counter()
     cache = _load_json_cache(CACHE_PATH)
     if ebird_code in cache:
+        _log_timing("species_photo", started, code=ebird_code, cache="hit")
         return cache[ebird_code] or None
 
     client = INaturalistClient()
@@ -152,6 +332,13 @@ def species_photo(
     result = _photo_result(taxon, str(resolved_sci or "")) if taxon else None
     cache[ebird_code] = result or {}
     _save_json_cache(CACHE_PATH, cache)
+    _log_timing(
+        "species_photo",
+        started,
+        code=ebird_code,
+        cache="miss",
+        found=bool(result),
+    )
     return result
 
 
@@ -159,15 +346,26 @@ def species_gallery(
     ebird_code: str,
     *,
     scientific_name: str | None = None,
-    max_photos: int = 99,
+    max_photos: int = DEFAULT_MAX_PHOTOS,
 ) -> dict[str, Any] | None:
-    """Return gallery photos plus species info and data-source credits."""
+    """Return gallery photos plus species info and data-source credits.
+
+    Uses curated iNaturalist taxon photos first, then fills from research-grade
+    observation photos so galleries are not stuck at the ~12 taxon-photo cap.
+    """
+    started = time.perf_counter()
     cache = _load_json_cache(GALLERY_CACHE_PATH)
     cached = cache.get(ebird_code)
-    if cached:
+    if cached and cached.get("cache_version") == GALLERY_CACHE_VERSION:
         cached_max = int(cached.get("max_photos") or 0)
-        # Re-fetch when a higher photo limit is requested than what we stored.
-        if cached_max >= max_photos or not cached.get("photos"):
+        if cached_max >= max_photos:
+            _log_timing(
+                "species_gallery",
+                started,
+                code=ebird_code,
+                cache="hit",
+                photos=len(cached.get("photos") or []),
+            )
             return cached or None
 
     client = INaturalistClient()
@@ -175,13 +373,16 @@ def species_gallery(
     if taxon is None and birdnet is None:
         cache[ebird_code] = {}
         _save_json_cache(GALLERY_CACHE_PATH, cache)
+        _log_timing("species_gallery", started, code=ebird_code, cache="miss", found=False)
         return None
 
     photos: list[dict[str, Any]] = []
     seen_urls: set[str] = set()
+    used_observations = False
     if taxon:
+        # Curated taxon photos first, then research-grade observation photos.
         for item in taxon.get("taxon_photos") or []:
-            entry = _photo_entry(item.get("photo") or {})
+            entry = _photo_entry(item.get("photo") or {}, photo_kind="taxon")
             if not entry or entry["image_url"] in seen_urls:
                 continue
             seen_urls.add(entry["image_url"])
@@ -189,9 +390,21 @@ def species_gallery(
             if len(photos) >= max_photos:
                 break
         if not photos:
-            entry = _photo_entry(taxon.get("default_photo") or {})
+            entry = _photo_entry(taxon.get("default_photo") or {}, photo_kind="taxon")
             if entry:
+                seen_urls.add(entry["image_url"])
                 photos.append(entry)
+
+        taxon_id = taxon.get("id")
+        if taxon_id and len(photos) < max_photos:
+            extra = client.observation_photos(
+                int(taxon_id),
+                max_photos=max_photos - len(photos),
+                seen_urls=seen_urls,
+            )
+            if extra:
+                used_observations = True
+                photos.extend(extra)
 
     # Fall back to BirdNET-selected image when iNat taxon photos are empty.
     if not photos and birdnet and isinstance(birdnet.get("image"), dict):
@@ -205,6 +418,7 @@ def species_gallery(
                     "license": image.get("license"),
                     "author": image.get("author"),
                     "source": image.get("source") or "BirdNET taxonomy",
+                    "photo_kind": "birdnet",
                 }
             )
 
@@ -220,7 +434,9 @@ def species_gallery(
     if birdnet:
         sources.append("BirdNET taxonomy (eBird code / scientific name crosswalk)")
     if taxon:
-        sources.append("iNaturalist taxa API (photos, common name)")
+        sources.append("iNaturalist taxa API (curated taxon photos, common name)")
+    if used_observations:
+        sources.append("iNaturalist observations API (research-grade photos)")
     if description_source:
         sources.append(f"Description: {description_source}")
     if birdnet and birdnet.get("ebird_code"):
@@ -260,9 +476,77 @@ def species_gallery(
         ),
         "photos": photos,
         "max_photos": max_photos,
+        "cache_version": GALLERY_CACHE_VERSION,
         "sources": unique_sources,
         "wikipedia_url": ((birdnet or {}).get("wikipedia_urls") or {}).get("en"),
     }
     cache[ebird_code] = result
     _save_json_cache(GALLERY_CACHE_PATH, cache)
+    _log_timing(
+        "species_gallery",
+        started,
+        code=ebird_code,
+        cache="miss",
+        photos=len(photos),
+        used_observations=used_observations,
+        max_photos=max_photos,
+    )
     return result
+
+
+def species_similar(
+    *,
+    taxon_id: int | None = None,
+    ebird_code: str | None = None,
+    scientific_name: str | None = None,
+    limit: int = 12,
+) -> list[dict[str, Any]]:
+    """Return similar species for a taxon, with thumbnail metadata when available."""
+    started = time.perf_counter()
+    cache_key = (
+        f"taxon:{taxon_id}"
+        if taxon_id
+        else f"code:{ebird_code or ''}|sci:{scientific_name or ''}"
+    )
+    cache = _load_json_cache(SIMILAR_CACHE_PATH)
+    cached = cache.get(cache_key)
+    if isinstance(cached, list):
+        _log_timing(
+            "species_similar",
+            started,
+            cache="hit",
+            key=cache_key,
+            results=len(cached),
+        )
+        return cached[:limit]
+
+    client = INaturalistClient()
+    resolved_taxon_id = taxon_id
+    if resolved_taxon_id is None:
+        birdnet, taxon, _resolved = _resolve_taxon(
+            client,
+            ebird_code or scientific_name or "",
+            scientific_name,
+        )
+        resolved_taxon_id = (taxon or {}).get("id") or (birdnet or {}).get("inat_id")
+
+    if not resolved_taxon_id:
+        cache[cache_key] = []
+        _save_json_cache(SIMILAR_CACHE_PATH, cache)
+        _log_timing("species_similar", started, cache="miss", key=cache_key, results=0)
+        return []
+
+    similar = client.similar_species(int(resolved_taxon_id), limit=limit)
+    cache[cache_key] = similar
+    # Also store under taxon id for reuse across code/sci lookups.
+    cache[f"taxon:{resolved_taxon_id}"] = similar
+    _save_json_cache(SIMILAR_CACHE_PATH, cache)
+    _log_timing(
+        "species_similar",
+        started,
+        cache="miss",
+        key=cache_key,
+        taxon_id=resolved_taxon_id,
+        results=len(similar),
+    )
+    return similar

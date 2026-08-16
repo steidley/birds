@@ -28,6 +28,10 @@
         cursor: grab;
         position: relative;
         background: rgba(0, 0, 0, 0.03);
+        box-sizing: border-box;
+        border: 4px solid transparent;
+        border-radius: 10px;
+        transition: border-color 0.15s ease;
       }
       #wrap.dragging {
         cursor: grabbing;
@@ -50,16 +54,24 @@
         color: rgba(0, 0, 0, 0.45);
         pointer-events: none;
       }
+      #wrap:focus {
+        outline: none;
+      }
+      #wrap:focus-visible {
+        outline: 2px solid rgba(0, 0, 0, 0.25);
+        outline-offset: -2px;
+      }
     </style>
   </head>
   <body>
-    <div id="wrap">
+    <div id="wrap" tabindex="0" aria-label="Bird photo. Arrow keys navigate.">
       <img id="photo" alt="Bird photo" draggable="false" />
-      <div id="hint">Swipe ←→ photos · ↑↓ birds</div>
+      <div id="hint">←→ photos · ↑↓ birds · keyboard works app-wide</div>
     </div>
     <script>
       const THRESHOLD = 48;
       let height = 420;
+      let imageOnly = false;
       let startX = 0;
       let startY = 0;
       let tracking = false;
@@ -86,15 +98,21 @@
         if (event.data.type !== "streamlit:render") return;
         const args = event.data.args || {};
         height = Number(args.height) || 420;
+        imageOnly = Boolean(args.image_only);
         const img = document.getElementById("photo");
         const wrap = document.getElementById("wrap");
         wrap.style.height = height + "px";
+        const frameColor = args.frame_color || "";
+        wrap.style.borderColor = frameColor || "transparent";
         if (args.image_url && img.src !== args.image_url) {
           img.src = args.image_url;
         }
         const hint = document.getElementById("hint");
         if (hint) {
           hint.style.display = args.show_hint === false ? "none" : "block";
+          hint.textContent = imageOnly
+            ? "←→ swipe photos"
+            : "←→ photos · ↑↓ birds · keyboard works app-wide";
         }
         sendMessage("streamlit:setFrameHeight", { height: height });
       }
@@ -118,6 +136,14 @@
         if (!tracking || sent) return;
         const dx = x - startX;
         const dy = y - startY;
+        if (imageOnly) {
+          const dominant =
+            Math.abs(dx) > Math.abs(dy)
+              ? Math.max(-24, Math.min(24, dx * 0.15))
+              : 0;
+          img.style.transform = `translate(${dominant}px, 0)`;
+          return;
+        }
         const dominant =
           Math.abs(dx) > Math.abs(dy)
             ? Math.max(-24, Math.min(24, dx * 0.15))
@@ -138,6 +164,12 @@
         const dx = x - startX;
         const dy = y - startY;
         if (Math.abs(dx) < THRESHOLD && Math.abs(dy) < THRESHOLD) return;
+        if (imageOnly) {
+          if (Math.abs(dx) <= Math.abs(dy)) return;
+          sent = true;
+          setValue(dx < 0 ? "image_next" : "image_prev");
+          return;
+        }
         sent = true;
         if (Math.abs(dx) > Math.abs(dy)) {
           setValue(dx < 0 ? "image_next" : "image_prev");

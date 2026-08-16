@@ -18,18 +18,22 @@ def swipe_image(
     *,
     height: int = 420,
     show_hint: bool = True,
+    image_only: bool = False,
+    frame_color: str | None = None,
     key: str | None = None,
 ) -> dict[str, Any] | None:
     """Render an image that reports swipe gestures.
 
     Returns ``{"action": "...", "t": <ms>}`` when the user swipes:
       - image_next / image_prev for horizontal swipes
-      - bird_next / bird_prev for vertical swipes
+      - bird_next / bird_prev for vertical swipes (unless image_only)
     """
     return _COMPONENT(
         image_url=image_url,
         height=height,
         show_hint=show_hint,
+        image_only=image_only,
+        frame_color=frame_color or "",
         key=key,
         default=None,
     )
