@@ -7,6 +7,7 @@ import requests
 import streamlit as st
 from dotenv import load_dotenv
 
+from components.swipe_image import swipe_image
 from ebird import EBirdClient, get_api_key
 from inaturalist import species_gallery, species_photo
 
@@ -98,6 +99,30 @@ def open_gallery(birds: list[dict], *, title: str = "Gallery") -> None:
     st.rerun()
 
 
+def apply_gallery_swipe(action: str, *, bird_count: int, image_count: int) -> bool:
+    """Apply a swipe action to gallery session state. Returns True if state changed."""
+    bird_index = int(st.session_state.get("gallery_bird_index", 0))
+    image_index = int(st.session_state.get("gallery_image_index", 0))
+
+    if action == "image_next" and image_index < image_count - 1:
+        st.session_state.gallery_image_index = image_index + 1
+        return True
+    if action == "image_prev" and image_index > 0:
+        st.session_state.gallery_image_index = image_index - 1
+        return True
+    if action == "bird_next" and bird_index < bird_count - 1:
+        st.session_state.gallery_bird_index = bird_index + 1
+        st.session_state.gallery_image_index = 0
+        st.session_state.gallery_show_info = False
+        return True
+    if action == "bird_prev" and bird_index > 0:
+        st.session_state.gallery_bird_index = bird_index - 1
+        st.session_state.gallery_image_index = 0
+        st.session_state.gallery_show_info = False
+        return True
+    return False
+
+
 def render_gallery() -> None:
     birds = st.session_state.get("gallery_birds") or []
     if not birds:
@@ -117,6 +142,7 @@ def render_gallery() -> None:
             "gallery_bird_index",
             "gallery_image_index",
             "gallery_show_info",
+            "gallery_last_swipe_t",
         ):
             st.session_state.pop(key, None)
         st.rerun()
@@ -199,7 +225,23 @@ def render_gallery() -> None:
                 st.session_state.gallery_image_index = image_index + 1
                 st.rerun()
 
-        st.image(photo["image_url"], width="stretch")
+        swipe = swipe_image(
+            photo["image_url"],
+            height=420,
+            key=f"gallery_swipe_{bird_index}_{image_index}",
+        )
+        if isinstance(swipe, dict):
+            action = str(swipe.get("action") or "")
+            swipe_t = swipe.get("t")
+            if action and swipe_t != st.session_state.get("gallery_last_swipe_t"):
+                st.session_state.gallery_last_swipe_t = swipe_t
+                if apply_gallery_swipe(
+                    action,
+                    bird_count=len(birds),
+                    image_count=len(photos),
+                ):
+                    st.rerun()
+
         credit_bits = [
             photo.get("source") or "iNaturalist",
             photo.get("attribution") or photo.get("author"),
