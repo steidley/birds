@@ -35,14 +35,17 @@ def inaturalist_photo_for_code(
 def gallery_payload_for_code(
     ebird_code: str,
     scientific_name: str | None = None,
+    max_photos: int = 99,
 ) -> dict | None:
     """Resolve gallery photos and species info for an eBird code."""
-    if not ebird_code:
+    lookup = (ebird_code or "").strip() or (scientific_name or "").strip()
+    if not lookup:
         return None
     try:
         return species_gallery(
-            ebird_code,
+            lookup,
             scientific_name=scientific_name or None,
+            max_photos=max_photos,
         )
     except requests.RequestException:
         return None
@@ -257,29 +260,52 @@ def load_life_list(region_code: str) -> dict[str, set[str]] | None:
       - common: normalized common names
       - sci: binomial scientific names
     """
+    birds = load_life_list_birds(region_code)
+    if birds is None:
+        return None
+    common = {normalize_common_name(bird["name"]) for bird in birds if bird.get("name")}
+    sci = {
+        binomial_sci_name(bird["sciName"])
+        for bird in birds
+        if bird.get("sciName")
+    }
+    return {"common": common, "sci": sci}
+
+
+def load_life_list_birds(region_code: str) -> list[dict] | None:
+    """Load ordered life-list species rows for gallery browsing."""
     path = life_list_path(region_code)
     if not path.exists():
         return None
 
-    common: set[str] = set()
-    sci: set[str] = set()
+    birds: list[dict] = []
+    seen: set[str] = set()
     with path.open(newline="", encoding="utf-8") as handle:
         reader = csv.DictReader(handle)
         for row in reader:
             category = (row.get("Category") or "").strip().casefold()
             if category and category != "species":
                 continue
-            # Prefer countable species when the export includes that column.
             countable = (row.get("Countable") or "1").strip()
             if countable == "0":
                 continue
             name = (row.get("Common Name") or "").strip()
-            if name:
-                common.add(normalize_common_name(name))
             sci_name = (row.get("Scientific Name") or "").strip()
-            if sci_name:
-                sci.add(binomial_sci_name(sci_name))
-    return {"common": common, "sci": sci}
+            if not name and not sci_name:
+                continue
+            display = name.split(" (", 1)[0].strip() or name or sci_name
+            key = normalize_common_name(display) if name else binomial_sci_name(sci_name)
+            if key in seen:
+                continue
+            seen.add(key)
+            birds.append(
+                {
+                    "name": display,
+                    "sciName": sci_name,
+                    "code": "",
+                }
+            )
+    return birds
 
 
 def life_list_total(life: dict[str, set[str]] | None) -> int | None:
@@ -288,6 +314,14 @@ def life_list_total(life: dict[str, set[str]] | None) -> int | None:
         return None
     return len(life["common"])
 
+
+def open_life_list_gallery(region_code: str, *, title: str) -> None:
+    """Open the gallery for every species on a saved life list."""
+    birds = load_life_list_birds(region_code)
+    if not birds:
+        st.warning(f"No species found for life list `{region_code}`.")
+        return
+    open_gallery(birds, title=title)
 
 def load_life_list_names(region_code: str) -> set[str] | None:
     """Backward-compatible helper returning normalized common names only."""
@@ -513,6 +547,32 @@ def enrich_checklists(
     return enriched
 
 
+def ensure_api_key() -> bool:
+    """Return True when an API key is available; otherwise prompt for one."""
+    if get_api_key():
+        return True
+
+    st.info(
+        "An eBird API key is required. "
+        "Get a free key at [ebird.org/api/keygen](https://ebird.org/api/keygen), "
+        "or open this app with `?EBIRD_API_KEY=your_key`."
+    )
+    entered = st.text_input(
+        "eBird API key",
+        type="password",
+        key="ebird_api_key_input",
+        help="Stored only for this browser session. You can also pass ?EBIRD_API_KEY=… in the URL.",
+    )
+    if st.button("Use API key", type="primary", key="save_ebird_api_key"):
+        cleaned = (entered or "").strip()
+        if not cleaned or cleaned == "your_ebird_api_key_here":
+            st.warning("Paste a valid eBird API key to continue.")
+            return False
+        st.session_state.ebird_api_key = cleaned
+        st.rerun()
+    return False
+
+
 def render_checklists() -> None:
     st.title("Checklists")
     st.caption(
@@ -521,8 +581,7 @@ def render_checklists() -> None:
         "`lifeLists/ebird_<region>_life_list.csv`."
     )
 
-    if not get_api_key() or get_api_key() == "your_ebird_api_key_here":
-        st.error("Configure EBIRD_API_KEY in `.env` first.")
+    if not ensure_api_key():
         return
 
     default_region = os.environ.get("EBIRD_HOME_REGION", "US-FL-099")
@@ -545,6 +604,15 @@ def render_checklists() -> None:
             )
         else:
             st.metric("World life list", f"{world_total} species")
+            if st.button(
+                "Open gallery",
+                key="gallery_world_life_list",
+                use_container_width=True,
+            ):
+                open_life_list_gallery(
+                    WORLD_LIFE_LIST_CODE,
+                    title="World life list gallery",
+                )
     with total_cols[1]:
         if region_code and region_total is None:
             st.warning(
@@ -552,6 +620,15 @@ def render_checklists() -> None:
             )
         elif region_total is not None:
             st.metric(f"Region life list ({region_code})", f"{region_total} species")
+            if st.button(
+                "Open gallery",
+                key="gallery_region_life_list",
+                use_container_width=True,
+            ):
+                open_life_list_gallery(
+                    region_code,
+                    title=f"Region life list gallery · {region_code}",
+                )
         else:
             st.metric("Region life list", "—")
 
@@ -915,6 +992,7 @@ def render_checklists() -> None:
 
 
 st.set_page_config(page_title="Birds", page_icon="🪶", layout="centered")
+get_api_key()  # ingest ?EBIRD_API_KEY=… into session when present
 if st.session_state.get("gallery_birds"):
     render_gallery()
 else:

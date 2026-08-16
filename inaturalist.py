@@ -159,12 +159,16 @@ def species_gallery(
     ebird_code: str,
     *,
     scientific_name: str | None = None,
-    max_photos: int = 12,
+    max_photos: int = 99,
 ) -> dict[str, Any] | None:
     """Return gallery photos plus species info and data-source credits."""
     cache = _load_json_cache(GALLERY_CACHE_PATH)
-    if ebird_code in cache and cache[ebird_code]:
-        return cache[ebird_code]
+    cached = cache.get(ebird_code)
+    if cached:
+        cached_max = int(cached.get("max_photos") or 0)
+        # Re-fetch when a higher photo limit is requested than what we stored.
+        if cached_max >= max_photos or not cached.get("photos"):
+            return cached or None
 
     client = INaturalistClient()
     birdnet, taxon, resolved_sci = _resolve_taxon(client, ebird_code, scientific_name)
@@ -255,6 +259,7 @@ def species_gallery(
             else None
         ),
         "photos": photos,
+        "max_photos": max_photos,
         "sources": unique_sources,
         "wikipedia_url": ((birdnet or {}).get("wikipedia_urls") or {}).get("en"),
     }

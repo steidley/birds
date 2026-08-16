@@ -17,10 +17,14 @@ load_dotenv(ROOT / ".env")
 
 
 def get_api_key() -> str | None:
-    """Return the eBird API key from env or Streamlit secrets."""
-    key = os.environ.get("EBIRD_API_KEY") or os.environ.get("EBIRD_API_TOKEN")
-    if key:
-        return key.strip()
+    """Return the eBird API key from env, secrets, URL param, or session input."""
+    for candidate in (
+        os.environ.get("EBIRD_API_KEY"),
+        os.environ.get("EBIRD_API_TOKEN"),
+    ):
+        key = _clean_api_key(candidate)
+        if key:
+            return key
 
     try:
         import streamlit as st
@@ -28,12 +32,68 @@ def get_api_key() -> str | None:
         secrets = getattr(st, "secrets", None)
         if secrets is not None:
             for name in ("EBIRD_API_KEY", "EBIRD_API_TOKEN"):
-                if name in secrets and secrets[name]:
-                    return str(secrets[name]).strip()
+                if name in secrets:
+                    key = _clean_api_key(secrets[name])
+                    if key:
+                        return key
+
+        _ingest_api_key_from_query()
+
+        session_key = st.session_state.get("ebird_api_key")
+        key = _clean_api_key(session_key)
+        if key:
+            return key
     except Exception:
         pass
 
     return None
+
+
+def _query_param_value(params: object, name: str) -> object:
+    try:
+        if name not in params:
+            return None
+        value = params.get(name) if hasattr(params, "get") else params[name]
+    except Exception:
+        return None
+    if isinstance(value, (list, tuple)):
+        return value[0] if value else None
+    return value
+
+
+def _ingest_api_key_from_query() -> None:
+    """Copy an API key from URL query params into session state, then drop it from the URL."""
+    try:
+        import streamlit as st
+    except Exception:
+        return
+
+    params = getattr(st, "query_params", None)
+    if params is None:
+        return
+
+    for name in ("EBIRD_API_KEY", "ebird_api_key", "api_key"):
+        key = _clean_api_key(_query_param_value(params, name))
+        if not key:
+            continue
+        st.session_state.ebird_api_key = key
+        try:
+            del params[name]
+        except Exception:
+            try:
+                params.pop(name)
+            except Exception:
+                pass
+        break
+
+
+def _clean_api_key(value: object) -> str | None:
+    if value is None:
+        return None
+    key = str(value).strip()
+    if not key or key == "your_ebird_api_key_here":
+        return None
+    return key
 
 
 class EBirdClient:
