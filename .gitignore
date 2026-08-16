@@ -13,4 +13,7 @@ venv/
 __pycache__/
 *.pyc
 .streamlit/secrets.toml
+!.streamlit/secrets.toml.example
+inaturalist_cache.json
+inaturalist_gallery_cache.json
 
