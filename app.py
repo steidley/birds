@@ -11,8 +11,13 @@ from dotenv import load_dotenv
 from components.swipe_image import swipe_image
 from ebird import (
     EBirdClient,
+    build_checklist_cache_status,
     build_local_last_seen_index,
+    filter_regions_by_query,
     get_api_key,
+    load_cached_hotspots,
+    load_local_checklists,
+    load_local_checklists_for_hotspot,
     resolve_ebird_code,
 )
 from inaturalist import GALLERY_CACHE_VERSION, species_gallery, species_photo, species_similar
@@ -153,6 +158,71 @@ def render_species_photo(
     st.image(photo["image_url"], width=width)
 
 
+def _format_eta(seconds: float) -> str:
+    """Format a remaining-time estimate for progress UI."""
+    total = max(0, int(round(seconds)))
+    if total < 60:
+        return f"{total}s"
+    minutes, secs = divmod(total, 60)
+    if minutes < 60:
+        return f"{minutes}m {secs:02d}s"
+    hours, minutes = divmod(minutes, 60)
+    return f"{hours}h {minutes:02d}m"
+
+
+def ensure_gallery_image_cache(
+    birds: list[dict],
+    *,
+    max_photos: int = 24,
+) -> None:
+    """Warm gallery photo caches with a count + ETA progress indicator."""
+    warmed: set[str] = st.session_state.setdefault(
+        "gallery_image_cache_warmed", set()
+    )
+    pending: list[tuple[str, str | None, str]] = []
+    seen: set[str] = set()
+    for bird in birds:
+        code = str(bird.get("code") or "").strip()
+        sci_raw = bird.get("sciName")
+        sci = str(sci_raw).strip() if sci_raw else None
+        lookup = code or (sci or "")
+        if not lookup:
+            continue
+        warm_key = f"{lookup}|{max_photos}|{GALLERY_CACHE_VERSION}"
+        if warm_key in warmed or warm_key in seen:
+            continue
+        seen.add(warm_key)
+        pending.append((code, sci, warm_key))
+
+    total = len(pending)
+    if total == 0:
+        return
+
+    progress = st.progress(
+        0.0,
+        text=f"Loading image cache 0/{total} · estimating…",
+    )
+    recent_durations: list[float] = []
+    for i, (code, sci, warm_key) in enumerate(pending, start=1):
+        item_started = time.perf_counter()
+        gallery_payload_for_code(code, sci, max_photos=max_photos)
+        recent_durations.append(time.perf_counter() - item_started)
+        if len(recent_durations) > 10:
+            recent_durations.pop(0)
+        warmed.add(warm_key)
+        avg = sum(recent_durations) / len(recent_durations)
+        remaining = avg * (total - i) if i < total else 0.0
+        eta_label = _format_eta(remaining) if i < total else "done"
+        progress.progress(
+            i / total,
+            text=(
+                f"Loading image cache {i}/{total} · "
+                f"ETA {eta_label} · {avg:.1f}s/bird"
+            ),
+        )
+    progress.empty()
+
+
 def open_gallery(birds: list[dict], *, title: str = "Gallery") -> None:
     """Store a bird list in session state and open the gallery view."""
     cleaned: list[dict] = []
@@ -202,6 +272,7 @@ def open_gallery(birds: list[dict], *, title: str = "Gallery") -> None:
     st.session_state.setdefault("gallery_hide_similar_never_seen", True)
     st.session_state.gallery_view_mode_pending = "list"
     st.session_state.gallery_list_image_indices = {}
+    st.session_state.pop("gallery_image_cache_warmed", None)
     st.rerun()
 
 
@@ -356,11 +427,17 @@ def similar_item_to_bird(item: dict) -> dict:
     """Map an iNaturalist similar-species row into gallery bird shape."""
     name = item.get("common_name") or item.get("scientific_name") or "Unknown"
     sci_name = item.get("scientific_name") or ""
-    return {
+    bird = {
         "code": str(item.get("ebird_code") or "").strip(),
         "name": str(name).strip(),
         "sciName": str(sci_name).strip(),
     }
+    if "is_new_region" in item:
+        bird["is_new_region"] = bool(item.get("is_new_region"))
+        bird["is_new"] = bird["is_new_region"]
+    if "is_new_world" in item:
+        bird["is_new_world"] = bool(item.get("is_new_world"))
+    return bird
 
 
 def format_region_last_seen_summary(info: dict, region_code: str) -> str:
@@ -392,7 +469,7 @@ def enrich_similar_with_region_history(
     similar: list[dict],
     region_code: str,
 ) -> list[dict]:
-    """Attach regional last-seen info and sort never-seen species to the end."""
+    """Attach regional last-seen + life-list novelty; sort never-seen to the end."""
     region = (region_code or "").strip()
     if not similar:
         return []
@@ -407,6 +484,8 @@ def enrich_similar_with_region_history(
     except requests.RequestException:
         region_codes = set(local_index)
     region_codes = set(region_codes) | set(local_index)
+    region_life = load_life_list(region) if region else None
+    world_life = load_life_list(WORLD_LIFE_LIST_CODE)
 
     enriched: list[dict] = []
     for index, item in enumerate(similar):
@@ -441,6 +520,29 @@ def enrich_similar_with_region_history(
             )
             if observation is None:
                 local_miss = True
+
+        taxon = {
+            "comName": common_name,
+            "sciName": sci_name,
+            "category": "species",
+        }
+        region_flag = is_new_to_life_list(taxon, region_life)
+        world_flag = is_new_to_life_list(taxon, world_life)
+        row["is_new_region"] = bool(region_flag) if region_flag is not None else False
+        row["is_new_world"] = bool(world_flag) if world_flag is not None else False
+        row["is_new"] = row["is_new_region"]
+        if row["is_new_world"]:
+            novelty_label = "new to world"
+            frame_color = FRAME_COLOR_WORLD
+        elif row["is_new_region"]:
+            novelty_label = "new to region"
+            frame_color = FRAME_COLOR_REGION
+        else:
+            novelty_label = "already counted"
+            frame_color = FRAME_COLOR_SEEN
+        row["novelty_label"] = novelty_label
+        row["frame_color"] = frame_color
+
         row["region_history"] = {
             "ever_seen": ever_seen,
             "observation": observation,
@@ -699,6 +801,7 @@ def render_gallery() -> None:
             "gallery_view_mode_pending",
             "gallery_list_image_indices",
             "gallery_list_last_swipe_t",
+            "gallery_image_cache_warmed",
         ):
             st.session_state.pop(key, None)
         st.rerun()
@@ -763,6 +866,8 @@ def render_gallery_list(
 ) -> None:
     """Browse all matching birds with swipeable main photos."""
     st.caption(f"{len(visible_indices)} birds · tap a name for Standard view")
+    visible_birds = [birds[idx] for idx in visible_indices]
+    ensure_gallery_image_cache(visible_birds, max_photos=24)
     last_swipe = st.session_state.setdefault("gallery_list_last_swipe_t", {})
 
     for start in range(0, len(visible_indices), 2):
@@ -1022,6 +1127,13 @@ def render_gallery_standard(
             "Species often confused with this one on iNaturalist. "
             f"Regional last-seen uses eBird data for {region_code}."
         )
+        st.markdown(
+            f"Highlights · "
+            f"<span style='color:{FRAME_COLOR_WORLD}'>■</span> new to world · "
+            f"<span style='color:{FRAME_COLOR_REGION}'>■</span> new to region · "
+            f"<span style='color:{FRAME_COLOR_SEEN}'>■</span> already counted",
+            unsafe_allow_html=True,
+        )
         if "gallery_hide_similar_never_seen" not in st.session_state:
             st.session_state.gallery_hide_similar_never_seen = True
         hide_never_seen = st.checkbox(
@@ -1072,12 +1184,30 @@ def render_gallery_standard(
                     cols = st.columns(3)
                     for col, item in zip(cols, similar[start : start + 3]):
                         with col:
+                            frame_color = (
+                                item.get("frame_color")
+                                or gallery_frame_color(similar_item_to_bird(item))
+                            )
                             if item.get("image_url"):
+                                st.markdown(
+                                    f"<div style='border:4px solid {frame_color}; "
+                                    f"border-radius:10px; padding:4px; "
+                                    f"box-sizing:border-box'>",
+                                    unsafe_allow_html=True,
+                                )
                                 st.image(item["image_url"], width="stretch")
+                                st.markdown("</div>", unsafe_allow_html=True)
                             similar_bird = similar_item_to_bird(item)
                             name = similar_bird["name"]
                             sci_name = similar_bird["sciName"]
-                            st.markdown(f"**{name}**")
+                            novelty = item.get("novelty_label") or ""
+                            title = f"**{name}**"
+                            if novelty:
+                                title = (
+                                    f"{title} · "
+                                    f"<span style='color:{frame_color}'>{novelty}</span>"
+                                )
+                            st.markdown(title, unsafe_allow_html=True)
                             if sci_name and sci_name != name:
                                 st.caption(sci_name)
                             history = item.get("region_history") or {}
@@ -1396,27 +1526,219 @@ def hotspot_label(hotspot: dict) -> str:
     return str(name)
 
 
+def _region_option_label(row: dict) -> str:
+    code = str(row.get("code") or "").strip()
+    name = str(row.get("name") or "").strip()
+    if name and name != code:
+        return f"{name} · {code}"
+    return code or name
+
+
+def _filter_regions_or_all(
+    rows: list[dict],
+    query: str,
+) -> list[dict]:
+    """Filter by query; if nothing matches, keep the full list for browsing."""
+    if not (query or "").strip():
+        return list(rows)
+    matches = filter_regions_by_query(rows, query)
+    return matches if matches else list(rows)
+
+
+def render_region_code_lookup(*, session_key: str = "checklists_region") -> None:
+    """Country → state → county picker that writes an eBird region code."""
+    with st.expander("Look up region code", expanded=False):
+        st.caption(
+            "Browse eBird regions by name, then apply the code to the field above. "
+            "Pick a country and state first, then filter for a county name."
+        )
+        query = st.text_input(
+            "Filter by name or code",
+            key=f"{session_key}_region_lookup_query",
+            placeholder="e.g. Palm Beach, Florida, US-FL",
+        )
+        try:
+            client = EBirdClient()
+        except Exception as exc:
+            st.warning(str(exc))
+            return
+
+        try:
+            with st.spinner("Loading countries…"):
+                countries = client.list_regions("country", "world")
+        except requests.RequestException as exc:
+            st.error(f"Could not load countries: {exc}")
+            return
+
+        country_rows = _filter_regions_or_all(countries, query)
+        current = str(st.session_state.get(session_key) or "").strip()
+        current_country = current.split("-", 1)[0] if current else ""
+        if current_country and all(r.get("code") != current_country for r in country_rows):
+            for row in countries:
+                if row.get("code") == current_country:
+                    country_rows = [row, *country_rows]
+                    break
+
+        if not country_rows:
+            st.info("No countries available.")
+            return
+
+        country_codes = [row["code"] for row in country_rows]
+        country_labels = {row["code"]: _region_option_label(row) for row in country_rows}
+        default_country = (
+            current_country
+            if current_country in country_codes
+            else ("US" if "US" in country_codes else country_codes[0])
+        )
+        country = st.selectbox(
+            "Country",
+            options=country_codes,
+            index=country_codes.index(default_country),
+            format_func=lambda code: country_labels.get(code, code),
+            key=f"{session_key}_region_lookup_country",
+        )
+
+        selected_code = country
+        selected_label = country_labels.get(country, country)
+
+        try:
+            with st.spinner(f"Loading states/provinces for {country}…"):
+                states = client.list_regions("subnational1", country)
+        except requests.RequestException as exc:
+            st.error(f"Could not load subnational regions: {exc}")
+            states = []
+
+        state_rows = _filter_regions_or_all(states, query)
+        current_state = ""
+        parts = current.split("-")
+        if len(parts) >= 2 and parts[0] == country:
+            current_state = f"{parts[0]}-{parts[1]}"
+        if current_state and all(r.get("code") != current_state for r in state_rows):
+            for row in states:
+                if row.get("code") == current_state:
+                    state_rows = [row, *state_rows]
+                    break
+
+        if state_rows:
+            state_codes = [row["code"] for row in state_rows]
+            state_labels = {row["code"]: _region_option_label(row) for row in state_rows}
+            state_options = ["(country only)", *state_codes]
+            default_state = (
+                current_state
+                if current_state in state_codes
+                else state_options[0]
+            )
+            state_choice = st.selectbox(
+                "State / province",
+                options=state_options,
+                index=state_options.index(default_state),
+                format_func=lambda code: (
+                    code if code == "(country only)" else state_labels.get(code, code)
+                ),
+                key=f"{session_key}_region_lookup_state",
+            )
+            if state_choice != "(country only)":
+                state = state_choice
+                selected_code = state
+                selected_label = state_labels.get(state, state)
+
+                try:
+                    with st.spinner(f"Loading counties for {state}…"):
+                        counties = client.list_regions("subnational2", state)
+                except requests.RequestException as exc:
+                    st.error(f"Could not load counties: {exc}")
+                    counties = []
+
+                # At county level, empty filter results should stay empty so the
+                # user can tell the name did not match.
+                county_rows = (
+                    filter_regions_by_query(counties, query)
+                    if query.strip()
+                    else counties
+                )
+                if current and all(r.get("code") != current for r in county_rows):
+                    for row in counties:
+                        if row.get("code") == current:
+                            county_rows = [row, *county_rows]
+                            break
+                if county_rows:
+                    county_codes = [row["code"] for row in county_rows]
+                    county_labels = {
+                        row["code"]: _region_option_label(row) for row in county_rows
+                    }
+                    county_options = ["(state only)", *county_codes]
+                    default_county = (
+                        current if current in county_codes else county_options[0]
+                    )
+                    county_choice = st.selectbox(
+                        "County / district",
+                        options=county_options,
+                        index=county_options.index(default_county),
+                        format_func=lambda code: (
+                            code
+                            if code == "(state only)"
+                            else county_labels.get(code, code)
+                        ),
+                        key=f"{session_key}_region_lookup_county",
+                    )
+                    if county_choice != "(state only)":
+                        selected_code = county_choice
+                        selected_label = county_labels.get(county_choice, county_choice)
+                elif query.strip():
+                    st.info("No counties match that filter in the selected state.")
+                elif not counties:
+                    st.caption("This state/province has no county-level regions.")
+        elif not states:
+            st.caption("This country has no state/province-level regions.")
+
+        st.write(f"Selected: **{selected_label}**")
+        if st.button(
+            f"Use {selected_code}",
+            key=f"{session_key}_region_lookup_apply",
+            type="primary",
+            use_container_width=True,
+        ):
+            st.session_state[session_key] = selected_code
+            st.session_state["region_code_field"] = selected_code
+            st.rerun()
+
+
 def enrich_checklists(
-    client: EBirdClient,
+    client: EBirdClient | None,
     rows: list[dict],
     region_life: dict[str, set[str]] | None,
     world_life: dict[str, set[str]] | None = None,
+    *,
+    allow_api: bool = True,
 ) -> list[dict]:
-    """Attach species names and life-list-new counts to checklist summaries."""
+    """Attach species names and life-list-new counts to checklist summaries.
+
+    When a row already includes ``_detail`` (local cache), that payload is used.
+    Otherwise details are fetched via the eBird API when ``allow_api`` is true.
+    """
     details: dict[str, dict] = {}
     codes: list[str] = []
     for row in rows:
         sub_id = str(row.get("subId") or row.get("subID") or "")
         if not sub_id:
             continue
-        detail = client.checklist(sub_id)
-        details[sub_id] = detail
-        for obs in detail.get("obs") or []:
+        detail = row.get("_detail")
+        if isinstance(detail, dict) and detail:
+            details[sub_id] = detail
+        elif allow_api and client is not None:
+            detail = client.checklist(sub_id)
+            details[sub_id] = detail
+        else:
+            details[sub_id] = {}
+        for obs in details[sub_id].get("obs") or []:
             code = obs.get("speciesCode")
             if code:
                 codes.append(str(code))
 
-    taxa_by_code = client.species_taxa(codes) if codes else {}
+    if allow_api and client is not None and codes:
+        taxa_by_code = client.species_taxa(codes)
+    else:
+        taxa_by_code = {}
     enriched: list[dict] = []
     for row in rows:
         sub_id = str(row.get("subId") or row.get("subID") or "")
@@ -1439,7 +1761,7 @@ def enrich_checklists(
                 or obs.get("howManyStr")
                 or ""
             )
-            taxon_for_match = taxon or {"comName": common}
+            taxon_for_match = taxon or {"comName": common, "sciName": sci_name}
             is_new_region = is_new_to_life_list(taxon_for_match, region_life)
             is_new_world = is_new_to_life_list(taxon_for_match, world_life)
             if is_new_region:
@@ -1459,9 +1781,14 @@ def enrich_checklists(
                     "category": taxon.get("category") or "",
                 }
             )
+        cleaned_row = {
+            key: value
+            for key, value in row.items()
+            if not str(key).startswith("_")
+        }
         enriched.append(
             {
-                **row,
+                **cleaned_row,
                 "species_rows": species_rows,
                 "new_count_region": (
                     len(new_region_names) if region_life is not None else None
@@ -1505,6 +1832,169 @@ def ensure_api_key() -> bool:
     return False
 
 
+def render_cache_status() -> None:
+    """Show downloaded checklist cache coverage by day and hotspot."""
+    st.title("Checklist cache")
+    st.caption(
+        "Coverage of downloaded checklist detail files versus the regional "
+        "daily feed cache. Days and hotspots are derived from on-disk files."
+    )
+
+    default_region = os.environ.get("EBIRD_HOME_REGION", "US-FL-099")
+    if "checklists_region" not in st.session_state:
+        st.session_state.checklists_region = default_region
+    st.session_state.setdefault(
+        "region_code_field", st.session_state.checklists_region
+    )
+    region_code = st.text_input(
+        "Region code",
+        key="region_code_field",
+        help="eBird region, e.g. US-FL-099. Use Look up region code if you only know the name.",
+    ).strip()
+    if region_code:
+        st.session_state.checklists_region = region_code
+    render_region_code_lookup(session_key="checklists_region")
+    region_code = str(st.session_state.checklists_region or "").strip()
+
+    year = st.number_input(
+        "Year",
+        min_value=2000,
+        max_value=2100,
+        value=int(st.session_state.get("cache_status_year", date.today().year)),
+        step=1,
+        key="cache_status_year_input",
+    )
+    st.session_state.cache_status_year = int(year)
+
+    refresh = st.button("Refresh status", use_container_width=True)
+    if not region_code:
+        st.info("Enter a region code to inspect the checklist cache.")
+        return
+
+    with st.spinner("Scanning checklist cache…"):
+        status = build_checklist_cache_status(
+            region_code,
+            int(year),
+            force_refresh=refresh,
+        )
+
+    expected = int(status.get("expected_total") or 0)
+    downloaded = int(status.get("downloaded_total") or 0)
+    coverage = (100.0 * downloaded / expected) if expected else None
+    metrics = st.columns(4)
+    with metrics[0]:
+        st.metric("Downloaded", f"{downloaded:,}")
+    with metrics[1]:
+        st.metric(
+            "Expected (feed)",
+            f"{expected:,}" if status.get("feed_cache_exists") else "—",
+        )
+    with metrics[2]:
+        st.metric(
+            "Coverage",
+            f"{coverage:.1f}%" if coverage is not None else "—",
+        )
+    with metrics[3]:
+        st.metric("Hotspots", f"{int(status.get('hotspot_count') or 0):,}")
+
+    days_cols = st.columns(3)
+    with days_cols[0]:
+        st.metric("Days in feed", f"{int(status.get('days_in_feed') or 0):,}")
+    with days_cols[1]:
+        st.metric(
+            "Days downloaded",
+            f"{int(status.get('days_with_downloads') or 0):,}",
+        )
+    with days_cols[2]:
+        truncated = status.get("truncated_dates") or []
+        st.metric("Truncated feed days", f"{len(truncated):,}")
+
+    if not status.get("feed_cache_exists"):
+        st.warning(
+            f"No regional feed cache at `{status.get('feed_cache_path')}`. "
+            "Downloaded files are still summarized below."
+        )
+    elif truncated:
+        with st.expander(f"Truncated feed days ({len(truncated)})"):
+            st.write(", ".join(truncated))
+
+    updated = status.get("updated_at")
+    if updated:
+        st.caption(f"Status index updated {updated}")
+
+    view = st.radio(
+        "View",
+        options=["by_day", "by_hotspot"],
+        format_func=lambda value: {
+            "by_day": "By day",
+            "by_hotspot": "By hotspot",
+        }[value],
+        horizontal=True,
+        key="cache_status_view",
+    )
+
+    days = status.get("days") or []
+    hotspots = status.get("hotspots") or []
+
+    if view == "by_day":
+        if not days:
+            st.info("No downloaded or feed days found for this region/year.")
+            return
+        day_rows = [
+            {
+                "Day": row["day"],
+                "Downloaded": int(row.get("downloaded") or 0),
+                "Expected": int(row.get("expected") or 0),
+                "Coverage %": (
+                    round(
+                        100.0
+                        * int(row.get("downloaded") or 0)
+                        / int(row["expected"]),
+                        1,
+                    )
+                    if int(row.get("expected") or 0)
+                    else None
+                ),
+                "Truncated": "yes" if row.get("truncated") else "",
+            }
+            for row in days
+        ]
+        chart_rows = [
+            {
+                "Day": row["Day"],
+                "Downloaded": row["Downloaded"],
+                "Expected": row["Expected"],
+            }
+            for row in day_rows
+        ]
+        st.subheader("Checklists per day")
+        st.bar_chart(
+            chart_rows,
+            x="Day",
+            y=["Downloaded", "Expected"],
+            height=280,
+        )
+        st.dataframe(day_rows, use_container_width=True, hide_index=True)
+        return
+
+    if not hotspots:
+        st.info("No hotspot checklist files found for this region/year.")
+        return
+    hotspot_rows = [
+        {
+            "Hotspot": row.get("locName") or row.get("locId") or "Unknown",
+            "locId": row.get("locId") or "",
+            "Checklists": int(row.get("checklists") or 0),
+            "First day": row.get("first_day") or "",
+            "Last day": row.get("last_day") or "",
+        }
+        for row in hotspots
+    ]
+    st.subheader("By hotspot")
+    st.caption(f"{len(hotspot_rows):,} locations with downloaded checklists")
+    st.dataframe(hotspot_rows, use_container_width=True, hide_index=True)
+
+
 def render_checklists() -> None:
     st.title("Checklists")
     st.caption(
@@ -1517,52 +2007,28 @@ def render_checklists() -> None:
         return
 
     default_region = os.environ.get("EBIRD_HOME_REGION", "US-FL-099")
+    if "checklists_region" not in st.session_state:
+        st.session_state.checklists_region = default_region
+    st.session_state.setdefault(
+        "region_code_field", st.session_state.checklists_region
+    )
     region_code = st.text_input(
         "Region code",
-        value=st.session_state.get("checklists_region", default_region),
-        help="eBird region, e.g. US-FL-099, US-FL, or US",
+        key="region_code_field",
+        help=(
+            "eBird region, e.g. US-FL-099, US-FL, or US. "
+            "Use Look up region code if you only know the place name."
+        ),
     ).strip()
+    if region_code:
+        st.session_state.checklists_region = region_code
+    render_region_code_lookup(session_key="checklists_region")
+    region_code = str(st.session_state.checklists_region or "").strip()
 
     world_life = load_life_list(WORLD_LIFE_LIST_CODE)
     region_life = load_life_list(region_code) if region_code else None
     world_total = life_list_total(world_life)
     region_total = life_list_total(region_life)
-
-    total_cols = st.columns(2)
-    with total_cols[0]:
-        if world_total is None:
-            st.warning(
-                f"No world life list at `{life_list_path(WORLD_LIFE_LIST_CODE)}`."
-            )
-        else:
-            st.metric("World life list", f"{world_total} species")
-            if st.button(
-                "Open gallery",
-                key="gallery_world_life_list",
-                use_container_width=True,
-            ):
-                open_life_list_gallery(
-                    WORLD_LIFE_LIST_CODE,
-                    title="World life list gallery",
-                )
-    with total_cols[1]:
-        if region_code and region_total is None:
-            st.warning(
-                f"No region life list at `{life_list_path(region_code)}`."
-            )
-        elif region_total is not None:
-            st.metric(f"Region life list ({region_code})", f"{region_total} species")
-            if st.button(
-                "Open gallery",
-                key="gallery_region_life_list",
-                use_container_width=True,
-            ):
-                open_life_list_gallery(
-                    region_code,
-                    title=f"Region life list gallery · {region_code}",
-                )
-        else:
-            st.metric("Region life list", "—")
 
     if st.button(
         "Open full region species gallery",
@@ -1576,6 +2042,45 @@ def render_checklists() -> None:
         disabled=not bool(region_code),
     ):
         open_region_species_gallery(region_code)
+
+    total_cols = st.columns(2)
+    with total_cols[0]:
+        if world_total is None:
+            st.warning(
+                f"No world life list at `{life_list_path(WORLD_LIFE_LIST_CODE)}`."
+            )
+        else:
+            st.caption("World life list")
+            if st.button(
+                f"{world_total} species",
+                key="gallery_world_life_list",
+                type="tertiary",
+                help="Open world life list gallery",
+            ):
+                open_life_list_gallery(
+                    WORLD_LIFE_LIST_CODE,
+                    title="World life list gallery",
+                )
+    with total_cols[1]:
+        if region_code and region_total is None:
+            st.warning(
+                f"No region life list at `{life_list_path(region_code)}`."
+            )
+        elif region_total is not None:
+            st.caption(f"Region life list ({region_code})")
+            if st.button(
+                f"{region_total} species",
+                key="gallery_region_life_list",
+                type="tertiary",
+                help=f"Open region life list gallery for {region_code}",
+            ):
+                open_life_list_gallery(
+                    region_code,
+                    title=f"Region life list gallery · {region_code}",
+                )
+        else:
+            st.caption("Region life list")
+            st.write("—")
 
     life_scope = st.radio(
         "Filter new birds by",
@@ -1596,7 +2101,11 @@ def render_checklists() -> None:
             return
         with st.spinner(f"Loading top hotspots for {region_code}…"):
             try:
-                hotspots = EBirdClient().top_hotspots(region_code, limit=100)
+                hotspots = EBirdClient().top_hotspots(
+                    region_code,
+                    limit=100,
+                    refresh=True,
+                )
             except requests.HTTPError as exc:
                 st.error(
                     f"eBird API error: {exc.response.status_code if exc.response else exc}"
@@ -1610,6 +2119,7 @@ def render_checklists() -> None:
         st.session_state.pop("checklist_rows", None)
         st.session_state.pop("checklist_summaries", None)
         st.session_state.pop("checklist_shown", None)
+        st.session_state.pop("checklist_source", None)
         hotspot_ids = [h["locId"] for h in hotspots if h.get("locId")]
         st.session_state.checklists_loc_id = (
             DEFAULT_HOTSPOT_ID if DEFAULT_HOTSPOT_ID in hotspot_ids else hotspot_ids[0]
@@ -1617,13 +2127,39 @@ def render_checklists() -> None:
             else None
         )
 
+    # Prefer session hotspots; otherwise start from the on-disk hotspot cache.
     hotspots = st.session_state.get("checklists_hotspots")
+    if not hotspots and region_code:
+        cached_hotspots = load_cached_hotspots(region_code)
+        if cached_hotspots:
+            hotspots = cached_hotspots
+            st.session_state.checklists_hotspots = cached_hotspots
+            st.session_state.checklists_region = region_code
+            hotspot_ids = [h["locId"] for h in cached_hotspots if h.get("locId")]
+            if hotspot_ids and st.session_state.get("checklists_loc_id") not in hotspot_ids:
+                st.session_state.checklists_loc_id = (
+                    DEFAULT_HOTSPOT_ID
+                    if DEFAULT_HOTSPOT_ID in hotspot_ids
+                    else hotspot_ids[0]
+                )
+            st.caption(
+                f"Loaded {len(cached_hotspots)} cached hotspots for {region_code}."
+            )
     if not hotspots:
         st.info("Enter a region and click Load hotspots.")
         return
 
     if st.session_state.get("checklists_region") != region_code:
-        st.warning("Region changed — click Load hotspots to refresh the list.")
+        cached_for_region = load_cached_hotspots(region_code)
+        if cached_for_region:
+            st.session_state.checklists_region = region_code
+            st.session_state.checklists_hotspots = cached_for_region
+            hotspots = cached_for_region
+            st.caption(
+                f"Switched to cached hotspots for {region_code}."
+            )
+        else:
+            st.warning("Region changed — click Load hotspots to refresh the list.")
 
     loc_ids = [h["locId"] for h in hotspots if h.get("locId")]
     labels = {h["locId"]: hotspot_label(h) for h in hotspots if h.get("locId")}
@@ -1647,8 +2183,28 @@ def render_checklists() -> None:
     )
     days_back = st.slider("Days to include", min_value=1, max_value=30, value=7)
     page_size = 50
+    stored_start = end_date - timedelta(days=days_back - 1)
 
-    if st.button("Show checklists"):
+    action_cols = st.columns(3)
+    with action_cols[0]:
+        show_api = st.button("Show checklists", type="primary", use_container_width=True)
+    with action_cols[1]:
+        show_cache = st.button(
+            "Show from cache",
+            use_container_width=True,
+            help="Browse downloaded checklist files for this hotspot — no eBird checklist API calls.",
+        )
+    with action_cols[2]:
+        show_all_cache = st.button(
+            "Show all from cache",
+            use_container_width=True,
+            help=(
+                "Browse downloaded checklists for every hotspot in this region "
+                "within the selected date range."
+            ),
+        )
+
+    if show_api:
         active_region = st.session_state.get("checklists_region", region_code)
         life_for_region = load_life_list(active_region)
         life_for_world = load_life_list(WORLD_LIFE_LIST_CODE)
@@ -1665,6 +2221,7 @@ def render_checklists() -> None:
                     summaries[:page_size],
                     life_for_region,
                     life_for_world,
+                    allow_api=True,
                 )
             except requests.HTTPError as exc:
                 st.error(
@@ -1683,6 +2240,64 @@ def render_checklists() -> None:
         st.session_state.checklist_life = life_for_region
         st.session_state.checklist_world_life = life_for_world
         st.session_state.checklist_hotspot_name = labels.get(loc_id, loc_id)
+        st.session_state.checklist_source = "api"
+
+    if show_cache or show_all_cache:
+        active_region = st.session_state.get("checklists_region", region_code)
+        life_for_region = load_life_list(active_region)
+        life_for_world = load_life_list(WORLD_LIFE_LIST_CODE)
+        all_hotspots = bool(show_all_cache)
+        spinner_label = (
+            "Loading all checklists from local cache…"
+            if all_hotspots
+            else "Loading checklists from local cache…"
+        )
+        with st.spinner(spinner_label):
+            if all_hotspots:
+                summaries = load_local_checklists(
+                    active_region,
+                    start_date=stored_start,
+                    end_date=end_date,
+                )
+            else:
+                summaries = load_local_checklists_for_hotspot(
+                    active_region,
+                    loc_id,
+                    start_date=stored_start,
+                    end_date=end_date,
+                )
+            # Resolve names via taxonomy when an API key is available; otherwise
+            # keep species codes from the cached checklist payload.
+            client = None
+            allow_api = False
+            if get_api_key():
+                try:
+                    client = EBirdClient()
+                    allow_api = True
+                except Exception:
+                    client = None
+                    allow_api = False
+            first_page = enrich_checklists(
+                client,
+                summaries[:page_size],
+                life_for_region,
+                life_for_world,
+                allow_api=allow_api,
+            )
+        st.session_state.checklists_loc_id = loc_id if not all_hotspots else ""
+        st.session_state.checklist_days = days_back
+        st.session_state.checklist_end_date = end_date
+        st.session_state.checklist_summaries = summaries
+        st.session_state.checklist_rows = first_page
+        st.session_state.checklist_shown = len(first_page)
+        st.session_state.checklist_life = life_for_region
+        st.session_state.checklist_world_life = life_for_world
+        st.session_state.checklist_hotspot_name = (
+            f"all hotspots ({active_region})"
+            if all_hotspots
+            else labels.get(loc_id, loc_id)
+        )
+        st.session_state.checklist_source = "cache"
 
     rows = st.session_state.get("checklist_rows")
     if rows is None:
@@ -1691,19 +2306,27 @@ def render_checklists() -> None:
     summaries = st.session_state.get("checklist_summaries") or []
     shown = st.session_state.get("checklist_shown", len(rows))
     total = len(summaries)
+    source = st.session_state.get("checklist_source", "api")
     hotspot_name = st.session_state.get(
         "checklist_hotspot_name", labels.get(loc_id, loc_id)
     )
     stored_end = st.session_state.get("checklist_end_date", end_date)
     stored_days = st.session_state.get("checklist_days", days_back)
     stored_start = stored_end - timedelta(days=stored_days - 1)
+    source_label = "local cache" if source == "cache" else "eBird API"
     st.write(
         f"Showing **{len(rows)}** of **{total}** checklist(s) at **{hotspot_name}** "
-        f"from **{stored_start.isoformat()}** to **{stored_end.isoformat()}**."
+        f"from **{stored_start.isoformat()}** to **{stored_end.isoformat()}** "
+        f"({source_label})."
     )
 
     if not rows and total == 0:
-        st.warning("No checklists found for this hotspot in that date range.")
+        if source == "cache":
+            st.warning(
+                "No downloaded checklists for this selection in that date range."
+            )
+        else:
+            st.warning("No checklists found for this hotspot in that date range.")
         return
 
     if shown < total:
@@ -1716,12 +2339,23 @@ def render_checklists() -> None:
             end = min(shown + page_size, total)
             with st.spinner("Loading more checklists…"):
                 try:
-                    more = enrich_checklists(
-                        EBirdClient(),
-                        summaries[start:end],
-                        life_for_region,
-                        life_for_world,
-                    )
+                    if source == "cache":
+                        client = EBirdClient() if get_api_key() else None
+                        more = enrich_checklists(
+                            client,
+                            summaries[start:end],
+                            life_for_region,
+                            life_for_world,
+                            allow_api=bool(client),
+                        )
+                    else:
+                        more = enrich_checklists(
+                            EBirdClient(),
+                            summaries[start:end],
+                            life_for_region,
+                            life_for_world,
+                            allow_api=True,
+                        )
                 except requests.HTTPError as exc:
                     st.error(
                         f"eBird API error: "
@@ -1802,6 +2436,7 @@ def render_checklists() -> None:
         )
         species = row.get("numSpecies", "?")
         observer = row.get("userDisplayName") or "Unknown observer"
+        location = str(row.get("locName") or row.get("locId") or "").strip()
         checklist_url = f"https://ebird.org/checklist/{sub_id}"
         region_new = row.get("new_count_region", row.get("new_count"))
         world_new = row.get("new_count_world")
@@ -1818,11 +2453,12 @@ def render_checklists() -> None:
             if world_new is not None:
                 new_bits.append(f"**{world_new}** new to world")
         new_label = f" · {' · '.join(new_bits)}" if new_bits else ""
+        location_label = f" · {location}" if location else ""
 
         with st.container(border=True):
             st.markdown(
                 f"**[{date_label}]({checklist_url})** · {species} species · "
-                f"{observer}{new_label}"
+                f"{observer}{location_label}{new_label}"
             )
             species_rows = row.get("species_rows") or []
             gallery_rows = species_rows
@@ -1943,4 +2579,18 @@ render_ebird_rate_limit_notices()
 if st.session_state.get("gallery_birds"):
     render_gallery()
 else:
-    render_checklists()
+    dashboard = st.radio(
+        "Dashboard",
+        options=["checklists", "cache"],
+        format_func=lambda value: {
+            "checklists": "Checklists",
+            "cache": "Checklist cache",
+        }[value],
+        horizontal=True,
+        key="dashboard_screen",
+        label_visibility="collapsed",
+    )
+    if dashboard == "cache":
+        render_cache_status()
+    else:
+        render_checklists()
