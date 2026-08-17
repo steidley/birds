@@ -42503,6 +42503,222 @@
     "taxon_url": "https://www.inaturalist.org/taxa/4765",
     "wikipedia_url": "https://en.wikipedia.org/wiki/Black%20vulture"
   },
+  "blugrb1": {
+    "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Passerina%20caerulea",
+    "cache_version": 3,
+    "common_name": "Blue Grosbeak",
+    "description": "The blue grosbeak (Passerina caerulea), is a medium-sized North American passerine bird in the cardinal family Cardinalidae. It is mainly migratory, wintering in Central America and breeding in northern Mexico and the southern United States. The male is blue with two brown wing bars. The female is mainly brown with scattered blue feathers on the upperparts and two brown wing bars.\n\n",
+    "description_source": "wikipedia",
+    "ebird_code": "blugrb1",
+    "ebird_url": "https://ebird.org/species/blugrb1",
+    "max_photos": 24,
+    "photos": [
+      {
+        "attribution": "(c) Braxton L., some rights reserved (CC BY-NC), uploaded by Braxton L.",
+        "author": "Braxton L.",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/680587416/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Cyrus Li, some rights reserved (CC BY-NC), uploaded by Cyrus Li",
+        "author": "Cyrus Li",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/651415565/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) ilouque, some rights reserved (CC BY)",
+        "author": "ilouque",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/239448/large.jpg",
+        "license": "cc-by",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Cheryl Rosenfeld, some rights reserved (CC BY-NC), uploaded by Cheryl Rosenfeld",
+        "author": "Cheryl Rosenfeld",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/241702550/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) DickDaniels, some rights reserved (CC BY-SA)",
+        "author": "DickDaniels",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/262496346/large.jpg",
+        "license": "cc-by-sa",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) uzun, some rights reserved (CC BY-NC), uploaded by uzun",
+        "author": "uzun",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/206676707/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Mark Greene, some rights reserved (CC BY-NC-ND), uploaded by Mark Greene",
+        "author": "Mark Greene",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/417055848/large.jpeg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Francisco Farriols Sarabia, some rights reserved (CC BY), uploaded by Francisco Farriols Sarabia",
+        "author": "Francisco Farriols Sarabia",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/7272251/large.jpeg",
+        "license": "cc-by",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) William Wise, all rights reserved, uploaded by William Wise",
+        "author": "William Wise",
+        "image_url": "https://static.inaturalist.org/photos/77824038/large.jpg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Ad Konings, some rights reserved (CC BY-NC), uploaded by Ad Konings",
+        "author": "Ad Konings",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/409888302/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Ad Konings, some rights reserved (CC BY-NC), uploaded by Ad Konings",
+        "author": "Ad Konings",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/379805040/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) John Trent, some rights reserved (CC BY-NC-ND)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/28697195/large.jpg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Mark Greene, some rights reserved (CC BY-NC-ND)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/417056586/large.jpeg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Mark Greene, some rights reserved (CC BY-NC-ND)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/417056600/large.jpeg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Mark Greene, some rights reserved (CC BY-NC-ND)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/417056602/large.jpeg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Ad Konings, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/143969234/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) larrymcdaniel, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/269954828/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) MarvalPhotography19, some rights reserved (CC BY)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/257754860/large.jpg",
+        "license": "cc-by",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) uzun, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/206676606/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) uzun, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/206676689/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) uzun, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/206676716/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) mitchm44, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/80181496/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) mitchm44, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/80181491/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) mitchm44, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/80181461/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      }
+    ],
+    "scientific_name": "Passerina caerulea",
+    "sources": [
+      "BirdNET taxonomy (eBird code / scientific name crosswalk)",
+      "iNaturalist taxa API (curated taxon photos, common name)",
+      "iNaturalist observations API (research-grade photos)",
+      "Description: wikipedia",
+      "eBird species code via BirdNET",
+      "Primary image selection: Macaulay Library ML67447361"
+    ],
+    "taxon_id": 73155,
+    "taxon_url": "https://www.inaturalist.org/taxa/73155",
+    "wikipedia_url": "https://en.wikipedia.org/wiki/Blue%20grosbeak"
+  },
   "blujay": {
     "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Cyanocitta%20cristata",
     "cache_version": 3,
@@ -47030,6 +47246,438 @@
     "taxon_url": "https://www.inaturalist.org/taxa/199916",
     "wikipedia_url": "https://en.wikipedia.org/wiki/Black-throated%20blue%20warbler"
   },
+  "btnwar": {
+    "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Setophaga%20virens",
+    "cache_version": 3,
+    "common_name": "Black-throated Green Warbler",
+    "description": "The black-throated green warbler (Setophaga virens) is a small songbird of the New World warbler family.",
+    "description_source": "wikipedia",
+    "ebird_code": "btnwar",
+    "ebird_url": "https://ebird.org/species/btnwar",
+    "max_photos": 24,
+    "photos": [
+      {
+        "attribution": "(c) pinemartyn, some rights reserved (CC BY-NC), uploaded by pinemartyn",
+        "author": "pinemartyn",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/506673183/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Dan Pancamo, some rights reserved (CC BY-SA)",
+        "author": "Dan Pancamo",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/68547/large.jpg",
+        "license": "cc-by-sa",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Zane Shantz, some rights reserved (CC BY-NC-ND), uploaded by Zane Shantz",
+        "author": "Zane Shantz",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/118639527/large.jpg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Owen J., some rights reserved (CC BY-NC), uploaded by Owen J.",
+        "author": "Owen J.",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/319488242/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) edporopat, some rights reserved (CC BY-NC), uploaded by edporopat",
+        "author": "edporopat",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/199207488/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Dan Pancamo, some rights reserved (CC BY-SA)",
+        "author": "Dan Pancamo",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/68548/large.jpg",
+        "license": "cc-by-sa",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Dean Hester, some rights reserved (CC BY-NC-ND), uploaded by Dean Hester",
+        "author": "Dean Hester",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/27253172/large.jpeg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "no rights reserved, uploaded by Erik Schiff",
+        "author": "Erik Schiff",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/200065363/large.jpg",
+        "license": "cc0",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Zac Cota, some rights reserved (CC BY-NC), uploaded by Zac Cota",
+        "author": "Zac Cota",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/44862085/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Alexandra Tey, some rights reserved (CC BY-NC), uploaded by Alexandra Tey",
+        "author": "Alexandra Tey",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/100470781/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) cbirds22, all rights reserved, uploaded by cbirds22",
+        "author": "cbirds22",
+        "image_url": "https://static.inaturalist.org/photos/258457029/large.jpg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) mhalsted, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/320981654/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) mhalsted, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/320982009/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) mhalsted, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/320982367/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) mhalsted, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/320982638/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) mhalsted, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/320982796/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) mhalsted, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/320982938/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) mhalsted, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/320983263/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) mhalsted, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/320983328/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) mhalsted, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/320983555/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Paul Bartels, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/66562263/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Paul Bartels, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/66562309/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Paul Bartels, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/66562359/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Paul Bartels, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/66562400/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      }
+    ],
+    "scientific_name": "Setophaga virens",
+    "sources": [
+      "BirdNET taxonomy (eBird code / scientific name crosswalk)",
+      "iNaturalist taxa API (curated taxon photos, common name)",
+      "iNaturalist observations API (research-grade photos)",
+      "Description: wikipedia",
+      "eBird species code via BirdNET",
+      "Primary image selection: iNaturalist"
+    ],
+    "taxon_id": 145258,
+    "taxon_url": "https://www.inaturalist.org/taxa/145258",
+    "wikipedia_url": "https://en.wikipedia.org/wiki/Black-throated%20green%20warbler"
+  },
+  "btywar": {
+    "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Setophaga%20nigrescens",
+    "cache_version": 3,
+    "common_name": "Black-throated Gray Warbler",
+    "description": "The black-throated gray warbler or black-throated grey warbler (Setophaga nigrescens) is a passerine bird of the New World warbler family Parulidae. It is 13 cm (5.1 in) long and has gray and white plumage with black markings. The male has the bold black throat of its name, and black stripes on its head, as well as black streaks on its flanks; the female is a paler version of the male, with a white throat and less distinct black markings on the flanks and wings. It breeds in western North America from British Columbia to New Mexico, and winters in Mexico and the southwestern United States. The habitats it prefers are coniferous and mixed forests and scrubland, especially those with pinyon pines, junipers, sagebrush, and oaks. Its nest is an open cup of plant fibers lined with feathers, built a few metres from the ground in the branches of a tree or shrub. Three to five eggs are laid, and young are fed by both parents. Common in its breeding range, it does not seem to be seriously threatened by human activities, unlike many migratory warblers.\n\n",
+    "description_source": "wikipedia",
+    "ebird_code": "btywar",
+    "ebird_url": "https://ebird.org/species/btywar",
+    "max_photos": 24,
+    "photos": [
+      {
+        "attribution": "(c) Mason Maron, all rights reserved, uploaded by Mason Maron",
+        "author": "Mason Maron",
+        "image_url": "https://static.inaturalist.org/photos/194575344/large.jpg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) cdbtx, some rights reserved (CC BY)",
+        "author": "cdbtx",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/275686522/large.jpg",
+        "license": "cc-by",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Josh van der Meulen, some rights reserved (CC BY-NC-ND), uploaded by Josh van der Meulen",
+        "author": "Josh van der Meulen",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/105079473/large.jpg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Kim Moore, all rights reserved, uploaded by Kim Moore",
+        "author": "Kim Moore",
+        "image_url": "https://static.inaturalist.org/photos/6023603/large.jpg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "no rights reserved, uploaded by adel-fridus",
+        "author": "adel-fridus",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/119758279/large.jpeg",
+        "license": "cc0",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Rick Nirschl, some rights reserved (CC BY-NC), uploaded by Rick Nirschl",
+        "author": "Rick Nirschl",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/56259317/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Greg Lasley, some rights reserved (CC BY-NC), uploaded by Greg Lasley",
+        "author": "Greg Lasley",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/229810/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Fred Hochstaedter, some rights reserved (CC BY-NC-SA)",
+        "author": "Fred Hochstaedter",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/2625481/large.jpg",
+        "license": "cc-by-nc-sa",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Juan Miguel Artigas Azas, all rights reserved, uploaded by Juan Miguel Artigas Azas",
+        "author": "Juan Miguel Artigas Azas",
+        "image_url": "https://static.inaturalist.org/photos/110712421/large.jpg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Paul Donahue, some rights reserved (CC BY-NC), uploaded by Paul Donahue",
+        "author": "Paul Donahue",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/135363998/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Mason Maron, all rights reserved, uploaded by Mason Maron",
+        "author": "Mason Maron",
+        "image_url": "https://static.inaturalist.org/photos/194575864/large.jpg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) minardroad, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/441375099/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) minardroad, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/441375124/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) minardroad, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/441375158/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) minardroad, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/441375190/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) minardroad, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/441375214/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) minardroad, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/441375247/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) minardroad, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/441375292/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Braxton L., some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/476924335/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Bridget Spencer, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/246191324/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Bridget Spencer, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/246191328/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Bridget Spencer, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/246191333/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Fyn Kynd, some rights reserved (CC BY-SA)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/8166673/large.jpg",
+        "license": "cc-by-sa",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Mason Maron, all rights reserved",
+        "author": null,
+        "image_url": "https://static.inaturalist.org/photos/194575400/large.jpg",
+        "license": null,
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      }
+    ],
+    "scientific_name": "Setophaga nigrescens",
+    "sources": [
+      "BirdNET taxonomy (eBird code / scientific name crosswalk)",
+      "iNaturalist taxa API (curated taxon photos, common name)",
+      "iNaturalist observations API (research-grade photos)",
+      "Description: wikipedia",
+      "eBird species code via BirdNET",
+      "Primary image selection: Macaulay Library ML297059311"
+    ],
+    "taxon_id": 145254,
+    "taxon_url": "https://www.inaturalist.org/taxa/145254",
+    "wikipedia_url": "https://en.wikipedia.org/wiki/Black-throated%20gray%20warbler"
+  },
   "bubcor1": {
     "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Uraeginthus%20angolensis",
     "cache_version": 3,
@@ -50909,6 +51557,222 @@
     "taxon_id": 7057,
     "taxon_url": "https://www.inaturalist.org/taxa/7057",
     "wikipedia_url": "https://en.wikipedia.org/wiki/Canvasback"
+  },
+  "canwar": {
+    "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Cardellina%20canadensis",
+    "cache_version": 3,
+    "common_name": "Canada Warbler",
+    "description": "The Canada warbler (Cardellina canadensis) is a small boreal songbird of the New World warbler family (Parulidae). It summers in Canada and northeastern United States and winters in northern South America.\n\n",
+    "description_source": "wikipedia",
+    "ebird_code": "canwar",
+    "ebird_url": "https://ebird.org/species/canwar",
+    "max_photos": 24,
+    "photos": [
+      {
+        "attribution": "(c) Matt Felperin, some rights reserved (CC BY), uploaded by Matt Felperin",
+        "author": "Matt Felperin",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/135286276/large.jpg",
+        "license": "cc-by",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Dan LaVorgna, all rights reserved, uploaded by Dan LaVorgna",
+        "author": "Dan LaVorgna",
+        "image_url": "https://static.inaturalist.org/photos/282008574/large.jpg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Joshua Lincoln, all rights reserved, uploaded by Joshua Lincoln",
+        "author": "Joshua Lincoln",
+        "image_url": "https://static.inaturalist.org/photos/58018183/large.jpg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Jeremy Meyer, some rights reserved (CC BY)",
+        "author": "Jeremy Meyer",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/11228/large.jpg",
+        "license": "cc-by",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Rob Routledge, some rights reserved (CC BY-NC), uploaded by Rob Routledge",
+        "author": "Rob Routledge",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/75163070/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Matt Felperin, some rights reserved (CC BY), uploaded by Matt Felperin",
+        "author": "Matt Felperin",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/135286467/large.jpg",
+        "license": "cc-by",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Emmett Hume, some rights reserved (CC BY)",
+        "author": "Emmett Hume",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/11229/large.jpg",
+        "license": "cc-by",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Jerry Downs, some rights reserved (CC BY-ND)",
+        "author": "Jerry Downs",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/11230/large.jpg",
+        "license": "cc-by-nd",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Marv Elliott, some rights reserved (CC BY-NC), uploaded by Marv Elliott",
+        "author": "Marv Elliott",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/684544/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) JoAnne-Russo, some rights reserved (CC BY-NC)",
+        "author": "JoAnne-Russo",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/229299/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Beau Cotter, all rights reserved",
+        "author": null,
+        "image_url": "https://static.inaturalist.org/photos/455090364/large.jpg",
+        "license": null,
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Matt Felperin, some rights reserved (CC BY)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/135286322/large.jpg",
+        "license": "cc-by",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Matt Felperin, some rights reserved (CC BY)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/135286432/large.jpg",
+        "license": "cc-by",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) nicosalino, all rights reserved",
+        "author": null,
+        "image_url": "https://static.inaturalist.org/photos/26262846/large.jpg",
+        "license": null,
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) nicosalino, all rights reserved",
+        "author": null,
+        "image_url": "https://static.inaturalist.org/photos/26262837/large.jpg",
+        "license": null,
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) nicosalino, all rights reserved",
+        "author": null,
+        "image_url": "https://static.inaturalist.org/photos/26262831/large.jpg",
+        "license": null,
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) nicosalino, all rights reserved",
+        "author": null,
+        "image_url": "https://static.inaturalist.org/photos/26262812/large.jpg",
+        "license": null,
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Erik Danielsen, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/57875999/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Kyle Blaney, all rights reserved",
+        "author": null,
+        "image_url": "https://static.inaturalist.org/photos/688995390/large.jpg",
+        "license": null,
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Marc Faucher, all rights reserved",
+        "author": null,
+        "image_url": "https://static.inaturalist.org/photos/129899225/large.jpg",
+        "license": null,
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Marc Faucher, all rights reserved",
+        "author": null,
+        "image_url": "https://static.inaturalist.org/photos/39710688/large.jpg",
+        "license": null,
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Dan Rubianto, all rights reserved",
+        "author": null,
+        "image_url": "https://static.inaturalist.org/photos/542785982/large.jpg",
+        "license": null,
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Dan Rubianto, all rights reserved",
+        "author": null,
+        "image_url": "https://static.inaturalist.org/photos/542786073/large.jpg",
+        "license": null,
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) shybeeal, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/264108868/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      }
+    ],
+    "scientific_name": "Cardellina canadensis",
+    "sources": [
+      "BirdNET taxonomy (eBird code / scientific name crosswalk)",
+      "iNaturalist taxa API (curated taxon photos, common name)",
+      "iNaturalist observations API (research-grade photos)",
+      "Description: wikipedia",
+      "eBird species code via BirdNET",
+      "Primary image selection: iNaturalist"
+    ],
+    "taxon_id": 145275,
+    "taxon_url": "https://www.inaturalist.org/taxa/145275",
+    "wikipedia_url": "https://en.wikipedia.org/wiki/Canada%20warbler"
   },
   "carchi": {
     "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Poecile%20carolinensis",
@@ -76159,6 +77023,222 @@
     "taxon_url": "https://www.inaturalist.org/taxa/12890",
     "wikipedia_url": "https://en.wikipedia.org/wiki/Hermit%20thrush"
   },
+  "herwar": {
+    "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Setophaga%20occidentalis",
+    "cache_version": 3,
+    "common_name": "Hermit Warbler",
+    "description": "The hermit warbler (Setophaga occidentalis) is a small perching bird. It is a species of New World warbler or wood-warbler. They are a migratory bird, the breeding range spanning the majority of the west coast of the United States. Their winter range includes parts of Mexico and Central America as well as parts of the southern California coast.\n\n",
+    "description_source": "wikipedia",
+    "ebird_code": "herwar",
+    "ebird_url": "https://ebird.org/species/herwar",
+    "max_photos": 24,
+    "photos": [
+      {
+        "attribution": "(c) Frode Jacobsen, some rights reserved (CC BY)",
+        "author": "Frode Jacobsen",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/70054/large.jpg",
+        "license": "cc-by",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) BJ Stacey, some rights reserved (CC BY-NC)",
+        "author": "BJ Stacey",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/306110/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Donna Pomeroy, some rights reserved (CC BY-NC), uploaded by Donna Pomeroy",
+        "author": "Donna Pomeroy",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/903609/large.JPG",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Juan Carlos Garcia Morales, all rights reserved, uploaded by Juan Carlos Garcia Morales",
+        "author": "Juan Carlos Garcia Morales",
+        "image_url": "https://static.inaturalist.org/photos/27283839/large.jpeg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) terence zahner, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/350101468/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) terence zahner, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/350101453/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) terence zahner, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/350101452/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) terence zahner, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/350101451/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) terence zahner, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/350101337/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Michael Long, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/508118133/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Michael Long, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/508118152/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Lauren Glevanik, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/434666254/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Lauren Glevanik, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/649559774/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Lauren Glevanik, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/649559602/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Lauren Glevanik, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/649559658/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Lauren Glevanik, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/649559979/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Lauren Glevanik, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/649558108/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Millie Basden, some rights reserved (CC BY)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/369038340/large.jpeg",
+        "license": "cc-by",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Millie Basden, some rights reserved (CC BY)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/369038401/large.jpeg",
+        "license": "cc-by",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Millie Basden, some rights reserved (CC BY)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/369038424/large.jpeg",
+        "license": "cc-by",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Millie Basden, some rights reserved (CC BY)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/369038446/large.jpeg",
+        "license": "cc-by",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Steven Mlodinow, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/71657482/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) caroline80126, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/278502887/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) caroline80126, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/278502920/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      }
+    ],
+    "scientific_name": "Setophaga occidentalis",
+    "sources": [
+      "BirdNET taxonomy (eBird code / scientific name crosswalk)",
+      "iNaturalist taxa API (curated taxon photos, common name)",
+      "iNaturalist observations API (research-grade photos)",
+      "Description: wikipedia",
+      "eBird species code via BirdNET",
+      "Primary image selection: iNaturalist"
+    ],
+    "taxon_id": 145256,
+    "taxon_url": "https://www.inaturalist.org/taxa/145256",
+    "wikipedia_url": "https://en.wikipedia.org/wiki/Hermit%20warbler"
+  },
   "hilmyn": {
     "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Gracula%20religiosa",
     "cache_version": 3,
@@ -78319,6 +79399,222 @@
     "taxon_url": "https://www.inaturalist.org/taxa/3950",
     "wikipedia_url": "https://en.wikipedia.org/wiki/Hudsonian%20godwit"
   },
+  "indbun": {
+    "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Passerina%20cyanea",
+    "cache_version": 3,
+    "common_name": "Indigo Bunting",
+    "description": "The indigo bunting (Passerina cyanea) is a small seed-eating bird in the cardinal family, Cardinalidae. It is migratory, ranging from southern Canada to northern Florida during the breeding season, and from southern Florida to northern South America during the winter. It often migrates by night, using the stars to navigate. Its habitat is farmland, brush areas, and open woodland. The indigo bunting is closely related to the lazuli bunting and interbreeds with the species where their ranges overlap.\nThe indigo bunting is a small bird, measuring 11.5\u201313 cm (4.5\u20135.1 in) in length. It displays sexual dimorphism in its coloration; the male is vibrant blue in the summer, with brightly colored  plumage during the breeding season to attract a mate. It is brown during the winter months, while the female is brown year-round. Nest-building and incubation are done solely by the female. The diet of the indigo bunting consists primarily of insects during the summer months and seeds during the winter months.\n\n",
+    "description_source": "wikipedia",
+    "ebird_code": "indbun",
+    "ebird_url": "https://ebird.org/species/indbun",
+    "max_photos": 24,
+    "photos": [
+      {
+        "attribution": "(c) Gareth Rasberry, some rights reserved (CC BY-SA)",
+        "author": "Gareth Rasberry",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/168808461/large.jpeg",
+        "license": "cc-by-sa",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Andrew Murray, some rights reserved (CC BY), uploaded by Andrew Murray",
+        "author": "Andrew Murray",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/383704746/large.jpg",
+        "license": "cc-by",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Al Tuttle, some rights reserved (CC BY-NC), uploaded by Al Tuttle",
+        "author": "Al Tuttle",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/30067878/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Abby Sesselberg, some rights reserved (CC BY-NC), uploaded by Abby Sesselberg",
+        "author": "Abby Sesselberg",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/111991069/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Tommy Farquhar, some rights reserved (CC BY-NC), uploaded by Tommy Farquhar",
+        "author": "Tommy Farquhar",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/17354730/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Daniel S. Katz, some rights reserved (CC BY), uploaded by Daniel S. Katz",
+        "author": "Daniel S. Katz",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/134453696/large.jpeg",
+        "license": "cc-by",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Greg Lasley, some rights reserved (CC BY-NC), uploaded by Greg Lasley",
+        "author": "Greg Lasley",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/232108/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Donna Lucas, some rights reserved (CC BY-NC), uploaded by Donna Lucas",
+        "author": "Donna Lucas",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/22701898/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Iv\u00e1n Res\u00e9ndiz Cruz, all rights reserved, uploaded by Iv\u00e1n Res\u00e9ndiz Cruz",
+        "author": "Iv\u00e1n Res\u00e9ndiz Cruz",
+        "image_url": "https://static.inaturalist.org/photos/121093140/large.jpeg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Donna Lucas, some rights reserved (CC BY-NC), uploaded by Donna Lucas",
+        "author": "Donna Lucas",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/22701888/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Senna Bryce Robeson, some rights reserved (CC BY), uploaded by Senna Bryce Robeson",
+        "author": "Senna Bryce Robeson",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/284724707/large.jpg",
+        "license": "cc-by",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Andy Jones, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/3019785/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Susan Elliott, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/72438231/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "no rights reserved",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/130795958/large.jpeg",
+        "license": "cc0",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "no rights reserved",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/130796042/large.jpeg",
+        "license": "cc0",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "no rights reserved",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/130796090/large.jpeg",
+        "license": "cc0",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Craig K. Hunt, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/380047654/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Craig K. Hunt, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/380047839/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Paul Reeves, some rights reserved (CC BY-NC-SA)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/88060651/large.jpg",
+        "license": "cc-by-nc-sa",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Christian Artuso, some rights reserved (CC BY-NC-ND)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/22974777/large.jpg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Christian Artuso, some rights reserved (CC BY-NC-ND)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/22974767/large.jpg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Christian Artuso, some rights reserved (CC BY-NC-ND)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/22974760/large.jpg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Christian Artuso, some rights reserved (CC BY-NC-ND)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/22974787/large.jpg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Christian Artuso, some rights reserved (CC BY-NC-ND)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/22974792/large.jpg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      }
+    ],
+    "scientific_name": "Passerina cyanea",
+    "sources": [
+      "BirdNET taxonomy (eBird code / scientific name crosswalk)",
+      "iNaturalist taxa API (curated taxon photos, common name)",
+      "iNaturalist observations API (research-grade photos)",
+      "Description: wikipedia",
+      "eBird species code via BirdNET",
+      "Primary image selection: iNaturalist"
+    ],
+    "taxon_id": 10227,
+    "taxon_url": "https://www.inaturalist.org/taxa/10227",
+    "wikipedia_url": "https://en.wikipedia.org/wiki/Indigo%20bunting"
+  },
   "kenwar": {
     "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Geothlypis%20formosa",
     "cache_version": 3,
@@ -80263,6 +81559,222 @@
     "taxon_id": 144514,
     "taxon_url": "https://www.inaturalist.org/taxa/144514",
     "wikipedia_url": "https://en.wikipedia.org/wiki/Laughing%20gull"
+  },
+  "lazbun": {
+    "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Passerina%20amoena",
+    "cache_version": 3,
+    "common_name": "Lazuli Bunting",
+    "description": "The lazuli bunting (Passerina amoena) is a North American songbird named for the gemstone lapis lazuli.",
+    "description_source": "wikipedia",
+    "ebird_code": "lazbun",
+    "ebird_url": "https://ebird.org/species/lazbun",
+    "max_photos": 24,
+    "photos": [
+      {
+        "attribution": "(c) Shou, all rights reserved, uploaded by Shou",
+        "author": "Shou",
+        "image_url": "https://static.inaturalist.org/photos/217851140/large.jpeg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) abcdefgewing, some rights reserved (CC BY-NC), uploaded by abcdefgewing",
+        "author": "abcdefgewing",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/105560742/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Mike Hannisian, some rights reserved (CC BY-NC), uploaded by Mike Hannisian",
+        "author": "Mike Hannisian",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/58292476/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) M.L. Watson, some rights reserved (CC BY-NC-ND), uploaded by M.L. Watson",
+        "author": "M.L. Watson",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/273685109/large.jpg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Pat Farris, some rights reserved (CC BY), uploaded by Pat Farris",
+        "author": "Pat Farris",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/189925731/large.jpg",
+        "license": "cc-by",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) R.J. Adams, some rights reserved (CC BY-NC), uploaded by R.J. Adams",
+        "author": "R.J. Adams",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/4093746/large.JPG",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) kmjackson, some rights reserved (CC BY-NC)",
+        "author": "kmjackson",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/20643854/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) John Murnane, some rights reserved (CC BY-NC), uploaded by John Murnane",
+        "author": "John Murnane",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/70539491/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Donna Pomeroy, some rights reserved (CC BY-NC), uploaded by Donna Pomeroy",
+        "author": "Donna Pomeroy",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/76934723/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) caro gmz, some rights reserved (CC BY-NC-SA)",
+        "author": "caro gmz",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/2375765/large.jpg",
+        "license": "cc-by-nc-sa",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Gerardo Marr\u00f3n, some rights reserved (CC BY-NC), uploaded by Gerardo Marr\u00f3n",
+        "author": "Gerardo Marr\u00f3n",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/124392348/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Cole Wolf, some rights reserved (CC BY), uploaded by Cole Wolf",
+        "author": "Cole Wolf",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/318695080/large.jpg",
+        "license": "cc-by",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) cjmatheson, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/378759078/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Joan Septembre, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/134446426/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) John Murnane, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/70539175/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) John Murnane, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/70539488/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) John Murnane, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/70539496/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) John Murnane, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/70539494/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Zach Kemp, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/203428013/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Zach Kemp, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/203428003/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Zach Kemp, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/203427989/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Zach Kemp, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/203427996/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Zach Kemp, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/203428020/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Zach Kemp, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/203428030/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      }
+    ],
+    "scientific_name": "Passerina amoena",
+    "sources": [
+      "BirdNET taxonomy (eBird code / scientific name crosswalk)",
+      "iNaturalist taxa API (curated taxon photos, common name)",
+      "iNaturalist observations API (research-grade photos)",
+      "Description: wikipedia",
+      "eBird species code via BirdNET",
+      "Primary image selection: Macaulay Library ML311473551"
+    ],
+    "taxon_id": 10234,
+    "taxon_url": "https://www.inaturalist.org/taxa/10234",
+    "wikipedia_url": "https://en.wikipedia.org/wiki/Lazuli%20bunting"
   },
   "lbbgul": {
     "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Larus%20fuscus",
@@ -106376,6 +107888,222 @@
     "taxon_url": "https://www.inaturalist.org/taxa/7188",
     "wikipedia_url": "https://en.wikipedia.org/wiki/Ringed%20teal"
   },
+  "robgro": {
+    "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Pheucticus%20ludovicianus",
+    "cache_version": 3,
+    "common_name": "Rose-breasted Grosbeak",
+    "description": "The rose-breasted grosbeak (Pheucticus ludovicianus), colloquially called \"cut-throat\" due to its coloration, is a large, seed-eating grosbeak in the cardinal family (Cardinalidae). It is primarily a foliage gleaner. Males have black heads, wings, backs, and tails, and a bright rose colored patch on their white breast. Males and females exhibit marked sexual dimorphism.\nBreeding habitat consists of cool-temperate open deciduous woods throughout much of eastern North America, with migration to tropical America in winter. Rose-breasted grosbeaks have an average maximum lifespan of 7.3 years in the wild, and up to 24 years in captivity. Death in the wild is generally due to collision with objects (buildings, cars, etc.) and predation, to eggs, nestlings and adults.",
+    "description_source": "wikipedia",
+    "ebird_code": "robgro",
+    "ebird_url": "https://ebird.org/species/robgro",
+    "max_photos": 24,
+    "photos": [
+      {
+        "attribution": "(c) Norma Maurice, some rights reserved (CC BY-NC-ND), uploaded by Norma Maurice",
+        "author": "Norma Maurice",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/203617764/large.jpg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Cephas, some rights reserved (CC BY-SA)",
+        "author": "Cephas",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/169653410/large.jpg",
+        "license": "cc-by-sa",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Blake Matheson, some rights reserved (CC BY-NC)",
+        "author": "Blake Matheson",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/239449/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Craig K. Hunt, some rights reserved (CC BY-NC), uploaded by Craig K. Hunt",
+        "author": "Craig K. Hunt",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/228640982/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Paul Prappas, some rights reserved (CC BY-NC), uploaded by Paul Prappas",
+        "author": "Paul Prappas",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/78300975/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) John Murnane, some rights reserved (CC BY-NC), uploaded by John Murnane",
+        "author": "John Murnane",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/72639228/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Daniel Onea, some rights reserved (CC BY-NC), uploaded by Daniel Onea",
+        "author": "Daniel Onea",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/278240859/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Kirsten S, all rights reserved, uploaded by Kirsten S",
+        "author": "Kirsten S",
+        "image_url": "https://static.inaturalist.org/photos/71342963/large.jpeg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Mel Sovay, some rights reserved (CC BY-NC), uploaded by Mel Sovay",
+        "author": "Mel Sovay",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/56918878/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Mario Urrutia, some rights reserved (CC BY-NC-ND), uploaded by Mario Urrutia",
+        "author": "Mario Urrutia",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/108726462/large.jpg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Kent Ross, some rights reserved (CC BY-NC), uploaded by Kent Ross",
+        "author": "Kent Ross",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/199244493/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Lisa Saffell, some rights reserved (CC BY-NC-ND), uploaded by Lisa Saffell",
+        "author": "Lisa Saffell",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/231495223/large.jpg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Kyleigh Godsey, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/97035507/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Kyleigh Godsey, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/97035468/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Kyleigh Godsey, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/97035497/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Kyleigh Godsey, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/97035483/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Craig K. Hunt, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/140506377/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) rearview, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/127041419/large.png",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) rebelgirl73, some rights reserved (CC BY-NC-ND)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/377661338/large.jpg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) rebelgirl73, some rights reserved (CC BY-NC-ND)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/377661384/large.jpg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) mhalsted, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/674362524/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) mhalsted, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/674363370/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Maeve O'Connor, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/657393066/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Maeve O'Connor, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/657393117/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      }
+    ],
+    "scientific_name": "Pheucticus ludovicianus",
+    "sources": [
+      "BirdNET taxonomy (eBird code / scientific name crosswalk)",
+      "iNaturalist taxa API (curated taxon photos, common name)",
+      "iNaturalist observations API (research-grade photos)",
+      "Description: wikipedia",
+      "eBird species code via BirdNET",
+      "Primary image selection: iNaturalist"
+    ],
+    "taxon_id": 10271,
+    "taxon_url": "https://www.inaturalist.org/taxa/10271",
+    "wikipedia_url": "https://en.wikipedia.org/wiki/Rose-breasted%20grosbeak"
+  },
   "rocpig": {
     "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Columba%20livia",
     "cache_version": 3,
@@ -111883,6 +113611,222 @@
     "taxon_id": 17009,
     "taxon_url": "https://www.inaturalist.org/taxa/17009",
     "wikipedia_url": "https://en.wikipedia.org/wiki/Say's%20phoebe"
+  },
+  "scatan": {
+    "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Piranga%20olivacea",
+    "cache_version": 3,
+    "common_name": "Scarlet Tanager",
+    "description": "The scarlet tanager (Piranga olivacea) is a medium-sized American songbird. Until recently, it was placed in the tanager family (Thraupidae), but it and other members of its genus are now classified as belonging to the cardinal family (Cardinalidae). The species' plumage and vocalizations are similar to other members of the cardinal family, although the Piranga species lacks the thick conical bill (well suited to seed and insect eating) that many cardinals possess. The species resides in thick deciduous woodlands and suburbs.",
+    "description_source": "wikipedia",
+    "ebird_code": "scatan",
+    "ebird_url": "https://ebird.org/species/scatan",
+    "max_photos": 24,
+    "photos": [
+      {
+        "attribution": "(c) samzhang, all rights reserved",
+        "author": "samzhang",
+        "image_url": "https://static.inaturalist.org/photos/199674966/large.jpeg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) F\u00e9lix Uribe, some rights reserved (CC BY-SA)",
+        "author": "F\u00e9lix Uribe",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/262509193/large.jpg",
+        "license": "cc-by-sa",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) brian stahls, some rights reserved (CC BY-NC), uploaded by brian stahls",
+        "author": "brian stahls",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/281747396/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Tom Murray, some rights reserved (CC BY-NC)",
+        "author": "Tom Murray",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/407829761/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Mary Keim, some rights reserved (CC BY-NC-SA)",
+        "author": "Mary Keim",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/233459120/large.jpg",
+        "license": "cc-by-nc-sa",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Shirley Zundell, some rights reserved (CC BY), uploaded by Shirley Zundell",
+        "author": "Shirley Zundell",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/42961581/large.jpeg",
+        "license": "cc-by",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Nancy Christensen, all rights reserved, uploaded by Nancy Christensen",
+        "author": "Nancy Christensen",
+        "image_url": "https://static.inaturalist.org/photos/220015515/large.jpg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Thijs Valkenburg, some rights reserved (CC BY-NC), uploaded by Thijs Valkenburg",
+        "author": "Thijs Valkenburg",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/179580289/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Terry Sohl, some rights reserved (CC BY-NC), uploaded by Terry Sohl",
+        "author": "Terry Sohl",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/45673082/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) David Remsen, some rights reserved (CC BY-NC), uploaded by David Remsen",
+        "author": "David Remsen",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/130235300/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) \nlwolfartist, some rights reserved (CC BY)",
+        "author": "\nlwolfartist",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/262509199/large.jpg",
+        "license": "cc-by",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Joy Phelan, some rights reserved (CC BY-NC-ND), uploaded by Joy Phelan",
+        "author": "Joy Phelan",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/156969060/large.jpeg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Judd Patterson, all rights reserved",
+        "author": null,
+        "image_url": "https://static.inaturalist.org/photos/4374741/large.jpg",
+        "license": null,
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Theresa Bayoud, all rights reserved",
+        "author": null,
+        "image_url": "https://static.inaturalist.org/photos/7601214/large.jpg",
+        "license": null,
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Joy Phelan, some rights reserved (CC BY-NC-ND)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/156969092/large.jpeg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Joy Phelan, some rights reserved (CC BY-NC-ND)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/156969120/large.jpeg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Joy Phelan, some rights reserved (CC BY-NC-ND)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/156969142/large.jpeg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Sean Vanderluit, some rights reserved (CC BY)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/203711981/large.jpeg",
+        "license": "cc-by",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Sean Vanderluit, some rights reserved (CC BY)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/204152904/large.jpeg",
+        "license": "cc-by",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Sean Vanderluit, some rights reserved (CC BY)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/204152926/large.jpeg",
+        "license": "cc-by",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Sue Wetmore, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/3760313/large.JPG",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Lee Minicuci, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/3585389/large.JPG",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) michaelkalisek, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/497203419/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) michaelkalisek, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/497217207/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      }
+    ],
+    "scientific_name": "Piranga olivacea",
+    "sources": [
+      "BirdNET taxonomy (eBird code / scientific name crosswalk)",
+      "iNaturalist taxa API (curated taxon photos, common name)",
+      "iNaturalist observations API (research-grade photos)",
+      "Description: wikipedia",
+      "eBird species code via BirdNET",
+      "Primary image selection: Macaulay Library ML297081931"
+    ],
+    "taxon_id": 9921,
+    "taxon_url": "https://www.inaturalist.org/taxa/9921",
+    "wikipedia_url": "https://en.wikipedia.org/wiki/Scarlet%20tanager"
   },
   "scoshe1": {
     "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Calonectris%20diomedea",
@@ -121509,6 +123453,222 @@
     "taxon_url": "https://www.inaturalist.org/taxa/3850",
     "wikipedia_url": "https://en.wikipedia.org/wiki/Stilt%20sandpiper"
   },
+  "sumtan": {
+    "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Piranga%20rubra",
+    "cache_version": 3,
+    "common_name": "Summer Tanager",
+    "description": "The summer tanager (Piranga rubra) is a medium-sized American songbird. Formerly placed in the tanager family (Thraupidae), it and other members of its genus are now classified in the cardinal family (Cardinalidae). The species's plumage and vocalizations are similar to other members of the cardinal family.",
+    "description_source": "wikipedia",
+    "ebird_code": "sumtan",
+    "ebird_url": "https://ebird.org/species/sumtan",
+    "max_photos": 24,
+    "photos": [
+      {
+        "attribution": "(c) Josh van der Meulen, some rights reserved (CC BY-NC-ND), uploaded by Josh van der Meulen",
+        "author": "Josh van der Meulen",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/21089917/large.jpg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Ricardo Arredondo T., some rights reserved (CC BY-NC), uploaded by Ricardo Arredondo T.",
+        "author": "Ricardo Arredondo T.",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/255951686/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) TVASQUEZ, some rights reserved (CC BY-NC), uploaded by TVASQUEZ",
+        "author": "TVASQUEZ",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/17864655/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Rachel Hall, some rights reserved (CC BY-NC), uploaded by Rachel Hall",
+        "author": "Rachel Hall",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/68047817/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) lonnyholmes, some rights reserved (CC BY-NC), uploaded by lonnyholmes",
+        "author": "lonnyholmes",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/137506964/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Rachel Hall, some rights reserved (CC BY-NC), uploaded by Rachel Hall",
+        "author": "Rachel Hall",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/68047807/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Alejandra Monsiv\u00e1is, some rights reserved (CC BY-NC), uploaded by Alejandra Monsiv\u00e1is",
+        "author": "Alejandra Monsiv\u00e1is",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/65558395/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) F\u00e9lix Uribe, some rights reserved (CC BY-SA)",
+        "author": "F\u00e9lix Uribe",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/262497627/large.jpg",
+        "license": "cc-by-sa",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) shzimmer, some rights reserved (CC BY-NC), uploaded by shzimmer",
+        "author": "shzimmer",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/23309964/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) tcantrell52, some rights reserved (CC BY)",
+        "author": "tcantrell52",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/121875832/large.jpg",
+        "license": "cc-by",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Josh van der Meulen, some rights reserved (CC BY-NC-ND), uploaded by Josh van der Meulen",
+        "author": "Josh van der Meulen",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/101125424/large.jpg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Laurel Ladwig, some rights reserved (CC BY-NC-SA)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/37405907/large.jpg",
+        "license": "cc-by-nc-sa",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Chris Canipe, some rights reserved (CC BY-NC-SA)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/39080670/large.jpg",
+        "license": "cc-by-nc-sa",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Chris Canipe, some rights reserved (CC BY-NC-SA)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/39080672/large.jpg",
+        "license": "cc-by-nc-sa",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Josh van der Meulen, some rights reserved (CC BY-NC-ND)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/101125434/large.jpg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) fowlerope, all rights reserved",
+        "author": null,
+        "image_url": "https://static.inaturalist.org/photos/19929816/large.jpg",
+        "license": null,
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) quiltedquetzal, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/197351636/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) quiltedquetzal, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/197351654/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) nancynorman, all rights reserved",
+        "author": null,
+        "image_url": "https://static.inaturalist.org/photos/292403790/large.jpg",
+        "license": null,
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) zr217, some rights reserved (CC BY)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/427179435/large.jpeg",
+        "license": "cc-by",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) zr217, some rights reserved (CC BY)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/427179403/large.jpeg",
+        "license": "cc-by",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Diogo Rodrigues, all rights reserved",
+        "author": null,
+        "image_url": "https://static.inaturalist.org/photos/620691284/large.jpg",
+        "license": null,
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Erica, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/359612244/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Erica, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/359612257/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      }
+    ],
+    "scientific_name": "Piranga rubra",
+    "sources": [
+      "BirdNET taxonomy (eBird code / scientific name crosswalk)",
+      "iNaturalist taxa API (curated taxon photos, common name)",
+      "iNaturalist observations API (research-grade photos)",
+      "Description: wikipedia",
+      "eBird species code via BirdNET",
+      "Primary image selection: iNaturalist"
+    ],
+    "taxon_id": 9915,
+    "taxon_url": "https://www.inaturalist.org/taxa/9915",
+    "wikipedia_url": "https://en.wikipedia.org/wiki/Summer%20tanager"
+  },
   "sunpar1": {
     "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Aratinga%20solstitialis",
     "cache_version": 3,
@@ -123885,6 +126045,222 @@
     "taxon_id": 980033,
     "taxon_url": "https://www.inaturalist.org/taxa/980033",
     "wikipedia_url": "https://en.wikipedia.org/wiki/Thick-billed%20vireo"
+  },
+  "towwar": {
+    "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Setophaga%20townsendi",
+    "cache_version": 3,
+    "common_name": "Townsend's Warbler",
+    "description": "Townsend's warbler (Setophaga townsendi) is a small songbird of the New World warbler family.",
+    "description_source": "wikipedia",
+    "ebird_code": "towwar",
+    "ebird_url": "https://ebird.org/species/towwar",
+    "max_photos": 24,
+    "photos": [
+      {
+        "attribution": "(c) Braxton L., some rights reserved (CC BY-NC), uploaded by Braxton L.",
+        "author": "Braxton L.",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/627894034/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) kwernicke, some rights reserved (CC BY-NC)",
+        "author": "kwernicke",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/113846998/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Greg Lasley, some rights reserved (CC BY-NC), uploaded by Greg Lasley",
+        "author": "Greg Lasley",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/10829611/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Donna Pomeroy, some rights reserved (CC BY-NC), uploaded by Donna Pomeroy",
+        "author": "Donna Pomeroy",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/2507857/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Declan Troy, all rights reserved, uploaded by Declan Troy",
+        "author": "Declan Troy",
+        "image_url": "https://static.inaturalist.org/photos/339221869/large.jpg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) macrhybopsis, some rights reserved (CC BY-NC)",
+        "author": "macrhybopsis",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/171915136/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) JJ Shaeffer, all rights reserved, uploaded by JJ Shaeffer",
+        "author": "JJ Shaeffer",
+        "image_url": "https://static.inaturalist.org/photos/545026869/large.jpg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) kwernicke, some rights reserved (CC BY-NC)",
+        "author": "kwernicke",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/113846991/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Bill Carpenter, all rights reserved, uploaded by Bill Carpenter",
+        "author": "Bill Carpenter",
+        "image_url": "https://static.inaturalist.org/photos/287427783/large.jpg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) M. Goff, some rights reserved (CC BY-NC-SA), uploaded by M. Goff",
+        "author": "M. Goff",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/133188766/large.jpg",
+        "license": "cc-by-nc-sa",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Brooke A Miller, all rights reserved, uploaded by Brooke A Miller",
+        "author": "Brooke A Miller",
+        "image_url": "https://static.inaturalist.org/photos/58290210/large.jpg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Greg Lasley, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/10829606/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Greg Lasley, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/10829601/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Greg Lasley, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/10829596/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Greg Lasley, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/10829592/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Greg Lasley, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/10829586/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Greg Lasley, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/10829580/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Greg Lasley, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/10829565/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Greg Lasley, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/10829573/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Greg Lasley, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/10829558/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Nathan Z\u00e1rate, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/456261472/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) sashacahill, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/594436853/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Donna Pomeroy, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/2633055/large.JPG",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Jamie Simmons, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/274876263/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      }
+    ],
+    "scientific_name": "Setophaga townsendi",
+    "sources": [
+      "BirdNET taxonomy (eBird code / scientific name crosswalk)",
+      "iNaturalist taxa API (curated taxon photos, common name)",
+      "iNaturalist observations API (research-grade photos)",
+      "Description: wikipedia",
+      "eBird species code via BirdNET",
+      "Primary image selection: Macaulay Library ML297064161"
+    ],
+    "taxon_id": 145255,
+    "taxon_url": "https://www.inaturalist.org/taxa/145255",
+    "wikipedia_url": "https://en.wikipedia.org/wiki/Townsend's%20warbler"
   },
   "treswa": {
     "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Tachycineta%20bicolor",
@@ -129826,6 +132202,222 @@
     "taxon_id": 10731,
     "taxon_url": "https://www.inaturalist.org/taxa/10731",
     "wikipedia_url": "https://en.wikipedia.org/wiki/Western%20spindalis"
+  },
+  "westan": {
+    "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Piranga%20ludoviciana",
+    "cache_version": 3,
+    "common_name": "Western Tanager",
+    "description": "The western tanager (Piranga ludoviciana) is a medium-sized American songbird. Formerly placed in the tanager family (Thraupidae), it and other members of its genus are classified in the cardinal family (Cardinalidae). The species' plumage and vocalizations are similar to other members of the cardinal family.",
+    "description_source": "wikipedia",
+    "ebird_code": "westan",
+    "ebird_url": "https://ebird.org/species/westan",
+    "max_photos": 24,
+    "photos": [
+      {
+        "attribution": "(c) Jim Gain, some rights reserved (CC BY-NC), uploaded by Jim Gain",
+        "author": "Jim Gain",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/289912656/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Dan LaVorgna, all rights reserved, uploaded by Dan LaVorgna",
+        "author": "Dan LaVorgna",
+        "image_url": "https://static.inaturalist.org/photos/657037781/large.jpg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) BJ Stacey, some rights reserved (CC BY-NC)",
+        "author": "BJ Stacey",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/300416/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Juan Carlos Garcia Morales, all rights reserved, uploaded by Juan Carlos Garcia Morales",
+        "author": "Juan Carlos Garcia Morales",
+        "image_url": "https://static.inaturalist.org/photos/29860487/large.jpeg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Andrej Chud\u00fd, some rights reserved (CC BY-NC-SA)",
+        "author": "Andrej Chud\u00fd",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/139350607/large.jpg",
+        "license": "cc-by-nc-sa",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Scott E Severs, some rights reserved (CC BY-NC), uploaded by Scott E Severs",
+        "author": "Scott E Severs",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/82668070/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Brian Long, some rights reserved (CC BY-NC), uploaded by Brian Long",
+        "author": "Brian Long",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/132021212/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Steven Mlodinow, some rights reserved (CC BY-NC), uploaded by Steven Mlodinow",
+        "author": "Steven Mlodinow",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/5104092/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Ad Konings, some rights reserved (CC BY-NC), uploaded by Ad Konings",
+        "author": "Ad Konings",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/318263846/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Spencer Hurt, some rights reserved (CC BY), uploaded by Spencer Hurt",
+        "author": "Spencer Hurt",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/414074727/large.jpg",
+        "license": "cc-by",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Donna Pomeroy, some rights reserved (CC BY-NC), uploaded by Donna Pomeroy",
+        "author": "Donna Pomeroy",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/903803/large.JPG",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) evernia648, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/75370656/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Robert A White, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/181932470/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Robert A White, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/181932483/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Robert A White, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/181932477/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) EmptyMoose, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/288006429/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) EmptyMoose, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/288006452/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "no rights reserved",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/106474565/large.jpeg",
+        "license": "cc0",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "no rights reserved",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/106474587/large.jpeg",
+        "license": "cc0",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "no rights reserved",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/106474601/large.jpeg",
+        "license": "cc0",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) rastor, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/502004372/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) rastor, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/502004406/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) rastor, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/502004440/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) rastor, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/502004466/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      }
+    ],
+    "scientific_name": "Piranga ludoviciana",
+    "sources": [
+      "BirdNET taxonomy (eBird code / scientific name crosswalk)",
+      "iNaturalist taxa API (curated taxon photos, common name)",
+      "iNaturalist observations API (research-grade photos)",
+      "Description: wikipedia",
+      "eBird species code via BirdNET",
+      "Primary image selection: iNaturalist"
+    ],
+    "taxon_id": 9919,
+    "taxon_url": "https://www.inaturalist.org/taxa/9919",
+    "wikipedia_url": "https://en.wikipedia.org/wiki/Western%20tanager"
   },
   "wewvir2": {
     "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Vireo%20swainsoni",
@@ -137059,6 +139651,222 @@
     "taxon_url": "https://www.inaturalist.org/taxa/4146",
     "wikipedia_url": "https://en.wikipedia.org/wiki/Wilson's%20storm%20petrel"
   },
+  "wlswar": {
+    "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Cardellina%20pusilla",
+    "cache_version": 3,
+    "common_name": "Wilson's Warbler",
+    "description": "Wilson's warbler (Cardellina pusilla) is a small New World warbler. It is greenish above and yellow below, with rounded wings and a long, slim tail. The male has a black crown patch; depending on the subspecies, that mark is reduced or absent in the female. It breeds across Canada and south through the western United States, and winters from Mexico south through much of Central America. It is a very rare vagrant to western Europe.",
+    "description_source": "wikipedia",
+    "ebird_code": "wlswar",
+    "ebird_url": "https://ebird.org/species/wlswar",
+    "max_photos": 24,
+    "photos": [
+      {
+        "attribution": "(c) Juan Miguel Artigas Azas, all rights reserved, uploaded by Juan Miguel Artigas Azas",
+        "author": "Juan Miguel Artigas Azas",
+        "image_url": "https://static.inaturalist.org/photos/164653214/large.jpeg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Juan Miguel Artigas Azas, all rights reserved, uploaded by Juan Miguel Artigas Azas",
+        "author": "Juan Miguel Artigas Azas",
+        "image_url": "https://static.inaturalist.org/photos/101770893/large.jpg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Warren Cronan, some rights reserved (CC BY-NC), uploaded by Warren Cronan",
+        "author": "Warren Cronan",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/45021246/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Jozef K. Richards, some rights reserved (CC BY-NC), uploaded by Jozef K. Richards",
+        "author": "Jozef K. Richards",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/249415681/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) JanetandPhil, some rights reserved (CC BY-NC-ND)",
+        "author": "JanetandPhil",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/1313940/large.jpg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) David Ru\u00edz Dom\u00ednguez, some rights reserved (CC BY-NC), uploaded by David Ru\u00edz Dom\u00ednguez",
+        "author": "David Ru\u00edz Dom\u00ednguez",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/340702351/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Stephen DeHart, some rights reserved (CC BY-NC), uploaded by Stephen DeHart",
+        "author": "Stephen DeHart",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/152949970/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Michael Woodruff, some rights reserved (CC BY)",
+        "author": "Michael Woodruff",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/905/large.jpg",
+        "license": "cc-by",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Juan Miguel Artigas Azas, all rights reserved, uploaded by Juan Miguel Artigas Azas",
+        "author": "Juan Miguel Artigas Azas",
+        "image_url": "https://static.inaturalist.org/photos/103258102/large.jpeg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) JanetandPhil, some rights reserved (CC BY-NC-ND)",
+        "author": "JanetandPhil",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/1313943/large.jpg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Ad Konings, some rights reserved (CC BY-NC), uploaded by Ad Konings",
+        "author": "Ad Konings",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/312428069/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) BJ Stacey, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/332482/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Paola Eslava, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/31354910/large.png",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) adventurehiker, all rights reserved",
+        "author": null,
+        "image_url": "https://static.inaturalist.org/photos/149310507/large.jpg",
+        "license": null,
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) adventurehiker, all rights reserved",
+        "author": null,
+        "image_url": "https://static.inaturalist.org/photos/149310538/large.jpg",
+        "license": null,
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Jozef K. Richards, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/249415728/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Jozef K. Richards, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/249415748/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Jozef K. Richards, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/249415776/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Jozef K. Richards, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/249415774/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Jozef K. Richards, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/249415782/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Jozef K. Richards, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/249415816/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Jozef K. Richards, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/249415827/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Jozef K. Richards, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/249415831/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Jozef K. Richards, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/249415851/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      }
+    ],
+    "scientific_name": "Cardellina pusilla",
+    "sources": [
+      "BirdNET taxonomy (eBird code / scientific name crosswalk)",
+      "iNaturalist taxa API (curated taxon photos, common name)",
+      "iNaturalist observations API (research-grade photos)",
+      "Description: wikipedia",
+      "eBird species code via BirdNET",
+      "Primary image selection: Macaulay Library ML297073391"
+    ],
+    "taxon_id": 145276,
+    "taxon_url": "https://www.inaturalist.org/taxa/145276",
+    "wikipedia_url": "https://en.wikipedia.org/wiki/Wilson's%20warbler"
+  },
   "woewar1": {
     "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Helmitheros%20vermivorum",
     "cache_version": 3,
@@ -141379,6 +144187,222 @@
     "taxon_id": 1188207,
     "taxon_url": "https://www.inaturalist.org/taxa/1188207",
     "wikipedia_url": "https://en.wikipedia.org/wiki/Yellow%20warbler"
+  },
+  "yerwar": {
+    "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Setophaga%20coronata",
+    "cache_version": 3,
+    "common_name": "Yellow-rumped Warbler",
+    "description": "The yellow-rumped warbler (Setophaga coronata) is a regular North American bird species that can be commonly observed all across the continent. Its extensive range connects both the Pacific and Atlantic coasts of the U.S. as well as Canada and Central America, with the population concentrated in the continent's northern reaches during the breeding season and migrating southwards to southern North and Central America in the winter. It generally prefers coniferous forests or mixed coniferous-deciduous forests as its breeding habitat, while during the winter it can be found inhabiting more open areas such as shrublands that offer food resources. The yellow-rumped warbler is primarily insectivorous, though the species does eat fruits such as juniper berries as well, especially in winter.\nThe species combines four closely related forms: the eastern myrtle warbler (spp. coronata); its western counterpart, Audubon's warbler (spp. group auduboni); the northwest Mexican black-fronted warbler (spp. nigrifrons); and the Guatemalan Goldman's warbler (spp. goldmani). All subspecies of the yellow-rumped warbler are characterized by the yellow rump as its name implies, while intra-group and inter-group variations in appearance exist in spite of many similarities. The myrtle and Audubon's groups, as two major subspecies, are distinguished by noticeable features such as differing throat colorations.",
+    "description_source": "wikipedia",
+    "ebird_code": "yerwar",
+    "ebird_url": "https://ebird.org/species/yerwar",
+    "max_photos": 24,
+    "photos": [
+      {
+        "attribution": "(c) Zane Shantz, some rights reserved (CC BY-NC-ND), uploaded by Zane Shantz",
+        "author": "Zane Shantz",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/128439522/large.jpg",
+        "license": "cc-by-nc-nd",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Michael Pidwirny, some rights reserved (CC BY-NC), uploaded by Michael Pidwirny",
+        "author": "Michael Pidwirny",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/271149831/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Dan Vickers, some rights reserved (CC BY), uploaded by Dan Vickers",
+        "author": "Dan Vickers",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/442752262/large.jpg",
+        "license": "cc-by",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Juan Miguel Artigas Azas, all rights reserved, uploaded by Juan Miguel Artigas Azas",
+        "author": "Juan Miguel Artigas Azas",
+        "image_url": "https://static.inaturalist.org/photos/249431206/large.jpg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Willem Span, some rights reserved (CC BY), uploaded by Willem Span",
+        "author": "Willem Span",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/271210824/large.jpg",
+        "license": "cc-by",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Mary Keim, some rights reserved (CC BY-NC-SA)",
+        "author": "Mary Keim",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/253746274/large.jpg",
+        "license": "cc-by-nc-sa",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Michael Gallo, all rights reserved, uploaded by Michael Gallo",
+        "author": "Michael Gallo",
+        "image_url": "https://static.inaturalist.org/photos/172451094/large.jpg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Kris Cu, some rights reserved (CC BY-NC), uploaded by Kris Cu",
+        "author": "Kris Cu",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/270574265/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Justyn Stahl, some rights reserved (CC BY-NC), uploaded by Justyn Stahl",
+        "author": "Justyn Stahl",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/268270890/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Dave Wendelken, some rights reserved (CC BY-NC)",
+        "author": "Dave Wendelken",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/461515668/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Michael Sherman, all rights reserved, uploaded by Michael Sherman",
+        "author": "Michael Sherman",
+        "image_url": "https://static.inaturalist.org/photos/157748649/large.jpeg",
+        "license": null,
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Janice Goetz, some rights reserved (CC BY-NC), uploaded by Janice Goetz",
+        "author": "Janice Goetz",
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/109844005/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "taxon",
+        "source": "iNaturalist taxon photo"
+      },
+      {
+        "attribution": "(c) Janice Goetz, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/109843994/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) pointrond, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/69782409/large.jpeg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Jonathan Eisen, some rights reserved (CC BY)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/252031775/large.jpg",
+        "license": "cc-by",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Jonathan Eisen, some rights reserved (CC BY)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/252031786/large.jpg",
+        "license": "cc-by",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) David Govoni, some rights reserved (CC BY-NC-SA)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/14331975/large.jpg",
+        "license": "cc-by-nc-sa",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) David Govoni, some rights reserved (CC BY-NC-SA)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/14332048/large.jpg",
+        "license": "cc-by-nc-sa",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Janet Wright, some rights reserved (CC BY-NC)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/10565082/large.jpg",
+        "license": "cc-by-nc",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Brooke J., some rights reserved (CC BY)",
+        "author": null,
+        "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/668050487/large.jpg",
+        "license": "cc-by",
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Mason Maron, all rights reserved",
+        "author": null,
+        "image_url": "https://static.inaturalist.org/photos/34497326/large.jpg",
+        "license": null,
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Mason Maron, all rights reserved",
+        "author": null,
+        "image_url": "https://static.inaturalist.org/photos/34497337/large.jpg",
+        "license": null,
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Mason Maron, all rights reserved",
+        "author": null,
+        "image_url": "https://static.inaturalist.org/photos/34497338/large.jpg",
+        "license": null,
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      },
+      {
+        "attribution": "(c) Mason Maron, all rights reserved",
+        "author": null,
+        "image_url": "https://static.inaturalist.org/photos/34497348/large.jpg",
+        "license": null,
+        "photo_kind": "observation",
+        "source": "iNaturalist observation"
+      }
+    ],
+    "scientific_name": "Setophaga coronata",
+    "sources": [
+      "BirdNET taxonomy (eBird code / scientific name crosswalk)",
+      "iNaturalist taxa API (curated taxon photos, common name)",
+      "iNaturalist observations API (research-grade photos)",
+      "Description: wikipedia",
+      "eBird species code via BirdNET",
+      "Primary image selection: iNaturalist"
+    ],
+    "taxon_id": 145245,
+    "taxon_url": "https://www.inaturalist.org/taxa/145245",
+    "wikipedia_url": "https://en.wikipedia.org/wiki/Yellow-rumped%20warbler"
   },
   "yetvir": {
     "birdnet_url": "https://birdnet.cornell.edu/taxonomy/api/species/Vireo%20flavifrons",
