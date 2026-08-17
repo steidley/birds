@@ -1,0 +1,1349 @@
+{
+  "ameavo": {
+    "attribution": "(c) Ad Konings, some rights reserved (CC BY-NC), uploaded by Ad Konings",
+    "common_name": "American Avocet",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/134687620/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Recurvirostra americana",
+    "taxon_id": 4885,
+    "taxon_url": "https://www.inaturalist.org/taxa/4885"
+  },
+  "amered": {
+    "attribution": "(c) Casey Weissburg, some rights reserved (CC BY-NC), uploaded by Casey Weissburg",
+    "common_name": "American Redstart",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/31539046/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Setophaga ruticilla",
+    "taxon_id": 10247,
+    "taxon_url": "https://www.inaturalist.org/taxa/10247"
+  },
+  "amwpel": {
+    "attribution": "(c) Mason Maron, all rights reserved, uploaded by Mason Maron",
+    "common_name": "American White Pelican",
+    "image_url": "https://static.inaturalist.org/photos/68158229/medium.jpg",
+    "license": null,
+    "scientific_name": "Pelecanus erythrorhynchos",
+    "taxon_id": 4334,
+    "taxon_url": "https://www.inaturalist.org/taxa/4334"
+  },
+  "anhing": {
+    "attribution": "(c) Shiva Shenoy, some rights reserved (CC BY), uploaded by Shiva Shenoy",
+    "common_name": "Anhinga",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/195512943/medium.jpg",
+    "license": "cc-by",
+    "scientific_name": "Anhinga anhinga",
+    "taxon_id": 5063,
+    "taxon_url": "https://www.inaturalist.org/taxa/5063"
+  },
+  "baleag": {
+    "attribution": "(c) Addy, some rights reserved (CC BY-NC), uploaded by Addy",
+    "common_name": "Bald Eagle",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/341016703/medium.jpeg",
+    "license": "cc-by-nc",
+    "scientific_name": "Haliaeetus leucocephalus",
+    "taxon_id": 5305,
+    "taxon_url": "https://www.inaturalist.org/taxa/5305"
+  },
+  "banswa": {
+    "attribution": "(c) rupperrt78, some rights reserved (CC BY-NC)",
+    "common_name": "Bank Swallow",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/165349740/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Riparia riparia",
+    "taxon_id": 11941,
+    "taxon_url": "https://www.inaturalist.org/taxa/11941"
+  },
+  "barswa": {
+    "attribution": "(c) Ad Konings, some rights reserved (CC BY-NC), uploaded by Ad Konings",
+    "common_name": "Barn Swallow",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/122469139/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Hirundo rustica",
+    "taxon_id": 11901,
+    "taxon_url": "https://www.inaturalist.org/taxa/11901"
+  },
+  "barswa5": {
+    "attribution": "(c) Ad Konings, some rights reserved (CC BY-NC), uploaded by Ad Konings",
+    "common_name": "Barn Swallow",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/122469139/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Hirundo rustica erythrogaster",
+    "taxon_id": 11901,
+    "taxon_url": "https://www.inaturalist.org/taxa/11901"
+  },
+  "bawwar": {
+    "attribution": "(c) Holly Merker, some rights reserved (CC BY-NC), uploaded by Holly Merker",
+    "common_name": "Black-and-white Warbler",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/71502776/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Mniotilta varia",
+    "taxon_id": 10286,
+    "taxon_url": "https://www.inaturalist.org/taxa/10286"
+  },
+  "bbwduc": {
+    "attribution": "(c) cello caruso-turiello, some rights reserved (CC BY), uploaded by cello caruso-turiello",
+    "common_name": "Black-bellied Whistling-Duck",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/411123026/medium.jpg",
+    "license": "cc-by",
+    "scientific_name": "Dendrocygna autumnalis",
+    "taxon_id": 6893,
+    "taxon_url": "https://www.inaturalist.org/taxa/6893"
+  },
+  "bcnher": {
+    "attribution": "no rights reserved, uploaded by Kyle Nessen",
+    "common_name": "Black-crowned Night Heron",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/49357930/medium.jpg",
+    "license": "cc0",
+    "scientific_name": "Nycticorax nycticorax",
+    "taxon_id": 4981,
+    "taxon_url": "https://www.inaturalist.org/taxa/4981"
+  },
+  "belkin1": {
+    "attribution": "(c) Dave Roberts, some rights reserved (CC BY-NC), uploaded by Dave Roberts",
+    "common_name": "Belted Kingfisher",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/244248986/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Megaceryle alcyon",
+    "taxon_id": 2548,
+    "taxon_url": "https://www.inaturalist.org/taxa/2548"
+  },
+  "bkbplo": {
+    "attribution": "(c) TroyEcol, all rights reserved, uploaded by TroyEcol",
+    "common_name": "Black-bellied Plover",
+    "image_url": "https://static.inaturalist.org/photos/10603462/medium.jpg",
+    "license": null,
+    "scientific_name": "Pluvialis squatarola",
+    "taxon_id": 4892,
+    "taxon_url": "https://www.inaturalist.org/taxa/4892"
+  },
+  "bkbwhd1": {
+    "attribution": "(c) cello caruso-turiello, some rights reserved (CC BY), uploaded by cello caruso-turiello",
+    "common_name": "Black-bellied Whistling-Duck",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/411123026/medium.jpg",
+    "license": "cc-by",
+    "scientific_name": "Dendrocygna autumnalis fulgens",
+    "taxon_id": 6893,
+    "taxon_url": "https://www.inaturalist.org/taxa/6893"
+  },
+  "bkcnih2": {
+    "attribution": "no rights reserved, uploaded by Kyle Nessen",
+    "common_name": "Black-crowned Night Heron",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/49357930/medium.jpg",
+    "license": "cc0",
+    "scientific_name": "Nycticorax nycticorax hoactli",
+    "taxon_id": 4981,
+    "taxon_url": "https://www.inaturalist.org/taxa/4981"
+  },
+  "bknsti": {
+    "attribution": "(c) Hayath Mohammed, all rights reserved, uploaded by Hayath Mohammed",
+    "common_name": "Black-necked Stilt",
+    "image_url": "https://static.inaturalist.org/photos/114045609/medium.jpeg",
+    "license": null,
+    "scientific_name": "Himantopus mexicanus",
+    "taxon_id": 4836,
+    "taxon_url": "https://www.inaturalist.org/taxa/4836"
+  },
+  "bknsti1": {
+    "attribution": "(c) Hayath Mohammed, all rights reserved, uploaded by Hayath Mohammed",
+    "common_name": "Black-necked Stilt",
+    "image_url": "https://static.inaturalist.org/photos/114045609/medium.jpeg",
+    "license": null,
+    "scientific_name": "Himantopus mexicanus mexicanus",
+    "taxon_id": 4836,
+    "taxon_url": "https://www.inaturalist.org/taxa/4836"
+  },
+  "blkski": {
+    "attribution": "(c) Scott, some rights reserved (CC BY-NC), uploaded by Scott",
+    "common_name": "Black Skimmer",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/227666105/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Rynchops niger",
+    "taxon_id": 4496,
+    "taxon_url": "https://www.inaturalist.org/taxa/4496"
+  },
+  "blkter": {
+    "attribution": "(c) David Yeany, some rights reserved (CC BY-NC), uploaded by David Yeany",
+    "common_name": "Black Tern",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/3789202/medium.jpeg",
+    "license": "cc-by-nc",
+    "scientific_name": "Chlidonias niger",
+    "taxon_id": 4512,
+    "taxon_url": "https://www.inaturalist.org/taxa/4512"
+  },
+  "blkvul": {
+    "attribution": "(c) eduardovieira17, some rights reserved (CC BY-NC), uploaded by eduardovieira17",
+    "common_name": "Black Vulture",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/176419188/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Coragyps atratus",
+    "taxon_id": 4765,
+    "taxon_url": "https://www.inaturalist.org/taxa/4765"
+  },
+  "blujay": {
+    "attribution": "(c) Judy Gallagher, some rights reserved (CC BY)",
+    "common_name": "Blue Jay",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/530721418/medium.jpg",
+    "license": "cc-by",
+    "scientific_name": "Cyanocitta cristata",
+    "taxon_id": 8229,
+    "taxon_url": "https://www.inaturalist.org/taxa/8229"
+  },
+  "botgra": {
+    "attribution": "(c) z7nikon, some rights reserved (CC BY-NC), uploaded by z7nikon",
+    "common_name": "Boat-tailed Grackle",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/109766112/medium.jpeg",
+    "license": "cc-by-nc",
+    "scientific_name": "Quiscalus major",
+    "taxon_id": 9601,
+    "taxon_url": "https://www.inaturalist.org/taxa/9601"
+  },
+  "botgra3": {
+    "attribution": "(c) z7nikon, some rights reserved (CC BY-NC), uploaded by z7nikon",
+    "common_name": "Boat-tailed Grackle",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/109766112/medium.jpeg",
+    "license": "cc-by-nc",
+    "scientific_name": "Quiscalus major westoni",
+    "taxon_id": 9601,
+    "taxon_url": "https://www.inaturalist.org/taxa/9601"
+  },
+  "brdowl": {
+    "attribution": "(c) David Yeager, some rights reserved (CC BY-NC), uploaded by David Yeager",
+    "common_name": "Barred Owl",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/359094470/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Strix varia",
+    "taxon_id": 19893,
+    "taxon_url": "https://www.inaturalist.org/taxa/19893"
+  },
+  "briter1": {
+    "attribution": "(c) cog2022, some rights reserved (CC BY-NC)",
+    "common_name": "Bridled Tern",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/199581302/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Onychoprion anaethetus",
+    "taxon_id": 144527,
+    "taxon_url": "https://www.inaturalist.org/taxa/144527"
+  },
+  "brnowl": {
+    "attribution": "(c) Andria E. Hernandez, some rights reserved (CC BY-NC), uploaded by Andria E. Hernandez",
+    "common_name": "American Barn Owl",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/103695544/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Tyto furcata",
+    "taxon_id": 1578502,
+    "taxon_url": "https://www.inaturalist.org/taxa/1578502"
+  },
+  "brnpel": {
+    "attribution": "(c) BJ Stacey, some rights reserved (CC BY-NC), uploaded by BJ Stacey",
+    "common_name": "Brown Pelican",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/74013719/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Pelecanus occidentalis",
+    "taxon_id": 4328,
+    "taxon_url": "https://www.inaturalist.org/taxa/4328"
+  },
+  "brnthr": {
+    "attribution": "(c) Tim Buskirk, all rights reserved",
+    "common_name": "Brown Thrasher",
+    "image_url": "https://static.inaturalist.org/photos/76155158/medium.jpg",
+    "license": null,
+    "scientific_name": "Toxostoma rufum",
+    "taxon_id": 14898,
+    "taxon_url": "https://www.inaturalist.org/taxa/14898"
+  },
+  "buggna": {
+    "attribution": "(c) samzhang, all rights reserved",
+    "common_name": "Blue-gray Gnatcatcher",
+    "image_url": "https://static.inaturalist.org/photos/269328954/medium.jpeg",
+    "license": null,
+    "scientific_name": "Polioptila caerulea",
+    "taxon_id": 7493,
+    "taxon_url": "https://www.inaturalist.org/taxa/7493"
+  },
+  "buggna1": {
+    "attribution": "(c) samzhang, all rights reserved",
+    "common_name": "Blue-gray Gnatcatcher",
+    "image_url": "https://static.inaturalist.org/photos/269328954/medium.jpeg",
+    "license": null,
+    "scientific_name": "Polioptila caerulea caerulea",
+    "taxon_id": 7493,
+    "taxon_url": "https://www.inaturalist.org/taxa/7493"
+  },
+  "burowl": {
+    "attribution": "(c) Jason Penney, all rights reserved",
+    "common_name": "Burrowing Owl",
+    "image_url": "https://static.inaturalist.org/photos/57747291/medium.jpg",
+    "license": null,
+    "scientific_name": "Athene cunicularia",
+    "taxon_id": 19975,
+    "taxon_url": "https://www.inaturalist.org/taxa/19975"
+  },
+  "burowl3": {
+    "attribution": "(c) Jason Penney, all rights reserved",
+    "common_name": "Burrowing Owl",
+    "image_url": "https://static.inaturalist.org/photos/57747291/medium.jpg",
+    "license": null,
+    "scientific_name": "Athene cunicularia floridana",
+    "taxon_id": 19975,
+    "taxon_url": "https://www.inaturalist.org/taxa/19975"
+  },
+  "carwre": {
+    "attribution": "(c) Tom Murray, some rights reserved (CC BY-NC)",
+    "common_name": "Carolina Wren",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/461889083/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Thryothorus ludovicianus",
+    "taxon_id": 7513,
+    "taxon_url": "https://www.inaturalist.org/taxa/7513"
+  },
+  "caster1": {
+    "attribution": "(c) Jef-B, some rights reserved (CC BY-NC), uploaded by Jef-B",
+    "common_name": "Caspian Tern",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/486575200/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Hydroprogne caspia",
+    "taxon_id": 144537,
+    "taxon_url": "https://www.inaturalist.org/taxa/144537"
+  },
+  "categr1": {
+    "attribution": "(c) \u0410\u043b\u0435\u043a\u0441\u0435\u0439 \u0421\u0438\u0437\u043e\u0432, some rights reserved (CC BY-NC), uploaded by \u0410\u043b\u0435\u043a\u0441\u0435\u0439 \u0421\u0438\u0437\u043e\u0432",
+    "common_name": "Western Cattle-Egret",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/278764160/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Ardea ibis",
+    "taxon_id": 411086,
+    "taxon_url": "https://www.inaturalist.org/taxa/411086"
+  },
+  "cavswa": {
+    "attribution": "(c) Juan Miguel Artigas Azas, all rights reserved, uploaded by Juan Miguel Artigas Azas",
+    "common_name": "Cave Swallow",
+    "image_url": "https://static.inaturalist.org/photos/106780521/medium.jpeg",
+    "license": null,
+    "scientific_name": "Petrochelidon fulva",
+    "taxon_id": 11855,
+    "taxon_url": "https://www.inaturalist.org/taxa/11855"
+  },
+  "chiswi": {
+    "attribution": "(c) biomule, some rights reserved (CC BY-NC)",
+    "common_name": "Chimney Swift",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/383206018/medium.jpeg",
+    "license": "cc-by-nc",
+    "scientific_name": "Chaetura pelagica",
+    "taxon_id": 6571,
+    "taxon_url": "https://www.inaturalist.org/taxa/6571"
+  },
+  "chwwid": {
+    "attribution": "(c) John Brush, some rights reserved (CC BY-NC), uploaded by John Brush",
+    "common_name": "Chuck-will's-widow",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/16038254/medium.jpeg",
+    "license": "cc-by-nc",
+    "scientific_name": "Antrostomus carolinensis",
+    "taxon_id": 199833,
+    "taxon_url": "https://www.inaturalist.org/taxa/199833"
+  },
+  "cliswa": {
+    "attribution": "(c) Dean Hester, some rights reserved (CC BY-NC-ND), uploaded by Dean Hester",
+    "common_name": "Cliff Swallow",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/27372454/medium.jpeg",
+    "license": "cc-by-nc-nd",
+    "scientific_name": "Petrochelidon pyrrhonota",
+    "taxon_id": 11858,
+    "taxon_url": "https://www.inaturalist.org/taxa/11858"
+  },
+  "cliswa2": {
+    "attribution": "(c) Dean Hester, some rights reserved (CC BY-NC-ND), uploaded by Dean Hester",
+    "common_name": "Cliff Swallow",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/27372454/medium.jpeg",
+    "license": "cc-by-nc-nd",
+    "scientific_name": "Petrochelidon pyrrhonota [pyrrhonota Group]",
+    "taxon_id": 11858,
+    "taxon_url": "https://www.inaturalist.org/taxa/11858"
+  },
+  "cogdov": {
+    "attribution": "(c) Cheryl Rosenfeld, some rights reserved (CC BY-NC), uploaded by Cheryl Rosenfeld",
+    "common_name": "Common Ground Dove",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/205041251/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Columbina passerina",
+    "taxon_id": 3545,
+    "taxon_url": "https://www.inaturalist.org/taxa/3545"
+  },
+  "comgal1": {
+    "attribution": "(c) uzun, some rights reserved (CC BY-NC), uploaded by uzun",
+    "common_name": "Common Gallinule",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/30905992/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Gallinula galeata",
+    "taxon_id": 144479,
+    "taxon_url": "https://www.inaturalist.org/taxa/144479"
+  },
+  "comgra": {
+    "attribution": "(c) brian stahls, some rights reserved (CC BY-NC), uploaded by brian stahls",
+    "common_name": "Common Grackle",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/265296529/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Quiscalus quiscula",
+    "taxon_id": 9602,
+    "taxon_url": "https://www.inaturalist.org/taxa/9602"
+  },
+  "comgra1": {
+    "attribution": "(c) brian stahls, some rights reserved (CC BY-NC), uploaded by brian stahls",
+    "common_name": "Common Grackle",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/265296529/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Quiscalus quiscula quiscula/stonei",
+    "taxon_id": 9602,
+    "taxon_url": "https://www.inaturalist.org/taxa/9602"
+  },
+  "commoo2": {
+    "attribution": "(c) uzun, some rights reserved (CC BY-NC), uploaded by uzun",
+    "common_name": "Common Gallinule",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/30905992/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Gallinula galeata [galeata Group]",
+    "taxon_id": 144479,
+    "taxon_url": "https://www.inaturalist.org/taxa/144479"
+  },
+  "comnig": {
+    "attribution": "(c) Mike Stewart, some rights reserved (CC BY-NC), uploaded by Mike Stewart",
+    "common_name": "Common Nighthawk",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/279194539/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Chordeiles minor",
+    "taxon_id": 19577,
+    "taxon_url": "https://www.inaturalist.org/taxa/19577"
+  },
+  "comyel": {
+    "attribution": "(c) bwood708, some rights reserved (CC BY-NC), uploaded by bwood708",
+    "common_name": "Common Yellowthroat",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/35803961/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Geothlypis trichas",
+    "taxon_id": 9721,
+    "taxon_url": "https://www.inaturalist.org/taxa/9721"
+  },
+  "comyel3": {
+    "attribution": "(c) bwood708, some rights reserved (CC BY-NC), uploaded by bwood708",
+    "common_name": "Common Yellowthroat",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/35803961/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Geothlypis trichas [trichas Group]",
+    "taxon_id": 9721,
+    "taxon_url": "https://www.inaturalist.org/taxa/9721"
+  },
+  "coohaw": {
+    "attribution": "(c) Abby Sesselberg, some rights reserved (CC BY-NC), uploaded by Abby Sesselberg",
+    "common_name": "Cooper's Hawk",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/170370008/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Astur cooperii",
+    "taxon_id": 1579017,
+    "taxon_url": "https://www.inaturalist.org/taxa/1579017"
+  },
+  "doccor": {
+    "attribution": "(c) Ben Martin Mortimer, some rights reserved (CC BY-NC), uploaded by Ben Martin Mortimer",
+    "common_name": "Double-crested Cormorant",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/541600012/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Nannopterum auritum",
+    "taxon_id": 1454382,
+    "taxon_url": "https://www.inaturalist.org/taxa/1454382"
+  },
+  "dowitc": {},
+  "dowwoo": {
+    "attribution": "(c) C\u00e9sar Andr\u00e9s Castillo, all rights reserved, uploaded by C\u00e9sar Andr\u00e9s Castillo",
+    "common_name": "Downy Woodpecker",
+    "image_url": "https://static.inaturalist.org/photos/25544008/medium.jpeg",
+    "license": null,
+    "scientific_name": "Dryobates pubescens",
+    "taxon_id": 792988,
+    "taxon_url": "https://www.inaturalist.org/taxa/792988"
+  },
+  "easkin": {
+    "attribution": "(c) Jake Scott, all rights reserved, uploaded by Jake Scott",
+    "common_name": "Eastern Kingbird",
+    "image_url": "https://static.inaturalist.org/photos/518522154/medium.jpg",
+    "license": null,
+    "scientific_name": "Tyrannus tyrannus",
+    "taxon_id": 16782,
+    "taxon_url": "https://www.inaturalist.org/taxa/16782"
+  },
+  "easmea": {
+    "attribution": "(c) Ingrid Macedo, all rights reserved, uploaded by Ingrid Macedo",
+    "common_name": "Eastern Meadowlark",
+    "image_url": "https://static.inaturalist.org/photos/31461304/medium.jpg",
+    "license": null,
+    "scientific_name": "Sturnella magna",
+    "taxon_id": 9528,
+    "taxon_url": "https://www.inaturalist.org/taxa/9528"
+  },
+  "easowl1": {
+    "attribution": "(c) Michael Hodge, some rights reserved (CC BY-NC-SA)",
+    "common_name": "Eastern Screech-Owl",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/5651/medium.jpg",
+    "license": "cc-by-nc-sa",
+    "scientific_name": "Megascops asio",
+    "taxon_id": 19765,
+    "taxon_url": "https://www.inaturalist.org/taxa/19765"
+  },
+  "egygoo": {
+    "attribution": "(c) Lu\u00eds Louren\u00e7o, some rights reserved (CC BY-NC-ND), uploaded by Lu\u00eds Louren\u00e7o",
+    "common_name": "Egyptian Goose",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/130517490/medium.jpeg",
+    "license": "cc-by-nc-nd",
+    "scientific_name": "Alopochen aegyptiaca",
+    "taxon_id": 72486,
+    "taxon_url": "https://www.inaturalist.org/taxa/72486"
+  },
+  "eucdov": {
+    "attribution": "(c) Daniel, all rights reserved, uploaded by Daniel",
+    "common_name": "Eurasian Collared-Dove",
+    "image_url": "https://static.inaturalist.org/photos/61919353/medium.jpeg",
+    "license": null,
+    "scientific_name": "Streptopelia decaocto",
+    "taxon_id": 2969,
+    "taxon_url": "https://www.inaturalist.org/taxa/2969"
+  },
+  "eursta": {
+    "attribution": "(c) Fran Wiesner, some rights reserved (CC BY-NC-ND), uploaded by Fran Wiesner",
+    "common_name": "European Starling",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/32152001/medium.jpg",
+    "license": "cc-by-nc-nd",
+    "scientific_name": "Sturnus vulgaris",
+    "taxon_id": 14850,
+    "taxon_url": "https://www.inaturalist.org/taxa/14850"
+  },
+  "fiscro": {
+    "attribution": "(c) srdsmkes, some rights reserved (CC BY-NC), uploaded by srdsmkes",
+    "common_name": "Fish Crow",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/275257665/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Corvus ossifragus",
+    "taxon_id": 8001,
+    "taxon_url": "https://www.inaturalist.org/taxa/8001"
+  },
+  "forter": {
+    "attribution": "(c) Bert Filemyr, some rights reserved (CC BY-NC), uploaded by Bert Filemyr",
+    "common_name": "Forster's Tern",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/35605055/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Sterna forsteri",
+    "taxon_id": 4457,
+    "taxon_url": "https://www.inaturalist.org/taxa/4457"
+  },
+  "fuwduc": {
+    "attribution": "(c) Tom Benson, some rights reserved (CC BY-NC-ND)",
+    "common_name": "Fulvous Whistling-Duck",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/91528685/medium.jpg",
+    "license": "cc-by-nc-nd",
+    "scientific_name": "Dendrocygna bicolor",
+    "taxon_id": 6899,
+    "taxon_url": "https://www.inaturalist.org/taxa/6899"
+  },
+  "gloibi": {
+    "attribution": "(c) bwood708, some rights reserved (CC BY-NC), uploaded by bwood708",
+    "common_name": "Glossy Ibis",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/29367762/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Plegadis falcinellus",
+    "taxon_id": 3756,
+    "taxon_url": "https://www.inaturalist.org/taxa/3756"
+  },
+  "grbher": {
+    "attribution": "(c) Dan Roach, some rights reserved (CC BY-NC), uploaded by Dan Roach",
+    "common_name": "Great Blue Heron",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/65060931/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Ardea herodias [herodias Group]",
+    "taxon_id": 4956,
+    "taxon_url": "https://www.inaturalist.org/taxa/4956"
+  },
+  "grbher3": {
+    "attribution": "(c) Dan Roach, some rights reserved (CC BY-NC), uploaded by Dan Roach",
+    "common_name": "Great Blue Heron",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/65060931/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Ardea herodias",
+    "taxon_id": 4956,
+    "taxon_url": "https://www.inaturalist.org/taxa/4956"
+  },
+  "grcfly": {
+    "attribution": "no rights reserved, uploaded by Chrissy McClarren and Andy Reago",
+    "common_name": "Great Crested Flycatcher",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/202717991/medium.jpeg",
+    "license": "cc0",
+    "scientific_name": "Myiarchus crinitus",
+    "taxon_id": 16028,
+    "taxon_url": "https://www.inaturalist.org/taxa/16028"
+  },
+  "greegr": {
+    "attribution": "(c) daverowe, some rights reserved (CC BY-NC)",
+    "common_name": "Great Egret",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/56653891/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Ardea alba",
+    "taxon_id": 144455,
+    "taxon_url": "https://www.inaturalist.org/taxa/144455"
+  },
+  "greegr2": {
+    "attribution": "(c) daverowe, some rights reserved (CC BY-NC)",
+    "common_name": "Great Egret",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/56653891/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Ardea alba egretta",
+    "taxon_id": 144455,
+    "taxon_url": "https://www.inaturalist.org/taxa/144455"
+  },
+  "greyel": {
+    "attribution": "(c) Javier Chiavone, all rights reserved, uploaded by Javier Chiavone",
+    "common_name": "Greater Yellowlegs",
+    "image_url": "https://static.inaturalist.org/photos/312548110/medium.jpg",
+    "license": null,
+    "scientific_name": "Tringa melanoleuca",
+    "taxon_id": 3892,
+    "taxon_url": "https://www.inaturalist.org/taxa/3892"
+  },
+  "grnher": {
+    "attribution": "(c) Tom Kennedy, some rights reserved (CC BY), uploaded by Tom Kennedy",
+    "common_name": "Green Heron",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/175041644/medium.jpeg",
+    "license": "cc-by",
+    "scientific_name": "Butorides virescens",
+    "taxon_id": 5020,
+    "taxon_url": "https://www.inaturalist.org/taxa/5020"
+  },
+  "grnher1": {
+    "attribution": "(c) Tom Kennedy, some rights reserved (CC BY), uploaded by Tom Kennedy",
+    "common_name": "Green Heron",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/175041644/medium.jpeg",
+    "license": "cc-by",
+    "scientific_name": "Butorides virescens virescens/bahamensis",
+    "taxon_id": 5020,
+    "taxon_url": "https://www.inaturalist.org/taxa/5020"
+  },
+  "grwher": {
+    "attribution": "(c) Dan Roach, some rights reserved (CC BY-NC), uploaded by Dan Roach",
+    "common_name": "Great Blue Heron",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/65060931/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Ardea herodias occidentalis",
+    "taxon_id": 4956,
+    "taxon_url": "https://www.inaturalist.org/taxa/4956"
+  },
+  "grykin": {
+    "attribution": "(c) JeffreyGammon, some rights reserved (CC BY-NC), uploaded by JeffreyGammon",
+    "common_name": "Gray Kingbird",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/122300470/medium.jpeg",
+    "license": "cc-by-nc",
+    "scientific_name": "Tyrannus dominicensis",
+    "taxon_id": 16798,
+    "taxon_url": "https://www.inaturalist.org/taxa/16798"
+  },
+  "gubter2": {
+    "attribution": "(c) Andrew Orgill, all rights reserved, uploaded by Andrew Orgill",
+    "common_name": "Gull-billed Tern",
+    "image_url": "https://static.inaturalist.org/photos/6869722/medium.jpeg",
+    "license": null,
+    "scientific_name": "Gelochelidon nilotica",
+    "taxon_id": 144536,
+    "taxon_url": "https://www.inaturalist.org/taxa/144536"
+  },
+  "houspa": {
+    "attribution": "(c) Ximo Galarza, some rights reserved (CC BY-NC-SA)",
+    "common_name": "House Sparrow",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/4608133/medium.jpg",
+    "license": "cc-by-nc-sa",
+    "scientific_name": "Passer domesticus",
+    "taxon_id": 13858,
+    "taxon_url": "https://www.inaturalist.org/taxa/13858"
+  },
+  "killde": {
+    "attribution": "(c) world_lineage, some rights reserved (CC BY-NC), uploaded by world_lineage",
+    "common_name": "Killdeer",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/15053771/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Charadrius vociferus",
+    "taxon_id": 4793,
+    "taxon_url": "https://www.inaturalist.org/taxa/4793"
+  },
+  "larus": {},
+  "laugul": {
+    "attribution": "(c) Jos\u00e9 Antonio Linage Espinosa, some rights reserved (CC BY-NC), uploaded by Jos\u00e9 Antonio Linage Espinosa",
+    "common_name": "Laughing Gull",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/4196757/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Leucophaeus atricilla",
+    "taxon_id": 144514,
+    "taxon_url": "https://www.inaturalist.org/taxa/144514"
+  },
+  "leabit": {
+    "attribution": "(c) Matt Felperin, some rights reserved (CC BY), uploaded by Matt Felperin",
+    "common_name": "Least Bittern",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/305676197/medium.jpg",
+    "license": "cc-by",
+    "scientific_name": "Botaurus exilis",
+    "taxon_id": 1578960,
+    "taxon_url": "https://www.inaturalist.org/taxa/1578960"
+  },
+  "leasan": {
+    "attribution": "(c) Greg Lasley, some rights reserved (CC BY-NC), uploaded by Greg Lasley",
+    "common_name": "Least Sandpiper",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/230314/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Calidris minutilla",
+    "taxon_id": 3864,
+    "taxon_url": "https://www.inaturalist.org/taxa/3864"
+  },
+  "leater1": {
+    "attribution": "(c) Greg Lasley, some rights reserved (CC BY-NC), uploaded by Greg Lasley",
+    "common_name": "Least Tern",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/3243989/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Sternula antillarum",
+    "taxon_id": 144530,
+    "taxon_url": "https://www.inaturalist.org/taxa/144530"
+  },
+  "lesyel": {
+    "attribution": "(c) Jonathan Irons, some rights reserved (CC BY-NC), uploaded by Jonathan Irons",
+    "common_name": "Lesser Yellowlegs",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/260887463/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Tringa flavipes",
+    "taxon_id": 3893,
+    "taxon_url": "https://www.inaturalist.org/taxa/3893"
+  },
+  "libher": {
+    "attribution": "(c) MARMAR, some rights reserved (CC BY-NC), uploaded by MARMAR",
+    "common_name": "Little Blue Heron",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/106796895/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Egretta caerulea",
+    "taxon_id": 4937,
+    "taxon_url": "https://www.inaturalist.org/taxa/4937"
+  },
+  "limpki": {
+    "attribution": "(c) David Monroy R, some rights reserved (CC BY-NC), uploaded by David Monroy R",
+    "common_name": "Limpkin",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/161521395/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Aramus guarauna",
+    "taxon_id": 7,
+    "taxon_url": "https://www.inaturalist.org/taxa/7"
+  },
+  "limpki1": {
+    "attribution": "(c) David Monroy R, some rights reserved (CC BY-NC), uploaded by David Monroy R",
+    "common_name": "Limpkin",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/161521395/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Aramus guarauna [pictus Group]",
+    "taxon_id": 7,
+    "taxon_url": "https://www.inaturalist.org/taxa/7"
+  },
+  "lobdow": {
+    "attribution": "(c) TroyEcol, all rights reserved, uploaded by TroyEcol",
+    "common_name": "Long-billed Dowitcher",
+    "image_url": "https://static.inaturalist.org/photos/10823734/medium.jpg",
+    "license": null,
+    "scientific_name": "Limnodromus scolopaceus",
+    "taxon_id": 3873,
+    "taxon_url": "https://www.inaturalist.org/taxa/3873"
+  },
+  "logshr": {
+    "attribution": "(c) Steve Bentsen, some rights reserved (CC BY-NC), uploaded by Steve Bentsen",
+    "common_name": "Loggerhead Shrike",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/171604270/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Lanius ludovicianus",
+    "taxon_id": 12024,
+    "taxon_url": "https://www.inaturalist.org/taxa/12024"
+  },
+  "louwat": {
+    "attribution": "(c) samzhang, all rights reserved",
+    "common_name": "Louisiana Waterthrush",
+    "image_url": "https://static.inaturalist.org/photos/490724818/medium.jpeg",
+    "license": null,
+    "scientific_name": "Parkesia motacilla",
+    "taxon_id": 73148,
+    "taxon_url": "https://www.inaturalist.org/taxa/73148"
+  },
+  "monpar": {
+    "attribution": "(c) Juan Emilio, some rights reserved (CC BY-SA)",
+    "common_name": "Monk Parakeet",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/101224790/medium.jpg",
+    "license": "cc-by-sa",
+    "scientific_name": "Myiopsitta monachus",
+    "taxon_id": 19349,
+    "taxon_url": "https://www.inaturalist.org/taxa/19349"
+  },
+  "motduc": {
+    "attribution": "no rights reserved, uploaded by Andy Wilson",
+    "common_name": "Mottled Duck",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/174399837/medium.jpeg",
+    "license": "cc0",
+    "scientific_name": "Anas fulvigula",
+    "taxon_id": 6948,
+    "taxon_url": "https://www.inaturalist.org/taxa/6948"
+  },
+  "motduc1": {
+    "attribution": "no rights reserved, uploaded by Andy Wilson",
+    "common_name": "Mottled Duck",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/174399837/medium.jpeg",
+    "license": "cc0",
+    "scientific_name": "Anas fulvigula fulvigula",
+    "taxon_id": 6948,
+    "taxon_url": "https://www.inaturalist.org/taxa/6948"
+  },
+  "moudov": {
+    "attribution": "(c) Donna Pomeroy, some rights reserved (CC BY-NC), uploaded by Donna Pomeroy",
+    "common_name": "Mourning Dove",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/14015355/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Zenaida macroura",
+    "taxon_id": 3454,
+    "taxon_url": "https://www.inaturalist.org/taxa/3454"
+  },
+  "musduc3": {
+    "attribution": "(c) Bernard DUPONT, some rights reserved (CC BY-SA)",
+    "common_name": "Muscovy Duck",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/54389963/medium.jpg",
+    "license": "cc-by-sa",
+    "scientific_name": "Cairina moschata (Domestic type)",
+    "taxon_id": 7120,
+    "taxon_url": "https://www.inaturalist.org/taxa/7120"
+  },
+  "norbob": {
+    "attribution": "(c) Andrej Chud\u00fd, some rights reserved (CC BY-NC-SA)",
+    "common_name": "Northern Bobwhite",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/188718574/medium.jpg",
+    "license": "cc-by-nc-sa",
+    "scientific_name": "Colinus virginianus",
+    "taxon_id": 1280,
+    "taxon_url": "https://www.inaturalist.org/taxa/1280"
+  },
+  "norcar": {
+    "attribution": "(c) Laura Keene, some rights reserved (CC BY-NC), uploaded by Laura Keene",
+    "common_name": "Northern Cardinal",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/189434971/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Cardinalis cardinalis",
+    "taxon_id": 9083,
+    "taxon_url": "https://www.inaturalist.org/taxa/9083"
+  },
+  "norcar1": {
+    "attribution": "(c) Laura Keene, some rights reserved (CC BY-NC), uploaded by Laura Keene",
+    "common_name": "Northern Cardinal",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/189434971/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Cardinalis cardinalis [cardinalis Group]",
+    "taxon_id": 9083,
+    "taxon_url": "https://www.inaturalist.org/taxa/9083"
+  },
+  "normoc": {
+    "attribution": "(c) Kevin Milazzo, some rights reserved (CC BY-NC-SA)",
+    "common_name": "Northern Mockingbird",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/142697277/medium.jpg",
+    "license": "cc-by-nc-sa",
+    "scientific_name": "Mimus polyglottos",
+    "taxon_id": 14886,
+    "taxon_url": "https://www.inaturalist.org/taxa/14886"
+  },
+  "norpar": {
+    "attribution": "(c) bwood708, some rights reserved (CC BY-NC), uploaded by bwood708",
+    "common_name": "Northern Parula",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/135474901/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Setophaga americana",
+    "taxon_id": 145233,
+    "taxon_url": "https://www.inaturalist.org/taxa/145233"
+  },
+  "osprey": {
+    "attribution": "(c) Greg Lasley, some rights reserved (CC BY-NC), uploaded by Greg Lasley",
+    "common_name": "Osprey",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/6903515/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Pandion haliaetus",
+    "taxon_id": 116999,
+    "taxon_url": "https://www.inaturalist.org/taxa/116999"
+  },
+  "osprey1": {
+    "attribution": "(c) Greg Lasley, some rights reserved (CC BY-NC), uploaded by Greg Lasley",
+    "common_name": "Osprey",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/6903515/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Pandion haliaetus carolinensis",
+    "taxon_id": 116999,
+    "taxon_url": "https://www.inaturalist.org/taxa/116999"
+  },
+  "pecsan": {
+    "attribution": "(c) Tom_Reichner, all rights reserved, uploaded by Tom_Reichner",
+    "common_name": "Pectoral Sandpiper",
+    "image_url": "https://static.inaturalist.org/photos/611117681/medium.jpg",
+    "license": null,
+    "scientific_name": "Calidris melanotos",
+    "taxon_id": 3865,
+    "taxon_url": "https://www.inaturalist.org/taxa/3865"
+  },
+  "pilwoo": {
+    "attribution": "(c) Joshlaymon, some rights reserved (CC BY-SA)",
+    "common_name": "Pileated Woodpecker",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/168915535/medium.jpg",
+    "license": "cc-by-sa",
+    "scientific_name": "Dryocopus pileatus",
+    "taxon_id": 17855,
+    "taxon_url": "https://www.inaturalist.org/taxa/17855"
+  },
+  "prawar": {
+    "attribution": "(c) Fyn Kynd, some rights reserved (CC BY-SA), uploaded by Fyn Kynd",
+    "common_name": "Prairie Warbler",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/4836789/medium.jpg",
+    "license": "cc-by-sa",
+    "scientific_name": "Setophaga discolor",
+    "taxon_id": 145249,
+    "taxon_url": "https://www.inaturalist.org/taxa/145249"
+  },
+  "purgal2": {
+    "attribution": "(c) Bert Filemyr, some rights reserved (CC BY-NC), uploaded by Bert Filemyr",
+    "common_name": "Purple Gallinule",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/246710060/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Porphyrio martinica",
+    "taxon_id": 519,
+    "taxon_url": "https://www.inaturalist.org/taxa/519"
+  },
+  "purmar": {
+    "attribution": "(c) Bill Carrell, some rights reserved (CC BY-NC-ND), uploaded by Bill Carrell",
+    "common_name": "Purple Martin",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/4079605/medium.jpg",
+    "license": "cc-by-nc-nd",
+    "scientific_name": "Progne subis",
+    "taxon_id": 11867,
+    "taxon_url": "https://www.inaturalist.org/taxa/11867"
+  },
+  "purswa3": {
+    "attribution": "(c) cdewerowe, some rights reserved (CC BY-NC), uploaded by cdewerowe",
+    "common_name": "Gray-headed Swamphen",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/344911929/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Porphyrio poliocephalus",
+    "taxon_id": 474332,
+    "taxon_url": "https://www.inaturalist.org/taxa/474332"
+  },
+  "rebwoo": {
+    "attribution": "(c) Juan Miguel Artigas Azas, all rights reserved, uploaded by Juan Miguel Artigas Azas",
+    "common_name": "Red-bellied Woodpecker",
+    "image_url": "https://static.inaturalist.org/photos/383227697/medium.jpeg",
+    "license": null,
+    "scientific_name": "Melanerpes carolinus",
+    "taxon_id": 18205,
+    "taxon_url": "https://www.inaturalist.org/taxa/18205"
+  },
+  "reevir1": {
+    "attribution": "(c) Kyle Blaney, all rights reserved, uploaded by Kyle Blaney",
+    "common_name": "Red-eyed Vireo",
+    "image_url": "https://static.inaturalist.org/photos/33624391/medium.jpg",
+    "license": null,
+    "scientific_name": "Vireo olivaceus",
+    "taxon_id": 891704,
+    "taxon_url": "https://www.inaturalist.org/taxa/891704"
+  },
+  "rempar": {
+    "attribution": "(c) Tom Benson, some rights reserved (CC BY-NC-ND)",
+    "common_name": "Red-masked Parakeet",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/215867200/medium.jpg",
+    "license": "cc-by-nc-nd",
+    "scientific_name": "Psittacara erythrogenys",
+    "taxon_id": 367572,
+    "taxon_url": "https://www.inaturalist.org/taxa/367572"
+  },
+  "reshaw": {
+    "attribution": "(c) Richard Wottrich, some rights reserved (CC BY-NC), uploaded by Richard Wottrich",
+    "common_name": "Red-shouldered Hawk",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/5600620/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Buteo lineatus",
+    "taxon_id": 5206,
+    "taxon_url": "https://www.inaturalist.org/taxa/5206"
+  },
+  "reshaw2": {
+    "attribution": "(c) Richard Wottrich, some rights reserved (CC BY-NC), uploaded by Richard Wottrich",
+    "common_name": "Red-shouldered Hawk",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/5600620/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Buteo lineatus extimus",
+    "taxon_id": 5206,
+    "taxon_url": "https://www.inaturalist.org/taxa/5206"
+  },
+  "rethaw": {
+    "attribution": "(c) Craig K. Hunt, some rights reserved (CC BY-NC), uploaded by Craig K. Hunt",
+    "common_name": "Red-tailed Hawk",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/101327658/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Buteo jamaicensis",
+    "taxon_id": 5212,
+    "taxon_url": "https://www.inaturalist.org/taxa/5212"
+  },
+  "rewbla": {
+    "attribution": "(c) sdrov, all rights reserved, uploaded by sdrov",
+    "common_name": "Red-winged Blackbird",
+    "image_url": "https://static.inaturalist.org/photos/368048127/medium.jpg",
+    "license": null,
+    "scientific_name": "Agelaius phoeniceus",
+    "taxon_id": 9744,
+    "taxon_url": "https://www.inaturalist.org/taxa/9744"
+  },
+  "rewbla1": {
+    "attribution": "(c) sdrov, all rights reserved, uploaded by sdrov",
+    "common_name": "Red-winged Blackbird",
+    "image_url": "https://static.inaturalist.org/photos/368048127/medium.jpg",
+    "license": null,
+    "scientific_name": "Agelaius phoeniceus [phoeniceus Group]",
+    "taxon_id": 9744,
+    "taxon_url": "https://www.inaturalist.org/taxa/9744"
+  },
+  "rocpig1": {
+    "attribution": "(c) Birds of Gilgit-Baltistan, some rights reserved (CC BY-SA)",
+    "common_name": "Rock Pigeon",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/466776975/medium.jpg",
+    "license": "cc-by-sa",
+    "scientific_name": "Columba livia (Feral Pigeon)",
+    "taxon_id": 3017,
+    "taxon_url": "https://www.inaturalist.org/taxa/3017"
+  },
+  "rosspo1": {
+    "attribution": "(c) drdad, all rights reserved",
+    "common_name": "Roseate Spoonbill",
+    "image_url": "https://static.inaturalist.org/photos/32776247/medium.jpg",
+    "license": null,
+    "scientific_name": "Platalea ajaja",
+    "taxon_id": 62529,
+    "taxon_url": "https://www.inaturalist.org/taxa/62529"
+  },
+  "royter1": {
+    "attribution": "(c) Omar Del Toro, some rights reserved (CC BY-NC), uploaded by Omar Del Toro",
+    "common_name": "Royal Tern",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/61880166/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Thalasseus maximus",
+    "taxon_id": 144539,
+    "taxon_url": "https://www.inaturalist.org/taxa/144539"
+  },
+  "rudtur": {
+    "attribution": "(c) John Clough, some rights reserved (CC BY-NC), uploaded by John Clough",
+    "common_name": "Ruddy Turnstone",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/57282715/medium.jpeg",
+    "license": "cc-by-nc",
+    "scientific_name": "Arenaria interpres",
+    "taxon_id": 3938,
+    "taxon_url": "https://www.inaturalist.org/taxa/3938"
+  },
+  "ruff": {
+    "attribution": "(c) Filipp Suvorov, some rights reserved (CC BY-NC), uploaded by Filipp Suvorov",
+    "common_name": "Ruff",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/277856852/medium.jpeg",
+    "license": "cc-by-nc",
+    "scientific_name": "Calidris pugnax",
+    "taxon_id": 339593,
+    "taxon_url": "https://www.inaturalist.org/taxa/339593"
+  },
+  "sancra": {
+    "attribution": "(c) samzhang, all rights reserved",
+    "common_name": "Sandhill Crane",
+    "image_url": "https://static.inaturalist.org/photos/269274277/medium.jpg",
+    "license": null,
+    "scientific_name": "Antigone canadensis",
+    "taxon_id": 508048,
+    "taxon_url": "https://www.inaturalist.org/taxa/508048"
+  },
+  "sander": {
+    "attribution": "(c) Marco Chan, some rights reserved (CC BY), uploaded by Marco Chan",
+    "common_name": "Sanderling",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/232281217/medium.jpeg",
+    "license": "cc-by",
+    "scientific_name": "Calidris alba",
+    "taxon_id": 3849,
+    "taxon_url": "https://www.inaturalist.org/taxa/3849"
+  },
+  "santer1": {
+    "attribution": "(c) Steve Raduns, all rights reserved, uploaded by Steve Raduns",
+    "common_name": "Sandwich Tern",
+    "image_url": "https://static.inaturalist.org/photos/58605529/medium.jpg",
+    "license": null,
+    "scientific_name": "Thalasseus sandvicensis",
+    "taxon_id": 144541,
+    "taxon_url": "https://www.inaturalist.org/taxa/144541"
+  },
+  "semplo": {
+    "attribution": "(c) Donna Pomeroy, some rights reserved (CC BY-NC), uploaded by Donna Pomeroy",
+    "common_name": "Semipalmated Plover",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/19719958/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Charadrius semipalmatus",
+    "taxon_id": 4817,
+    "taxon_url": "https://www.inaturalist.org/taxa/4817"
+  },
+  "semsan": {
+    "attribution": "(c) brian stahls, some rights reserved (CC BY-NC), uploaded by brian stahls",
+    "common_name": "Semipalmated Sandpiper",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/320602640/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Calidris pusilla",
+    "taxon_id": 3862,
+    "taxon_url": "https://www.inaturalist.org/taxa/3862"
+  },
+  "shbdow": {
+    "attribution": "(c) TroyEcol, all rights reserved, uploaded by TroyEcol",
+    "common_name": "Short-billed Dowitcher",
+    "image_url": "https://static.inaturalist.org/photos/18958336/medium.jpg",
+    "license": null,
+    "scientific_name": "Limnodromus griseus",
+    "taxon_id": 3869,
+    "taxon_url": "https://www.inaturalist.org/taxa/3869"
+  },
+  "shoreb1": {},
+  "shthaw": {
+    "attribution": "(c) Patricia Tiller, some rights reserved (CC BY-NC), uploaded by Patricia Tiller",
+    "common_name": "Short-tailed Hawk",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/102440509/medium.jpeg",
+    "license": "cc-by-nc",
+    "scientific_name": "Buteo brachyurus",
+    "taxon_id": 5186,
+    "taxon_url": "https://www.inaturalist.org/taxa/5186"
+  },
+  "snoegr": {
+    "attribution": "(c) Juan Miguel Artigas Azas, all rights reserved, uploaded by Juan Miguel Artigas Azas",
+    "common_name": "Snowy Egret",
+    "image_url": "https://static.inaturalist.org/photos/107527504/medium.jpeg",
+    "license": null,
+    "scientific_name": "Egretta thula",
+    "taxon_id": 4940,
+    "taxon_url": "https://www.inaturalist.org/taxa/4940"
+  },
+  "solsan": {
+    "attribution": "(c) Juan Miguel Artigas Azas, all rights reserved, uploaded by Juan Miguel Artigas Azas",
+    "common_name": "Solitary Sandpiper",
+    "image_url": "https://static.inaturalist.org/photos/101768794/medium.jpeg",
+    "license": null,
+    "scientific_name": "Tringa solitaria",
+    "taxon_id": 3875,
+    "taxon_url": "https://www.inaturalist.org/taxa/3875"
+  },
+  "sooter1": {
+    "attribution": "(c) Judd Patterson, all rights reserved, uploaded by Judd Patterson",
+    "common_name": "Sooty Tern",
+    "image_url": "https://static.inaturalist.org/photos/4346191/medium.jpg",
+    "license": null,
+    "scientific_name": "Onychoprion fuscatus",
+    "taxon_id": 144525,
+    "taxon_url": "https://www.inaturalist.org/taxa/144525"
+  },
+  "sposan": {
+    "attribution": "(c) Jason Headley, some rights reserved (CC BY-NC), uploaded by Jason Headley",
+    "common_name": "Spotted Sandpiper",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/46532647/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Actitis macularius",
+    "taxon_id": 72458,
+    "taxon_url": "https://www.inaturalist.org/taxa/72458"
+  },
+  "stisan": {
+    "attribution": "(c) Greg Lasley, some rights reserved (CC BY-NC), uploaded by Greg Lasley",
+    "common_name": "Stilt Sandpiper",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/231298/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Calidris himantopus",
+    "taxon_id": 3850,
+    "taxon_url": "https://www.inaturalist.org/taxa/3850"
+  },
+  "swallo": {},
+  "swtkit": {
+    "attribution": "(c) Greg Lasley, some rights reserved (CC BY-NC), uploaded by Greg Lasley",
+    "common_name": "Swallow-tailed Kite",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/21518168/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Elanoides forficatus",
+    "taxon_id": 5301,
+    "taxon_url": "https://www.inaturalist.org/taxa/5301"
+  },
+  "triher": {
+    "attribution": "(c) Pete Followill, some rights reserved (CC BY-NC), uploaded by Pete Followill",
+    "common_name": "Tricolored Heron",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/149734404/medium.jpeg",
+    "license": "cc-by-nc",
+    "scientific_name": "Egretta tricolor",
+    "taxon_id": 4938,
+    "taxon_url": "https://www.inaturalist.org/taxa/4938"
+  },
+  "turvul": {
+    "attribution": "(c) Seig, some rights reserved (CC BY), uploaded by Seig",
+    "common_name": "Turkey Vulture",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/52277010/medium.jpg",
+    "license": "cc-by",
+    "scientific_name": "Cathartes aura",
+    "taxon_id": 4756,
+    "taxon_url": "https://www.inaturalist.org/taxa/4756"
+  },
+  "turvul2": {
+    "attribution": "(c) Seig, some rights reserved (CC BY), uploaded by Seig",
+    "common_name": "Turkey Vulture",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/52277010/medium.jpg",
+    "license": "cc-by",
+    "scientific_name": "Cathartes aura [aura Group]",
+    "taxon_id": 4756,
+    "taxon_url": "https://www.inaturalist.org/taxa/4756"
+  },
+  "tyrann1": {
+    "attribution": "(c) josanel sugasti, all rights reserved, uploaded by josanel sugasti",
+    "common_name": "Black Hawk-Eagle",
+    "image_url": "https://static.inaturalist.org/photos/337160841/medium.jpeg",
+    "license": null,
+    "scientific_name": "Tyrannus sp.",
+    "taxon_id": 5291,
+    "taxon_url": "https://www.inaturalist.org/taxa/5291"
+  },
+  "warble": {},
+  "wessan": {
+    "attribution": "(c) Greg Lasley, some rights reserved (CC BY-NC), uploaded by Greg Lasley",
+    "common_name": "Western Sandpiper",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/3256542/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Calidris mauri",
+    "taxon_id": 3855,
+    "taxon_url": "https://www.inaturalist.org/taxa/3855"
+  },
+  "whepar2": {
+    "attribution": "(c) Gabriel Bonfa, some rights reserved (CC BY-NC-ND), uploaded by Gabriel Bonfa",
+    "common_name": "White-eyed Parakeet",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/246857985/medium.jpg",
+    "license": "cc-by-nc-nd",
+    "scientific_name": "Psittacara leucophthalmus",
+    "taxon_id": 367573,
+    "taxon_url": "https://www.inaturalist.org/taxa/367573"
+  },
+  "whevir": {
+    "attribution": "(c) Greg Lasley, some rights reserved (CC BY-NC), uploaded by Greg Lasley",
+    "common_name": "White-eyed Vireo",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/30897328/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Vireo griseus",
+    "taxon_id": 17408,
+    "taxon_url": "https://www.inaturalist.org/taxa/17408"
+  },
+  "whiibi": {
+    "attribution": "(c) Greg Lasley, some rights reserved (CC BY-NC), uploaded by Greg Lasley",
+    "common_name": "White Ibis",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/13109245/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Eudocimus albus",
+    "taxon_id": 3751,
+    "taxon_url": "https://www.inaturalist.org/taxa/3751"
+  },
+  "whwdov": {
+    "attribution": "(c) Jerry DeBoer, all rights reserved, uploaded by Jerry DeBoer",
+    "common_name": "White-winged Dove",
+    "image_url": "https://static.inaturalist.org/photos/57871916/medium.jpg",
+    "license": null,
+    "scientific_name": "Zenaida asiatica",
+    "taxon_id": 3460,
+    "taxon_url": "https://www.inaturalist.org/taxa/3460"
+  },
+  "willet1": {
+    "attribution": "(c) Bridget Spencer, some rights reserved (CC BY-NC), uploaded by Bridget Spencer",
+    "common_name": "Willet",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/168931162/medium.jpeg",
+    "license": "cc-by-nc",
+    "scientific_name": "Tringa semipalmata",
+    "taxon_id": 144491,
+    "taxon_url": "https://www.inaturalist.org/taxa/144491"
+  },
+  "willet3": {
+    "attribution": "(c) Bridget Spencer, some rights reserved (CC BY-NC), uploaded by Bridget Spencer",
+    "common_name": "Willet",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/168931162/medium.jpeg",
+    "license": "cc-by-nc",
+    "scientific_name": "Tringa semipalmata inornata",
+    "taxon_id": 144491,
+    "taxon_url": "https://www.inaturalist.org/taxa/144491"
+  },
+  "wilpha": {
+    "attribution": "(c) Leo Weiskittel, some rights reserved (CC BY-NC), uploaded by Leo Weiskittel",
+    "common_name": "Wilson's Phalarope",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/381136722/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Phalaropus tricolor",
+    "taxon_id": 144497,
+    "taxon_url": "https://www.inaturalist.org/taxa/144497"
+  },
+  "woosto": {
+    "attribution": "(c) Jeff Stauffer, all rights reserved, uploaded by Jeff Stauffer",
+    "common_name": "Wood Stork",
+    "image_url": "https://static.inaturalist.org/photos/108641164/medium.jpg",
+    "license": null,
+    "scientific_name": "Mycteria americana",
+    "taxon_id": 4742,
+    "taxon_url": "https://www.inaturalist.org/taxa/4742"
+  },
+  "y00318": {},
+  "y00475": {
+    "attribution": "(c) arachphotobia, all rights reserved, uploaded by arachphotobia",
+    "common_name": "American Coot",
+    "image_url": "https://static.inaturalist.org/photos/113612953/medium.jpeg",
+    "license": null,
+    "scientific_name": "Fulica americana",
+    "taxon_id": 473,
+    "taxon_url": "https://www.inaturalist.org/taxa/473"
+  },
+  "y00678": {
+    "attribution": "(c) Juan Cruzado Cort\u00e9s, some rights reserved (CC BY), uploaded by Juan Cruzado Cort\u00e9s",
+    "common_name": "Crested Caracara",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/344678876/medium.jpeg",
+    "license": "cc-by",
+    "scientific_name": "Caracara plancus",
+    "taxon_id": 4715,
+    "taxon_url": "https://www.inaturalist.org/taxa/4715"
+  },
+  "ycnher": {
+    "attribution": "(c) Dimitris Salas, all rights reserved, uploaded by Dimitris Salas",
+    "common_name": "Yellow-crowned Night Heron",
+    "image_url": "https://static.inaturalist.org/photos/208281514/medium.jpeg",
+    "license": null,
+    "scientific_name": "Nyctanassa violacea",
+    "taxon_id": 4999,
+    "taxon_url": "https://www.inaturalist.org/taxa/4999"
+  },
+  "yebcuc": {
+    "attribution": "(c) Ashley Tubbs, some rights reserved (CC BY-ND)",
+    "common_name": "Yellow-billed Cuckoo",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/12581532/medium.jpg",
+    "license": "cc-by-nd",
+    "scientific_name": "Coccyzus americanus",
+    "taxon_id": 1965,
+    "taxon_url": "https://www.inaturalist.org/taxa/1965"
+  },
+  "yecnih1": {
+    "attribution": "(c) Dimitris Salas, all rights reserved, uploaded by Dimitris Salas",
+    "common_name": "Yellow-crowned Night Heron",
+    "image_url": "https://static.inaturalist.org/photos/208281514/medium.jpeg",
+    "license": null,
+    "scientific_name": "Nyctanassa violacea [violacea Group]",
+    "taxon_id": 4999,
+    "taxon_url": "https://www.inaturalist.org/taxa/4999"
+  },
+  "yelwar1": {
+    "attribution": "(c) Ad Konings, some rights reserved (CC BY-NC), uploaded by Ad Konings",
+    "common_name": "Northern Yellow Warbler",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/193214440/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Setophaga aestiva",
+    "taxon_id": 1188207,
+    "taxon_url": "https://www.inaturalist.org/taxa/1188207"
+  },
+  "yetwar": {
+    "attribution": "(c) Peter May, some rights reserved (CC BY-NC), uploaded by Peter May",
+    "common_name": "Yellow-throated Warbler",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/542751103/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Setophaga dominica",
+    "taxon_id": 145246,
+    "taxon_url": "https://www.inaturalist.org/taxa/145246"
+  }
+}
