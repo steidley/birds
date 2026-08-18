@@ -31072,6 +31072,128 @@
       "taxon_url": "https://www.inaturalist.org/taxa/3850"
     }
   ],
+  "taxon:3879": [
+    {
+      "attribution": "(c) J\u00e1n Svetl\u00edk, some rights reserved (CC BY-NC-ND)",
+      "common_name": "Spotted Redshank",
+      "count": 327,
+      "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/347059364/medium.jpg",
+      "license": "cc-by-nc-nd",
+      "scientific_name": "Tringa erythropus",
+      "taxon_id": 3882,
+      "taxon_url": "https://www.inaturalist.org/taxa/3882"
+    },
+    {
+      "attribution": "(c) Erik Eckstein, some rights reserved (CC BY-NC), uploaded by Erik Eckstein",
+      "common_name": "Wood Sandpiper",
+      "count": 82,
+      "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/323621890/medium.jpg",
+      "license": "cc-by-nc",
+      "scientific_name": "Tringa glareola",
+      "taxon_id": 3888,
+      "taxon_url": "https://www.inaturalist.org/taxa/3888"
+    },
+    {
+      "attribution": "(c) Filipp Suvorov, some rights reserved (CC BY-NC), uploaded by Filipp Suvorov",
+      "common_name": "Ruff",
+      "count": 81,
+      "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/277856852/medium.jpeg",
+      "license": "cc-by-nc",
+      "scientific_name": "Calidris pugnax",
+      "taxon_id": 339593,
+      "taxon_url": "https://www.inaturalist.org/taxa/339593"
+    },
+    {
+      "attribution": "(c) Ximo Galarza, some rights reserved (CC BY-NC-SA)",
+      "common_name": "Common Greenshank",
+      "count": 56,
+      "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/52660452/medium.jpg",
+      "license": "cc-by-nc-sa",
+      "scientific_name": "Tringa nebularia",
+      "taxon_id": 3878,
+      "taxon_url": "https://www.inaturalist.org/taxa/3878"
+    },
+    {
+      "attribution": "(c) Sergey Pisarevskiy, some rights reserved (CC BY-NC-SA)",
+      "common_name": "Common Sandpiper",
+      "count": 37,
+      "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/405355875/medium.jpg",
+      "license": "cc-by-nc-sa",
+      "scientific_name": "Actitis hypoleucos",
+      "taxon_id": 3978,
+      "taxon_url": "https://www.inaturalist.org/taxa/3978"
+    },
+    {
+      "attribution": "(c) Ad Konings, some rights reserved (CC BY-NC), uploaded by Ad Konings",
+      "common_name": "Marsh Sandpiper",
+      "count": 36,
+      "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/337986353/medium.jpg",
+      "license": "cc-by-nc",
+      "scientific_name": "Tringa stagnatilis",
+      "taxon_id": 3881,
+      "taxon_url": "https://www.inaturalist.org/taxa/3881"
+    },
+    {
+      "attribution": "(c) Gabi Rusu, some rights reserved (CC BY-NC), uploaded by Gabi Rusu",
+      "common_name": "Green Sandpiper",
+      "count": 33,
+      "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/262067607/medium.jpg",
+      "license": "cc-by-nc",
+      "scientific_name": "Tringa ochropus",
+      "taxon_id": 3885,
+      "taxon_url": "https://www.inaturalist.org/taxa/3885"
+    },
+    {
+      "attribution": "(c) Kyle Blaney, all rights reserved, uploaded by Kyle Blaney",
+      "common_name": "Purple Sandpiper",
+      "count": 21,
+      "image_url": "https://static.inaturalist.org/photos/457108856/medium.jpg",
+      "license": null,
+      "scientific_name": "Calidris maritima",
+      "taxon_id": 3856,
+      "taxon_url": "https://www.inaturalist.org/taxa/3856"
+    },
+    {
+      "attribution": "(c) Paul Reeves, some rights reserved (CC BY-NC-SA), uploaded by Paul Reeves",
+      "common_name": "Dunlin",
+      "count": 20,
+      "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/65881975/medium.jpg",
+      "license": "cc-by-nc-sa",
+      "scientific_name": "Calidris alpina",
+      "taxon_id": 3857,
+      "taxon_url": "https://www.inaturalist.org/taxa/3857"
+    },
+    {
+      "attribution": "(c) thegreatdodo, some rights reserved (CC BY-NC), uploaded by thegreatdodo",
+      "common_name": "Black-tailed Godwit",
+      "count": 18,
+      "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/387543070/medium.jpg",
+      "license": "cc-by-nc",
+      "scientific_name": "Limosa limosa",
+      "taxon_id": 3947,
+      "taxon_url": "https://www.inaturalist.org/taxa/3947"
+    },
+    {
+      "attribution": "(c) Paul Cools, some rights reserved (CC BY-NC), uploaded by Paul Cools",
+      "common_name": "Eurasian Oystercatcher",
+      "count": 17,
+      "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/1940433/medium.jpg",
+      "license": "cc-by-nc",
+      "scientific_name": "Haematopus ostralegus",
+      "taxon_id": 4843,
+      "taxon_url": "https://www.inaturalist.org/taxa/4843"
+    },
+    {
+      "attribution": "(c) Phuwarin Suchartbunmak, some rights reserved (CC BY-NC), uploaded by Phuwarin Suchartbunmak",
+      "common_name": "Terek Sandpiper",
+      "count": 15,
+      "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/209189029/medium.jpeg",
+      "license": "cc-by-nc",
+      "scientific_name": "Xenus cinereus",
+      "taxon_id": 3969,
+      "taxon_url": "https://www.inaturalist.org/taxa/3969"
+    }
+  ],
   "taxon:3892": [
     {
       "attribution": "(c) Jonathan Irons, some rights reserved (CC BY-NC), uploaded by Jonathan Irons",

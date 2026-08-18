@@ -32,10 +32,10 @@ ebird_checklists/US-FL-099/2026-08/*
 !ebird_checklists/US-FL-099/2025/L364884/**
 !ebird_checklists/US-FL-099/2026/L364884/**
 !ebird_checklists/US-FL-099/2026-08/L364884/**
-ebird_region_species_cache.json
-ebird_last_seen_cache.json
 !ebird_*_local_last_seen.json
+ebird_last_seen_cache.json
 ebird_*_checklist_cache_status_*.json
 ebird_*_feed_cache_progress_*.json
 ebird_*_checklist_download_progress_*.json
+saved_galleries/
 
