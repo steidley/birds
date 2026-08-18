@@ -22,4 +22,6 @@ ebird_region_list_cache.json
 ebird_*_local_last_seen.json
 ebird_*_hotspots.json
 ebird_*_checklist_cache_status_*.json
+ebird_*_feed_cache_progress_*.json
+ebird_*_checklist_download_progress_*.json
 

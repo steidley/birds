@@ -13,6 +13,8 @@ from urllib.parse import quote
 import requests
 from dotenv import load_dotenv
 
+from api_log import log_api_done, log_api_send
+
 BASE_URL = "https://api.ebird.org/v2"
 ROOT = Path(__file__).parent
 CHECKLIST_CACHE_VERSION = 1
@@ -29,6 +31,24 @@ MIN_RATE_LIMIT_WAIT_SECONDS = 1.0
 load_dotenv(ROOT / ".env")
 
 
+def _streamlit_runtime_active() -> bool:
+    """True only when called inside a live Streamlit script run."""
+    try:
+        from streamlit.runtime.scriptrunner import get_script_run_ctx
+
+        return get_script_run_ctx(suppress_warning=True) is not None
+    except TypeError:
+        # Older Streamlit builds may not accept suppress_warning.
+        try:
+            from streamlit.runtime.scriptrunner import get_script_run_ctx
+
+            return get_script_run_ctx() is not None
+        except Exception:
+            return False
+    except Exception:
+        return False
+
+
 def get_api_key() -> str | None:
     """Return the eBird API key from env, secrets, URL param, or session input."""
     for candidate in (
@@ -38,6 +58,9 @@ def get_api_key() -> str | None:
         key = _clean_api_key(candidate)
         if key:
             return key
+
+    if not _streamlit_runtime_active():
+        return None
 
     try:
         import streamlit as st
@@ -76,6 +99,8 @@ def _query_param_value(params: object, name: str) -> object:
 
 def _ingest_api_key_from_query() -> None:
     """Copy an API key from URL query params into session state, then drop it from the URL."""
+    if not _streamlit_runtime_active():
+        return
     try:
         import streamlit as st
     except Exception:
@@ -246,7 +271,7 @@ def _parse_checklist_day(value: object) -> date | None:
     return None
 
 
-CHECKLIST_CACHE_STATUS_VERSION = 1
+CHECKLIST_CACHE_STATUS_VERSION = 3
 
 
 def checklist_cache_status_path(region_code: str, year: int) -> Path:
@@ -307,6 +332,8 @@ def build_checklist_cache_status(
 
     year_prefix = f"{year}-"
     expected_by_day: dict[str, int] = {}
+    expected_by_loc: dict[str, set[str]] = {}
+    loc_names_from_feed: dict[str, str] = {}
     truncated_dates: list[str] = []
     expected_ids: set[str] = set()
     feed_cache_exists = feed_path.exists()
@@ -332,10 +359,30 @@ def build_checklist_cache_status(
                 if checklist_id:
                     day_ids.add(checklist_id)
                     expected_ids.add(checklist_id)
+                loc_obj = row.get("loc") if isinstance(row.get("loc"), dict) else {}
+                loc_id = str(
+                    row.get("locId")
+                    or row.get("locID")
+                    or loc_obj.get("locId")
+                    or loc_obj.get("locID")
+                    or ""
+                ).strip()
+                if not loc_id or not checklist_id:
+                    continue
+                expected_by_loc.setdefault(loc_id, set()).add(checklist_id)
+                loc_name = str(
+                    row.get("locName")
+                    or loc_obj.get("locName")
+                    or loc_obj.get("name")
+                    or ""
+                ).strip()
+                if loc_name and loc_id not in loc_names_from_feed:
+                    loc_names_from_feed[loc_id] = loc_name
             expected_by_day[day] = len(day_ids)
 
-    downloaded_by_day: dict[str, int] = {}
+    downloaded_by_day: dict[str, set[str]] = {}
     downloaded_ids: set[str] = set()
+    downloaded_by_loc: dict[str, set[str]] = {}
     hotspot_stats: dict[str, dict[str, Any]] = {}
 
     for path in files:
@@ -362,7 +409,9 @@ def build_checklist_cache_status(
         ).strip()
         if sub_id:
             downloaded_ids.add(sub_id)
-        downloaded_by_day[day_key] = downloaded_by_day.get(day_key, 0) + 1
+            downloaded_by_day.setdefault(day_key, set()).add(sub_id)
+        else:
+            downloaded_by_day.setdefault(day_key, set()).add(path.stem)
 
         loc_obj = feed.get("loc") if isinstance(feed.get("loc"), dict) else {}
         loc_id = str(
@@ -384,6 +433,8 @@ def build_checklist_cache_status(
         ).strip()
         if not loc_name and "__" in path.parent.name:
             loc_name = path.parent.name.split("__", 1)[1].replace("_", " ").strip()
+        if sub_id:
+            downloaded_by_loc.setdefault(loc_id, set()).add(sub_id)
 
         hotspot = hotspot_stats.get(loc_id)
         if hotspot is None:
@@ -403,20 +454,62 @@ def build_checklist_cache_status(
             if day_key > str(hotspot["last_day"]):
                 hotspot["last_day"] = day_key
 
+    for loc_id, checklist_ids in expected_by_loc.items():
+        hotspot = hotspot_stats.get(loc_id)
+        if hotspot is None:
+            hotspot_stats[loc_id] = {
+                "locId": loc_id,
+                "locName": loc_names_from_feed.get(loc_id, ""),
+                "checklists": 0,
+                "first_day": "",
+                "last_day": "",
+            }
+            hotspot = hotspot_stats[loc_id]
+        elif not hotspot.get("locName") and loc_names_from_feed.get(loc_id):
+            hotspot["locName"] = loc_names_from_feed[loc_id]
+        expected = len(checklist_ids)
+        downloaded = len(downloaded_by_loc.get(loc_id, set()) & checklist_ids)
+        if not checklist_ids:
+            downloaded = len(downloaded_by_loc.get(loc_id, set()))
+        hotspot["expected"] = expected
+        hotspot["downloaded"] = downloaded
+        hotspot["missing"] = max(0, expected - downloaded)
+        # Keep checklists as the on-disk count for backwards-compatible sorting.
+        hotspot["checklists"] = len(downloaded_by_loc.get(loc_id, set()))
+
+    for loc_id, hotspot in hotspot_stats.items():
+        if "expected" in hotspot:
+            continue
+        downloaded = len(downloaded_by_loc.get(loc_id, set()))
+        hotspot["expected"] = 0
+        hotspot["downloaded"] = downloaded
+        hotspot["missing"] = 0
+        hotspot["checklists"] = downloaded
+
     all_days = sorted(set(expected_by_day) | set(downloaded_by_day))
     truncated_set = set(truncated_dates)
     days = [
         {
             "day": day,
             "expected": int(expected_by_day.get(day, 0)),
-            "downloaded": int(downloaded_by_day.get(day, 0)),
+            "downloaded": len(downloaded_by_day.get(day, set())),
+            "missing": max(
+                0,
+                int(expected_by_day.get(day, 0))
+                - len(downloaded_by_day.get(day, set())),
+            ),
             "truncated": day in truncated_set,
         }
         for day in all_days
     ]
     hotspots = sorted(
         hotspot_stats.values(),
-        key=lambda row: (-int(row["checklists"]), str(row.get("locName") or ""), str(row["locId"])),
+        key=lambda row: (
+            -int(row.get("missing") or 0),
+            -int(row.get("checklists") or 0),
+            str(row.get("locName") or ""),
+            str(row["locId"]),
+        ),
     )
     result = {
         "cache_version": CHECKLIST_CACHE_STATUS_VERSION,
@@ -428,9 +521,11 @@ def build_checklist_cache_status(
         "feed_cache_path": str(feed_path),
         "checklists_dir": str(root),
         "expected_total": len(expected_ids) if expected_ids else sum(expected_by_day.values()),
-        "downloaded_total": len(downloaded_ids) if downloaded_ids else sum(downloaded_by_day.values()),
+        "downloaded_total": len(downloaded_ids) if downloaded_ids else sum(
+            len(ids) for ids in downloaded_by_day.values()
+        ),
         "days_in_feed": len(expected_by_day),
-        "days_with_downloads": sum(1 for count in downloaded_by_day.values() if count > 0),
+        "days_with_downloads": sum(1 for ids in downloaded_by_day.values() if ids),
         "hotspot_count": len(hotspots),
         "truncated_dates": truncated_dates,
         "days": days,
@@ -444,10 +539,14 @@ def load_local_checklists_for_hotspot(
     region_code: str,
     loc_id: str,
     *,
-    start_date: date,
-    end_date: date,
+    start_date: date | None = None,
+    end_date: date | None = None,
 ) -> list[dict[str, Any]]:
-    """Load downloaded checklist files for a hotspot within a date window."""
+    """Load downloaded checklist files for a hotspot.
+
+    When ``start_date``/``end_date`` are omitted, every cached checklist for
+    the hotspot is returned.
+    """
     return load_local_checklists(
         region_code,
         loc_id=loc_id,
@@ -459,14 +558,15 @@ def load_local_checklists_for_hotspot(
 def load_local_checklists(
     region_code: str,
     *,
-    start_date: date,
-    end_date: date,
+    start_date: date | None = None,
+    end_date: date | None = None,
     loc_id: str | None = None,
 ) -> list[dict[str, Any]]:
-    """Load downloaded checklist files within a date window.
+    """Load downloaded checklist files, optionally filtered by date and hotspot.
 
     When ``loc_id`` is set, only that hotspot is included; otherwise every
-    downloaded checklist in the region for the window is returned.
+    downloaded checklist in the region for the window is returned. When
+    ``start_date`` or ``end_date`` is ``None``, that bound is open.
 
     Returns feed-summary-shaped rows with ``_detail`` set to the full checklist
     payload so callers can enrich without another API call.
@@ -508,7 +608,11 @@ def load_local_checklists(
         obs_day = _parse_checklist_day(
             checklist.get("obsDt") or feed.get("isoObsDate") or feed.get("obsDt")
         )
-        if obs_day is None or obs_day < start_date or obs_day > end_date:
+        if obs_day is None:
+            continue
+        if start_date is not None and obs_day < start_date:
+            continue
+        if end_date is not None and obs_day > end_date:
             continue
         sub_id = str(
             checklist.get("subId") or feed.get("subId") or feed.get("subID") or path.stem
@@ -540,6 +644,7 @@ def load_local_checklists(
             "_detail": checklist,
             "_source": "local_cache",
             "_path": str(path),
+            "_obs_day": obs_day.isoformat(),
         }
         previous = found.get(sub_id)
         if previous is None or str(summary["isoObsDate"]) >= str(
@@ -659,6 +764,27 @@ def build_local_last_seen_index(region_code: str) -> dict[str, dict[str, Any]]:
     return by_code
 
 
+def _retry_after_seconds(response: requests.Response) -> float:
+    """Seconds to wait from a 429 Retry-After header (seconds or HTTP-date)."""
+    raw = (response.headers.get("Retry-After") or "").strip()
+    if not raw:
+        return 60.0
+    try:
+        return max(float(raw), MIN_RATE_LIMIT_WAIT_SECONDS)
+    except ValueError:
+        pass
+    try:
+        from email.utils import parsedate_to_datetime
+
+        when = parsedate_to_datetime(raw)
+        if when.tzinfo is None:
+            when = when.replace(tzinfo=datetime.now().astimezone().tzinfo)
+        delay = (when - datetime.now(when.tzinfo)).total_seconds()
+        return max(delay, MIN_RATE_LIMIT_WAIT_SECONDS)
+    except (TypeError, ValueError, OverflowError):
+        return 60.0
+
+
 def note_rate_limit(seconds: float, *, path: str) -> None:
     """Record a rate-limit wait for UI surfaces (Streamlit session when available)."""
     event = {
@@ -670,6 +796,8 @@ def note_rate_limit(seconds: float, *, path: str) -> None:
         f"[rate-limit] waiting {seconds:.0f}s for {path}",
         flush=True,
     )
+    if not _streamlit_runtime_active():
+        return
     try:
         import streamlit as st
 
@@ -699,25 +827,179 @@ def resolve_ebird_code(
     if cache_key in cache:
         value = cache[cache_key]
         return str(value) if value else None
+    url = f"https://birdnet.cornell.edu/taxonomy/api/species/{quote(lookup, safe='')}"
+    started = time.perf_counter()
+    log_api_send(
+        "birdnet",
+        "resolve eBird code",
+        url=url,
+        scientific_name=sci or None,
+        common_name=common or None,
+        lookup=lookup,
+    )
     try:
-        response = requests.get(
-            f"https://birdnet.cornell.edu/taxonomy/api/species/{quote(lookup, safe='')}",
-            timeout=20,
-        )
+        response = requests.get(url, timeout=20)
         if response.status_code == 404:
             cache[cache_key] = ""
             _save_json_file(BIRDNET_CODE_CACHE_PATH, cache)
+            log_api_done(
+                "birdnet",
+                "resolve eBird code",
+                started=started,
+                status=404,
+                lookup=lookup,
+            )
             return None
         response.raise_for_status()
         payload = response.json()
-    except (requests.RequestException, ValueError, TypeError):
+    except (requests.RequestException, ValueError, TypeError) as exc:
+        log_api_done(
+            "birdnet",
+            "resolve eBird code",
+            started=started,
+            status=None,
+            lookup=lookup,
+            error=exc.__class__.__name__,
+        )
         return None
     code = str((payload or {}).get("ebird_code") or "").strip()
     cache[cache_key] = code
     if sci and common:
         cache[f"common:{common.casefold()}"] = code
     _save_json_file(BIRDNET_CODE_CACHE_PATH, cache)
+    log_api_done(
+        "birdnet",
+        "resolve eBird code",
+        started=started,
+        status=response.status_code,
+        lookup=lookup,
+        ebird_code=code or None,
+    )
     return code or None
+
+
+def _ebird_request_summary(path: str, params: dict[str, Any] | None) -> str:
+    """Short human-readable label for an eBird API path."""
+    text = path or ""
+    if text.startswith("/product/checklist/view/"):
+        return f"checklist detail subId={text.rsplit('/', 1)[-1]}"
+    if text.startswith("/product/spplist/"):
+        return f"region species list region={text.rsplit('/', 1)[-1]}"
+    if text.startswith("/ref/hotspot/"):
+        return f"hotspots region={text.rsplit('/', 1)[-1]}"
+    if text.startswith("/ref/region/list/"):
+        parts = text.strip("/").split("/")
+        kind = parts[3] if len(parts) > 3 else "?"
+        parent = parts[4] if len(parts) > 4 else "?"
+        return f"region list type={kind} parent={parent}"
+    if text.startswith("/ref/region/info/"):
+        return f"region info code={text.rsplit('/', 1)[-1]}"
+    if text.startswith("/ref/taxonomy/ebird"):
+        species = (params or {}).get("species")
+        if species:
+            return f"taxonomy species={species}"
+        return "taxonomy"
+    if "/data/obs/" in text and "/recent" in text:
+        return f"recent observations {text}"
+    if text.startswith("/product/lists/"):
+        parts = text.strip("/").split("/")
+        # /product/lists/{loc} or /product/lists/{loc}/{y}/{m}/{d}
+        loc = parts[2] if len(parts) > 2 else "?"
+        if len(parts) >= 6:
+            return f"checklists loc={loc} date={parts[3]}-{parts[4].zfill(2)}-{parts[5].zfill(2)}"
+        return f"recent checklists loc={loc}"
+    return text
+
+
+def load_disk_region_species_codes(region_code: str) -> list[str] | None:
+    """Return cached regional species codes without calling the eBird API.
+
+    ``None`` means this region has no disk entry yet.
+    """
+    region = (region_code or "").strip()
+    if not region:
+        return None
+    cache = _load_json_file(REGION_SPECIES_CACHE_PATH)
+    cached = cache.get(region)
+    if not isinstance(cached, list):
+        return None
+    return [str(item) for item in cached if item]
+
+
+def region_historical_species_cache_coverage(region_code: str) -> dict[str, Any]:
+    """Coverage of a region's historical species list against local caches.
+
+    Historical list = eBird ``/product/spplist`` codes stored in
+    ``ebird_region_species_cache.json``.
+    """
+    from inaturalist import GALLERY_CACHE_VERSION
+
+    region = (region_code or "").strip()
+    historical_list = load_disk_region_species_codes(region)
+    historical_set = set(historical_list or [])
+    local_codes = set(build_local_last_seen_index(region)) if region else set()
+    in_checklists = historical_set & local_codes
+
+    photo_cache = _load_json_file(ROOT / "inaturalist_cache.json")
+    in_photos = {
+        code
+        for code in historical_set
+        if isinstance(photo_cache.get(code), dict) and photo_cache.get(code)
+    }
+
+    gallery_cache = _load_json_file(ROOT / "inaturalist_gallery_cache.json")
+    gallery_by_code: dict[str, dict[str, Any]] = {}
+    for key, value in gallery_cache.items():
+        if not isinstance(value, dict) or not value:
+            continue
+        if key in historical_set:
+            gallery_by_code.setdefault(str(key), value)
+        nested_code = str(value.get("ebird_code") or "").strip()
+        if nested_code and nested_code in historical_set:
+            gallery_by_code.setdefault(nested_code, value)
+    in_gallery = {
+        code
+        for code, entry in gallery_by_code.items()
+        if entry.get("cache_version") == GALLERY_CACHE_VERSION
+    }
+
+    similar_cache = _load_json_file(ROOT / "inaturalist_similar_cache.json")
+    similar_codes: set[str] = set()
+    similar_taxon_ids: set[str] = set()
+    for key in similar_cache:
+        text = str(key)
+        if text.startswith("code:"):
+            similar_codes.add(text[5:].split("|", 1)[0])
+        elif text.startswith("taxon:"):
+            similar_taxon_ids.add(text[6:])
+    in_similar: set[str] = set()
+    for code in historical_set:
+        if code in similar_codes:
+            in_similar.add(code)
+            continue
+        entry = gallery_by_code.get(code) or {}
+        taxon_id = entry.get("taxon_id")
+        if taxon_id is not None and str(taxon_id) in similar_taxon_ids:
+            in_similar.add(code)
+
+    total = len(historical_set)
+    checklist_count = len(in_checklists)
+    photo_count = len(in_photos)
+    gallery_count = len(in_gallery)
+    similar_count = len(in_similar)
+    return {
+        "region_code": region,
+        "historical_total": total,
+        "has_historical_list": historical_list is not None,
+        "in_checklist_cache": checklist_count,
+        "checklist_pct": (100.0 * checklist_count / total) if total else None,
+        "in_photo_cache": photo_count,
+        "photo_pct": (100.0 * photo_count / total) if total else None,
+        "in_gallery_cache": gallery_count,
+        "gallery_pct": (100.0 * gallery_count / total) if total else None,
+        "in_similar_cache": similar_count,
+        "similar_pct": (100.0 * similar_count / total) if total else None,
+    }
 
 
 class EBirdClient:
@@ -736,44 +1018,91 @@ class EBirdClient:
         self.session = requests.Session()
         self.session.headers.update({"X-eBirdApiToken": self.api_key})
         self.rate_limit_events: list[dict[str, Any]] = []
+        self.http_429_count = 0
+        self.wait_count = 0
+        self.wait_seconds_total = 0.0
         self.min_rate_limit_wait_seconds = max(
             float(min_rate_limit_wait_seconds),
             MIN_RATE_LIMIT_WAIT_SECONDS,
         )
+        # Extra pause before the next request after recovering from a 429.
+        self._post_rate_limit_cooldown_seconds = 0.0
+
+    def _rate_limit_wait(self, seconds: float, *, path: str) -> None:
+        wait_seconds = max(float(seconds), 0.0)
+        if wait_seconds <= 0:
+            return
+        self.wait_count += 1
+        self.wait_seconds_total += wait_seconds
+        note_rate_limit(wait_seconds, path=path)
+        time.sleep(wait_seconds)
 
     def get(self, path: str, params: dict[str, Any] | None = None) -> Any:
         started = time.perf_counter()
+        url = f"{BASE_URL}{path}"
+        summary = _ebird_request_summary(path, params)
+        cooldown = float(self._post_rate_limit_cooldown_seconds or 0.0)
+        if cooldown > 0:
+            print(
+                f"[rate-limit] post-429 cooldown {cooldown:.0f}s before {path}",
+                flush=True,
+            )
+            self._rate_limit_wait(cooldown, path=f"{path} (post-429 cooldown)")
+            self._post_rate_limit_cooldown_seconds = 0.0
         for attempt in range(MAX_RATE_LIMIT_RETRIES):
+            log_api_send(
+                "ebird",
+                summary,
+                url=url,
+                params=params,
+                attempt=attempt + 1 if attempt else None,
+            )
             response = self.session.get(
-                f"{BASE_URL}{path}",
+                url,
                 params=params,
                 timeout=30,
             )
             if response.status_code == 429:
-                retry_after = response.headers.get("Retry-After")
-                try:
-                    wait_seconds = float(retry_after) if retry_after else 60.0
-                except ValueError:
-                    wait_seconds = 60.0
-                wait_seconds = max(
-                    wait_seconds,
-                    self.min_rate_limit_wait_seconds,
+                header_wait = _retry_after_seconds(response)
+                # Honor Retry-After; only apply the client floor when the header
+                # is missing/unusable (header helper already returns >= 1s).
+                raw_retry = (response.headers.get("Retry-After") or "").strip()
+                base_wait = (
+                    max(header_wait, self.min_rate_limit_wait_seconds)
+                    if not raw_retry
+                    else header_wait
                 )
+                # Wait twice the recommended interval, then apply the same
+                # doubled pause before the next request after this one succeeds.
+                wait_seconds = base_wait * 2.0
                 event = {
                     "seconds": wait_seconds,
                     "path": path,
                     "attempt": attempt + 1,
+                    "retry_after": raw_retry or None,
+                    "retry_after_seconds": base_wait,
+                    "multiplier": 2.0,
                 }
                 self.rate_limit_events.append(event)
-                note_rate_limit(wait_seconds, path=path)
-                time.sleep(wait_seconds)
+                self.http_429_count += 1
+                self._post_rate_limit_cooldown_seconds = wait_seconds
+                log_api_done(
+                    "ebird",
+                    summary,
+                    started=started,
+                    status=429,
+                    attempt=attempt + 1,
+                    retry_after_s=f"{wait_seconds:.0f}",
+                )
+                self._rate_limit_wait(wait_seconds, path=path)
                 continue
             response.raise_for_status()
-            elapsed_ms = (time.perf_counter() - started) * 1000
-            print(
-                f"[timing] ebird_get: {elapsed_ms:.0f}ms path={path} "
-                f"status={response.status_code}",
-                flush=True,
+            log_api_done(
+                "ebird",
+                summary,
+                started=started,
+                status=response.status_code,
+                **(params or {}),
             )
             return response.json()
         raise requests.HTTPError(
@@ -841,11 +1170,11 @@ class EBirdClient:
         code = (region_code or "").strip()
         if not code:
             return set()
-        cache = _load_json_file(REGION_SPECIES_CACHE_PATH)
-        cached = cache.get(code)
-        if isinstance(cached, list):
-            return {str(item) for item in cached if item}
+        cached = load_disk_region_species_codes(code)
+        if cached is not None:
+            return set(cached)
         codes = self.region_species_codes(code)
+        cache = _load_json_file(REGION_SPECIES_CACHE_PATH)
         cache[code] = codes
         _save_json_file(REGION_SPECIES_CACHE_PATH, cache)
         return set(codes)
@@ -945,12 +1274,18 @@ class EBirdClient:
         year: int,
         *,
         max_results: int = 200,
+        delay_seconds: float = 0.0,
+        on_progress: Any = None,
+        should_stop: Any = None,
     ) -> dict[str, Any]:
         """Persist daily checklist feeds for a region through today.
 
         eBird returns at most ``max_results`` entries per date. Dates that hit
         that limit are retained but marked as truncated so consumers do not
         mistake the cache for a complete daily record.
+
+        Missing days (including whole prior years) are fetched. Already-cached
+        historical days are skipped; today is always refreshed.
         """
         code = (region_code or "").strip()
         if not code:
@@ -983,37 +1318,59 @@ class EBirdClient:
         if first_day > last_day:
             raise ValueError("The requested year has not started yet.")
 
+        pending_days: list[date] = []
         day = first_day
         while day <= last_day:
             day_key = day.isoformat()
             # Historical dates do not change; always refresh today.
             if day_key not in daily or day == today:
-                rows = self.checklists_on_date(
-                    code,
-                    day.year,
-                    day.month,
-                    day.day,
-                    max_results=max_results,
-                )
-                daily[day_key] = {
-                    "checklists": rows,
-                    "truncated": len(rows) >= max_results,
+                pending_days.append(day)
+            day = date.fromordinal(day.toordinal() + 1)
+
+        total = len(pending_days)
+        stopped = False
+        for index, day in enumerate(pending_days, start=1):
+            if callable(should_stop) and should_stop():
+                stopped = True
+                break
+            day_key = day.isoformat()
+            rows = self.checklists_on_date(
+                code,
+                day.year,
+                day.month,
+                day.day,
+                max_results=max_results,
+            )
+            daily[day_key] = {
+                "checklists": rows,
+                "truncated": len(rows) >= max_results,
+            }
+            cache.update(
+                {
+                    "cache_version": CHECKLIST_CACHE_VERSION,
+                    "region_code": code,
+                    "year": year,
+                    "max_results_per_day": max_results,
+                    "daily": daily,
+                    "updated_at": datetime.now().astimezone().isoformat(),
                 }
-                cache.update(
+            )
+            path.write_text(
+                json.dumps(cache, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+            if callable(on_progress):
+                on_progress(
                     {
-                        "cache_version": CHECKLIST_CACHE_VERSION,
-                        "region_code": code,
-                        "year": year,
-                        "max_results_per_day": max_results,
-                        "daily": daily,
-                        "updated_at": datetime.now().astimezone().isoformat(),
+                        "processed": index,
+                        "total": total,
+                        "remaining": total - index,
+                        "last_day": day_key,
+                        "days_in_feed": len(daily),
                     }
                 )
-                path.write_text(
-                    json.dumps(cache, indent=2, sort_keys=True) + "\n",
-                    encoding="utf-8",
-                )
-            day = date.fromordinal(day.toordinal() + 1)
+            if delay_seconds > 0 and index < total:
+                time.sleep(delay_seconds)
 
         checklist_ids: set[str] = set()
         for entry in daily.values():
@@ -1030,6 +1387,7 @@ class EBirdClient:
             if isinstance(entry, dict) and entry.get("truncated")
         )
         cache["updated_at"] = datetime.now().astimezone().isoformat()
+        cache["status"] = "stopped" if stopped else "complete"
         path.write_text(
             json.dumps(cache, indent=2, sort_keys=True) + "\n",
             encoding="utf-8",

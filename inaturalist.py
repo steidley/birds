@@ -15,6 +15,8 @@ from urllib.parse import quote
 
 import requests
 
+from api_log import log_api_done, log_api_send
+
 ROOT = Path(__file__).parent
 CACHE_PATH = ROOT / "inaturalist_cache.json"
 GALLERY_CACHE_PATH = ROOT / "inaturalist_gallery_cache.json"
@@ -44,27 +46,55 @@ class INaturalistClient:
 
     def birdnet_species(self, ebird_code: str) -> dict[str, Any] | None:
         started = time.perf_counter()
-        response = self.session.get(
-            f"{BIRDNET_API_URL}/{quote(ebird_code, safe='')}",
-            timeout=20,
+        url = f"{BIRDNET_API_URL}/{quote(ebird_code, safe='')}"
+        log_api_send(
+            "birdnet",
+            "species by eBird code",
+            url=url,
+            ebird_code=ebird_code,
         )
+        response = self.session.get(url, timeout=20)
         if response.status_code == 404:
-            _log_timing("birdnet_species", started, code=ebird_code, status=404)
+            log_api_done(
+                "birdnet",
+                "species by eBird code",
+                started=started,
+                status=404,
+                ebird_code=ebird_code,
+            )
             return None
         response.raise_for_status()
         data = response.json()
-        _log_timing("birdnet_species", started, code=ebird_code, status=response.status_code)
+        log_api_done(
+            "birdnet",
+            "species by eBird code",
+            started=started,
+            status=response.status_code,
+            ebird_code=ebird_code,
+            scientific_name=(
+                (data or {}).get("scientific_name") if isinstance(data, dict) else None
+            ),
+        )
         return data if isinstance(data, dict) else None
 
     def taxon(self, taxon_id: int) -> dict[str, Any] | None:
         started = time.perf_counter()
-        response = self.session.get(f"{INAT_API_URL}/{taxon_id}", timeout=20)
+        url = f"{INAT_API_URL}/{taxon_id}"
+        log_api_send(
+            "inaturalist",
+            "taxon details",
+            url=url,
+            taxon_id=taxon_id,
+        )
+        response = self.session.get(url, timeout=20)
         response.raise_for_status()
         results = response.json().get("results", [])
         taxon_photos = len((results[0] or {}).get("taxon_photos") or []) if results else 0
-        _log_timing(
-            "inat_taxon",
-            started,
+        log_api_done(
+            "inaturalist",
+            "taxon details",
+            started=started,
+            status=response.status_code,
             taxon_id=taxon_id,
             taxon_photos=taxon_photos,
         )
@@ -72,9 +102,17 @@ class INaturalistClient:
 
     def search_taxon(self, scientific_name: str) -> dict[str, Any] | None:
         started = time.perf_counter()
+        params = {"q": scientific_name, "rank": "species", "per_page": 30}
+        log_api_send(
+            "inaturalist",
+            "search taxon",
+            url=INAT_API_URL,
+            params=params,
+            scientific_name=scientific_name,
+        )
         response = self.session.get(
             INAT_API_URL,
-            params={"q": scientific_name, "rank": "species", "per_page": 30},
+            params=params,
             timeout=20,
         )
         response.raise_for_status()
@@ -88,12 +126,15 @@ class INaturalistClient:
             None,
         )
         match = exact or (results[0] if results else None)
-        _log_timing(
-            "inat_search_taxon",
-            started,
-            q=scientific_name,
+        log_api_done(
+            "inaturalist",
+            "search taxon",
+            started=started,
+            status=response.status_code,
+            scientific_name=scientific_name,
             hits=len(results),
             matched=bool(match),
+            taxon_id=(match or {}).get("id"),
         )
         return match
 
@@ -114,25 +155,35 @@ class INaturalistClient:
 
         while len(photos) < max_photos and page <= max_pages:
             page_started = time.perf_counter()
+            params = {
+                "taxon_id": taxon_id,
+                "photos": "true",
+                "quality_grade": "research",
+                "per_page": per_page,
+                "page": page,
+                "order_by": "votes",
+            }
+            log_api_send(
+                "inaturalist",
+                "observation photos",
+                url=INAT_OBS_API_URL,
+                params=params,
+                max_photos=max_photos,
+            )
             response = self.session.get(
                 INAT_OBS_API_URL,
-                params={
-                    "taxon_id": taxon_id,
-                    "photos": "true",
-                    "quality_grade": "research",
-                    "per_page": per_page,
-                    "page": page,
-                    "order_by": "votes",
-                },
+                params=params,
                 timeout=30,
             )
             response.raise_for_status()
             results = response.json().get("results") or []
             before = len(photos)
             if not results:
-                _log_timing(
-                    "inat_observations_page",
-                    page_started,
+                log_api_done(
+                    "inaturalist",
+                    "observation photos",
+                    started=page_started,
+                    status=response.status_code,
                     taxon_id=taxon_id,
                     page=page,
                     obs=0,
@@ -153,9 +204,11 @@ class INaturalistClient:
                         break
                 if len(photos) >= max_photos:
                     break
-            _log_timing(
-                "inat_observations_page",
-                page_started,
+            log_api_done(
+                "inaturalist",
+                "observation photos",
+                started=page_started,
+                status=response.status_code,
                 taxon_id=taxon_id,
                 page=page,
                 obs=len(results),
@@ -186,9 +239,16 @@ class INaturalistClient:
     ) -> list[dict[str, Any]]:
         """Return species often confused with this taxon (iNaturalist)."""
         started = time.perf_counter()
+        params = {"taxon_id": taxon_id, "per_page": limit}
+        log_api_send(
+            "inaturalist",
+            "similar species",
+            url=INAT_SIMILAR_API_URL,
+            params=params,
+        )
         response = self.session.get(
             INAT_SIMILAR_API_URL,
-            params={"taxon_id": taxon_id, "per_page": limit},
+            params=params,
             timeout=30,
         )
         response.raise_for_status()
@@ -221,10 +281,13 @@ class INaturalistClient:
             )
             if len(similar) >= limit:
                 break
-        _log_timing(
-            "inat_similar_species",
-            started,
+        log_api_done(
+            "inaturalist",
+            "similar species",
+            started=started,
+            status=response.status_code,
             taxon_id=taxon_id,
+            limit=limit,
             results=len(similar),
         )
         return similar
