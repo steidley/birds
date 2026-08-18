@@ -136,6 +136,17 @@ def _clean_api_key(value: object) -> str | None:
     return key
 
 
+class MissingEbirdApiKey(ValueError):
+    """Raised when an eBird HTTP call is attempted without an API key."""
+
+    def __init__(self) -> None:
+        super().__init__(
+            "Missing eBird API key. Set EBIRD_API_KEY in .env or "
+            ".streamlit/secrets.toml, or enter it when prompted. "
+            "Get a key at https://ebird.org/api/keygen"
+        )
+
+
 def region_year_checklist_cache_path(region_code: str, year: int) -> Path:
     """Location of the on-disk regional daily-checklist cache."""
     safe_region = "".join(
@@ -796,7 +807,11 @@ def _parse_obs_count(obs: dict[str, Any]) -> int | None:
     return None
 
 
-def build_local_last_seen_index(region_code: str) -> dict[str, dict[str, Any]]:
+def build_local_last_seen_index(
+    region_code: str,
+    *,
+    rebuild: bool = False,
+) -> dict[str, dict[str, Any]]:
     """Index species last-seen info from downloaded checklist detail files."""
     region = (region_code or "").strip()
     if not region:
@@ -810,7 +825,8 @@ def build_local_last_seen_index(region_code: str) -> dict[str, dict[str, Any]]:
     }
     existing = _load_json_file(index_path)
     if (
-        existing.get("signature") == signature
+        not rebuild
+        and existing.get("signature") == signature
         and isinstance(existing.get("by_code"), dict)
     ):
         return {
@@ -887,6 +903,38 @@ def build_local_last_seen_index(region_code: str) -> dict[str, dict[str, Any]]:
         },
     )
     return by_code
+
+
+def list_local_checklist_regions() -> list[str]:
+    """Region codes that have downloaded checklist files on disk."""
+    if not CHECKLISTS_DIR.exists():
+        return []
+    regions: list[str] = []
+    for path in sorted(CHECKLISTS_DIR.iterdir()):
+        if not path.is_dir() or path.name.startswith("."):
+            continue
+        if any(path.rglob("S*.json")):
+            regions.append(path.name)
+    return regions
+
+
+def rebuild_local_last_seen_indexes(
+    region_codes: list[str] | None = None,
+) -> list[dict[str, Any]]:
+    """Rebuild per-region last-seen indexes from on-disk checklist details."""
+    codes = [code.strip() for code in (region_codes or list_local_checklist_regions()) if code.strip()]
+    results: list[dict[str, Any]] = []
+    for code in codes:
+        by_code = build_local_last_seen_index(code, rebuild=True)
+        path = local_checklist_index_path(code)
+        results.append(
+            {
+                "region_code": code,
+                "species": len(by_code),
+                "path": str(path.name),
+            }
+        )
+    return results
 
 
 def _retry_after_seconds(response: requests.Response) -> float:
@@ -1135,14 +1183,10 @@ class EBirdClient:
         *,
         min_rate_limit_wait_seconds: float = MIN_RATE_LIMIT_WAIT_SECONDS,
     ) -> None:
-        self.api_key = api_key or get_api_key()
-        if not self.api_key:
-            raise ValueError(
-                "Missing eBird API key. Set EBIRD_API_KEY in .env or "
-                ".streamlit/secrets.toml. Get a key at https://ebird.org/api/keygen"
-            )
+        self.api_key = _clean_api_key(api_key) or get_api_key()
         self.session = requests.Session()
-        self.session.headers.update({"X-eBirdApiToken": self.api_key})
+        if self.api_key:
+            self.session.headers.update({"X-eBirdApiToken": self.api_key})
         self.rate_limit_events: list[dict[str, Any]] = []
         self.http_429_count = 0
         self.wait_count = 0
@@ -1154,6 +1198,16 @@ class EBirdClient:
         # Extra pause before the next request after recovering from a 429.
         self._post_rate_limit_cooldown_seconds = 0.0
 
+    def _require_api_key(self) -> str:
+        """Return a usable API key, refreshing from env/session if needed."""
+        key = _clean_api_key(self.api_key) or get_api_key()
+        if not key:
+            raise MissingEbirdApiKey()
+        if key != self.api_key:
+            self.api_key = key
+            self.session.headers.update({"X-eBirdApiToken": key})
+        return key
+
     def _rate_limit_wait(self, seconds: float, *, path: str) -> None:
         wait_seconds = max(float(seconds), 0.0)
         if wait_seconds <= 0:
@@ -1164,6 +1218,7 @@ class EBirdClient:
         time.sleep(wait_seconds)
 
     def get(self, path: str, params: dict[str, Any] | None = None) -> Any:
+        self._require_api_key()
         started = time.perf_counter()
         url = f"{BASE_URL}{path}"
         summary = _ebird_request_summary(path, params)

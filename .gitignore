@@ -19,7 +19,6 @@ ebird_*_checklists_*.json
 ebird_checklists/
 ebird_region_species_cache.json
 ebird_last_seen_cache.json
-ebird_*_local_last_seen.json
 ebird_*_checklist_cache_status_*.json
 ebird_*_feed_cache_progress_*.json
 ebird_*_checklist_download_progress_*.json

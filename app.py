@@ -15,13 +15,16 @@ from dotenv import load_dotenv
 from components.swipe_image import swipe_image
 from ebird import (
     EBirdClient,
+    MissingEbirdApiKey,
     build_checklist_cache_status,
     build_local_last_seen_index,
     filter_regions_by_query,
     get_api_key,
+    list_local_checklist_regions,
     load_cached_hotspots,
     load_disk_region_species_codes,
     load_local_checklists_for_hotspot,
+    rebuild_local_last_seen_indexes,
     region_historical_species_cache_coverage,
     resolve_ebird_code,
 )
@@ -1030,6 +1033,9 @@ def missing_species_display_rows(codes: list[str]) -> list[dict]:
     taxa: dict[str, dict] = {}
     try:
         taxa = EBirdClient().species_taxa(cleaned)
+    except MissingEbirdApiKey:
+        ensure_api_key()
+        taxa = {}
     except Exception:
         taxa = {}
     rows: list[dict] = []
@@ -1060,6 +1066,9 @@ def _warm_codes_with_progress(
     taxa: dict[str, dict] = {}
     try:
         taxa = EBirdClient().species_taxa(codes)
+    except MissingEbirdApiKey:
+        ensure_api_key()
+        taxa = {}
     except Exception:
         taxa = {}
     progress = st.progress(0.0, text=f"Loading {label} 0/{total:,} · estimating…")
@@ -1461,6 +1470,10 @@ def enrich_similar_with_region_history(
     # Prefer disk-cached species list; fall back to local checklist species.
     try:
         region_codes = client.cached_region_species_codes(region)
+    except MissingEbirdApiKey:
+        ensure_api_key()
+        client = None
+        region_codes = set(load_disk_region_species_codes(region) or [])
     except requests.RequestException:
         region_codes = set(local_index)
     region_codes = set(region_codes) | set(local_index)
@@ -1483,7 +1496,7 @@ def enrich_similar_with_region_history(
         local_miss = False
         if code and code in local_index:
             observation = dict(local_index[code])
-        elif ever_seen and code:
+        elif ever_seen and code and client is not None:
             # Local checklist cache missed; only then ask the API.
             try:
                 observation = client.last_seen_in_region(
@@ -1492,6 +1505,9 @@ def enrich_similar_with_region_history(
                     back=30,
                     allow_api=True,
                 )
+            except MissingEbirdApiKey:
+                ensure_api_key()
+                observation = None
             except requests.RequestException:
                 observation = None
             local_miss = observation is None or (
@@ -2358,6 +2374,9 @@ def open_region_species_gallery(region_code: str) -> None:
     with st.spinner(f"Loading full species list for {code}…"):
         try:
             birds = load_region_species_gallery_birds(code)
+        except MissingEbirdApiKey:
+            ensure_api_key()
+            return
         except requests.HTTPError as exc:
             st.error(
                 f"eBird API error: {exc.response.status_code if exc.response else exc}"
@@ -2544,15 +2563,14 @@ def render_region_code_lookup(*, session_key: str = "checklists_region") -> None
             key=f"{session_key}_region_lookup_query",
             placeholder="e.g. Palm Beach, Florida, US-FL",
         )
-        try:
-            client = EBirdClient()
-        except Exception as exc:
-            st.warning(str(exc))
-            return
+        client = EBirdClient()
 
         try:
             with st.spinner("Loading countries…"):
                 countries = client.list_regions("country", "world")
+        except MissingEbirdApiKey:
+            ensure_api_key()
+            return
         except requests.RequestException as exc:
             st.error(f"Could not load countries: {exc}")
             return
@@ -2591,6 +2609,9 @@ def render_region_code_lookup(*, session_key: str = "checklists_region") -> None
         try:
             with st.spinner(f"Loading states/provinces for {country}…"):
                 states = client.list_regions("subnational1", country)
+        except MissingEbirdApiKey:
+            ensure_api_key()
+            states = []
         except requests.RequestException as exc:
             st.error(f"Could not load subnational regions: {exc}")
             states = []
@@ -2632,6 +2653,9 @@ def render_region_code_lookup(*, session_key: str = "checklists_region") -> None
                 try:
                     with st.spinner(f"Loading counties for {state}…"):
                         counties = client.list_regions("subnational2", state)
+                except MissingEbirdApiKey:
+                    ensure_api_key()
+                    counties = []
                 except requests.RequestException as exc:
                     st.error(f"Could not load counties: {exc}")
                     counties = []
@@ -2817,13 +2841,10 @@ def enrich_checklists(
     return enriched
 
 
-def ensure_api_key() -> bool:
-    """Return True when an API key is available; otherwise prompt for one."""
-    if get_api_key():
-        return True
-
+def render_api_key_form() -> None:
+    """Password field for entering an eBird API key for this session."""
     st.info(
-        "An eBird API key is required. "
+        "An eBird API key is required for this request. "
         "Get a free key at [ebird.org/api/keygen](https://ebird.org/api/keygen), "
         "or open this app with `?EBIRD_API_KEY=your_key`."
     )
@@ -2837,8 +2858,23 @@ def ensure_api_key() -> bool:
         cleaned = (entered or "").strip()
         if not cleaned or cleaned == "your_ebird_api_key_here":
             st.warning("Paste a valid eBird API key to continue.")
-            return False
+            return
         st.session_state.ebird_api_key = cleaned
+        st.session_state.pop("ebird_api_key_needed", None)
+        st.rerun()
+
+
+def ensure_api_key() -> bool:
+    """Return True when a key is available; otherwise prompt and return False.
+
+    The form is shown at the top of the app on the next run, so cached screens
+    stay usable until an eBird HTTP call is actually needed.
+    """
+    if get_api_key():
+        st.session_state.pop("ebird_api_key_needed", None)
+        return True
+    if not st.session_state.get("ebird_api_key_needed"):
+        st.session_state.ebird_api_key_needed = True
         st.rerun()
     return False
 
@@ -2869,21 +2905,24 @@ def render_general_cache_maintenance() -> None:
                 type="primary",
                 use_container_width=True,
             ):
-                try:
-                    result = warm_missing_region_species_list(region_code)
-                    found = int(result.get("found") or 0)
-                    st.success(
-                        f"Cached {found:,} historical species for `{region_code}`."
-                    )
-                except requests.HTTPError as exc:
-                    st.error(
-                        f"API error: "
-                        f"{exc.response.status_code if exc.response else exc}"
-                    )
-                except Exception as exc:
-                    st.error(str(exc))
-                else:
-                    st.rerun()
+                if ensure_api_key():
+                    try:
+                        result = warm_missing_region_species_list(region_code)
+                        found = int(result.get("found") or 0)
+                        st.success(
+                            f"Cached {found:,} historical species for `{region_code}`."
+                        )
+                    except MissingEbirdApiKey:
+                        ensure_api_key()
+                    except requests.HTTPError as exc:
+                        st.error(
+                            f"API error: "
+                            f"{exc.response.status_code if exc.response else exc}"
+                        )
+                    except Exception as exc:
+                        st.error(str(exc))
+                    else:
+                        st.rerun()
         else:
             st.caption(
                 f"Historical species list for `{region_code}`: "
@@ -2952,9 +2991,12 @@ def render_general_cache_maintenance() -> None:
                 warmer = loaders.get(str(loader))
                 if warmer is None:
                     st.error(f"No loader configured for {loader}.")
-                else:
+                elif ensure_api_key():
                     try:
                         result = warmer(region_code)
+                    except MissingEbirdApiKey:
+                        ensure_api_key()
+                        continue
                     except requests.HTTPError as exc:
                         st.error(
                             f"API error: "
@@ -3338,6 +3380,8 @@ def render_checklist_download_maintenance(
         st.rerun()
 
     if start:
+        if not ensure_api_key():
+            return
         error = _start_checklist_download(
             region_code,
             year,
@@ -3397,6 +3441,35 @@ def render_cache_status() -> None:
         help="Daily feed and checklist details can be cached for any year from 2002 through the current year.",
     )
     st.session_state.cache_status_year = int(year)
+
+    local_regions = list_local_checklist_regions()
+    last_seen_cols = st.columns([2.4, 1.6], vertical_alignment="bottom")
+    with last_seen_cols[0]:
+        st.caption(
+            "Last-seen index files (`ebird_<region>_local_last_seen.json`) are "
+            "built from downloaded checklist details on disk — no eBird API calls."
+        )
+    with last_seen_cols[1]:
+        rebuild_last_seen = st.button(
+            "Rebuild last-seen from checklists",
+            use_container_width=True,
+            disabled=not bool(local_regions),
+            help=(
+                "Rescan downloaded checklist JSON for every region on disk and "
+                "rewrite the per-region last-seen cache files."
+            ),
+        )
+    if rebuild_last_seen:
+        with st.spinner("Rebuilding last-seen caches from checklist files…"):
+            rebuilt = rebuild_local_last_seen_indexes()
+        if not rebuilt:
+            st.warning("No downloaded checklists found under `ebird_checklists/`.")
+        else:
+            summary = ", ".join(
+                f"{row['region_code']} ({row['species']:,} spp)"
+                for row in rebuilt
+            )
+            st.success(f"Rebuilt last-seen cache for {len(rebuilt)} region(s): {summary}.")
 
     refresh_cols = st.columns([1.15, 2.4, 1.7], vertical_alignment="bottom")
     with refresh_cols[0]:
@@ -3512,6 +3585,8 @@ def render_feed_cache_controls(
         time.sleep(0.15)
         st.rerun()
     if start_feed:
+        if not ensure_api_key():
+            return
         error = _start_feed_cache(region_code, year)
         if error:
             st.error(f"Could not start daily-feed cache: {error}")
@@ -3886,9 +3961,6 @@ def render_checklists() -> None:
         "`lifeLists/ebird_<region>_life_list.csv`."
     )
 
-    if not ensure_api_key():
-        return
-
     region_code = render_region_code_input(
         help=(
             "eBird region, e.g. US-FL-099, US-FL, or US. "
@@ -3912,7 +3984,8 @@ def render_checklists() -> None:
         ),
         disabled=not bool(region_code),
     ):
-        open_region_species_gallery(region_code)
+        if ensure_api_key():
+            open_region_species_gallery(region_code)
 
     total_cols = st.columns(2)
     with total_cols[0]:
@@ -3998,32 +4071,33 @@ def render_checklists() -> None:
     ):
         if not region_code:
             st.warning("Enter a region code.")
-            return
-        with st.spinner(f"Loading additional hotspots for {region_code}…"):
-            try:
-                merged, added = EBirdClient().additional_hotspots(
-                    region_code,
-                    existing=hotspots,
-                )
-            except requests.HTTPError as exc:
-                st.error(
-                    f"eBird API error: {exc.response.status_code if exc.response else exc}"
-                )
-                return
-            except Exception as exc:
-                st.error(str(exc))
-                return
-        apply_hotspots(region_code, merged)
-        hotspots = merged
-        if added:
-            st.success(
-                f"Added {len(added):,} hotspot{'s' if len(added) != 1 else ''} "
-                f"({len(merged):,} total)."
-            )
-        elif merged:
-            st.info(f"No additional hotspots. {len(merged):,} already cached.")
-        else:
-            st.warning(f"No hotspots found for {region_code}.")
+        elif ensure_api_key():
+            with st.spinner(f"Loading additional hotspots for {region_code}…"):
+                try:
+                    merged, added = EBirdClient().additional_hotspots(
+                        region_code,
+                        existing=hotspots,
+                    )
+                except MissingEbirdApiKey:
+                    ensure_api_key()
+                except requests.HTTPError as exc:
+                    st.error(
+                        f"eBird API error: {exc.response.status_code if exc.response else exc}"
+                    )
+                except Exception as exc:
+                    st.error(str(exc))
+                else:
+                    apply_hotspots(region_code, merged)
+                    hotspots = merged
+                    if added:
+                        st.success(
+                            f"Added {len(added):,} hotspot{'s' if len(added) != 1 else ''} "
+                            f"({len(merged):,} total)."
+                        )
+                    elif merged:
+                        st.info(f"No additional hotspots. {len(merged):,} already cached.")
+                    else:
+                        st.warning(f"No hotspots found for {region_code}.")
 
     if not hotspots:
         st.info("Enter a region and click Load hotspots.")
@@ -4077,43 +4151,45 @@ def render_checklists() -> None:
         )
 
     if show_api:
-        active_region = st.session_state.get("checklists_region", region_code)
-        life_for_region = load_life_list(active_region)
-        life_for_world = load_life_list(WORLD_LIFE_LIST_CODE)
-        with st.spinner("Loading checklists…"):
-            try:
-                client = EBirdClient()
-                summaries = client.location_checklists(
-                    loc_id,
-                    days_back=days_back,
-                    end_date=end_date,
-                )
-                first_page = enrich_checklists(
-                    client,
-                    summaries[:page_size],
-                    life_for_region,
-                    life_for_world,
-                    allow_api=True,
-                )
-            except requests.HTTPError as exc:
-                st.error(
-                    f"eBird API error: {exc.response.status_code if exc.response else exc}"
-                )
-                return
-            except Exception as exc:
-                st.error(str(exc))
-                return
-        st.session_state.checklists_loc_id = loc_id
-        st.session_state.checklist_days = days_back
-        st.session_state.checklist_end_date = end_date
-        st.session_state.checklist_summaries = summaries
-        st.session_state.checklist_rows = first_page
-        st.session_state.checklist_shown = len(first_page)
-        st.session_state.checklist_life = life_for_region
-        st.session_state.checklist_world_life = life_for_world
-        st.session_state.checklist_hotspot_name = labels.get(loc_id, loc_id)
-        st.session_state.checklist_source = "api"
-        st.session_state.checklist_cache_all_dates = False
+        if ensure_api_key():
+            active_region = st.session_state.get("checklists_region", region_code)
+            life_for_region = load_life_list(active_region)
+            life_for_world = load_life_list(WORLD_LIFE_LIST_CODE)
+            with st.spinner("Loading checklists…"):
+                try:
+                    client = EBirdClient()
+                    summaries = client.location_checklists(
+                        loc_id,
+                        days_back=days_back,
+                        end_date=end_date,
+                    )
+                    first_page = enrich_checklists(
+                        client,
+                        summaries[:page_size],
+                        life_for_region,
+                        life_for_world,
+                        allow_api=True,
+                    )
+                except MissingEbirdApiKey:
+                    ensure_api_key()
+                except requests.HTTPError as exc:
+                    st.error(
+                        f"eBird API error: {exc.response.status_code if exc.response else exc}"
+                    )
+                except Exception as exc:
+                    st.error(str(exc))
+                else:
+                    st.session_state.checklists_loc_id = loc_id
+                    st.session_state.checklist_days = days_back
+                    st.session_state.checklist_end_date = end_date
+                    st.session_state.checklist_summaries = summaries
+                    st.session_state.checklist_rows = first_page
+                    st.session_state.checklist_shown = len(first_page)
+                    st.session_state.checklist_life = life_for_region
+                    st.session_state.checklist_world_life = life_for_world
+                    st.session_state.checklist_hotspot_name = labels.get(loc_id, loc_id)
+                    st.session_state.checklist_source = "api"
+                    st.session_state.checklist_cache_all_dates = False
 
     if show_cache or show_all_cache:
         active_region = st.session_state.get("checklists_region", region_code)
@@ -4228,6 +4304,7 @@ def render_checklists() -> None:
             start = shown
             end = min(shown + page_size, total)
             with st.spinner("Loading more checklists…"):
+                more = None
                 try:
                     if source == "cache":
                         client = EBirdClient() if get_api_key() else None
@@ -4238,7 +4315,7 @@ def render_checklists() -> None:
                             life_for_world,
                             allow_api=bool(client),
                         )
-                    else:
+                    elif ensure_api_key():
                         more = enrich_checklists(
                             EBirdClient(),
                             summaries[start:end],
@@ -4246,18 +4323,20 @@ def render_checklists() -> None:
                             life_for_world,
                             allow_api=True,
                         )
+                except MissingEbirdApiKey:
+                    ensure_api_key()
                 except requests.HTTPError as exc:
                     st.error(
                         f"eBird API error: "
                         f"{exc.response.status_code if exc.response else exc}"
                     )
-                    return
                 except Exception as exc:
                     st.error(str(exc))
-                    return
-            st.session_state.checklist_rows = rows + more
-            st.session_state.checklist_shown = end
-            st.rerun()
+                else:
+                    if more is not None:
+                        st.session_state.checklist_rows = rows + more
+                        st.session_state.checklist_shown = end
+                        st.rerun()
 
     loaded_rows = st.session_state.get("checklist_rows", [])
     species_summary = build_species_summary(loaded_rows)
@@ -4394,6 +4473,9 @@ def render_checklists() -> None:
                                     "is_new_world": False,
                                 }
                             )
+                    except MissingEbirdApiKey:
+                        ensure_api_key()
+                        continue
                     except Exception as exc:
                         st.write(f"Could not load checklist detail: {exc}")
                         continue
@@ -4445,6 +4527,8 @@ def render_checklists() -> None:
 
 st.set_page_config(page_title="Birds", page_icon="🪶", layout="centered")
 get_api_key()  # ingest ?EBIRD_API_KEY=… into session when present
+if st.session_state.get("ebird_api_key_needed") and not get_api_key():
+    render_api_key_form()
 render_ebird_rate_limit_notices()
 if st.session_state.get("gallery_birds"):
     render_gallery()

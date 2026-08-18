@@ -1,0 +1,4393 @@
+{
+  "by_code": {
+    "acafly": {
+      "howMany": 1,
+      "locId": "L127409",
+      "locName": "J.W. Corbett Wildlife Management Area",
+      "obsDt": "2026-05-05 10:22",
+      "source": "local_checklist",
+      "speciesCode": "acafly",
+      "subId": "S333102642"
+    },
+    "accipi": {
+      "howMany": 1,
+      "locId": "L58243701",
+      "locName": "Shawano Drainage District",
+      "obsDt": "2026-05-25 08:00",
+      "source": "local_checklist",
+      "speciesCode": "accipi",
+      "subId": "S346216078"
+    },
+    "afrcod1": {
+      "howMany": 1,
+      "locId": "L11323760",
+      "locName": "James A. Rutherford Park",
+      "obsDt": "2026-05-07 09:00",
+      "source": "local_checklist",
+      "speciesCode": "afrcod1",
+      "subId": "S334027590"
+    },
+    "agwtea1": {
+      "howMany": 1,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-03-22 07:17",
+      "source": "local_checklist",
+      "speciesCode": "agwtea1",
+      "subId": "S311999111"
+    },
+    "aldfly": {
+      "howMany": 3,
+      "locId": "L4081873",
+      "locName": "Loxahatchee NWR--Lee Way (Treeline Trail)",
+      "obsDt": "2025-10-04 08:33",
+      "source": "local_checklist",
+      "speciesCode": "aldfly",
+      "subId": "S277214403"
+    },
+    "ambduc": {
+      "howMany": 2,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-04-08 12:56",
+      "source": "local_checklist",
+      "speciesCode": "ambduc",
+      "subId": "S318833521"
+    },
+    "ameavo": {
+      "howMany": 16,
+      "locId": "L364884",
+      "locName": "Duda Farms - PRIVATE PROPERTY (Access via AE Trips Only)",
+      "obsDt": "2026-08-15 06:51",
+      "source": "local_checklist",
+      "speciesCode": "ameavo",
+      "subId": "S383776870"
+    },
+    "amebit": {
+      "howMany": 1,
+      "locId": "L143084",
+      "locName": "Wakodahatchee Wetlands",
+      "obsDt": "2026-05-16 16:35",
+      "source": "local_checklist",
+      "speciesCode": "amebit",
+      "subId": "S340389123"
+    },
+    "amecoo": {
+      "howMany": 3,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-08 07:57",
+      "source": "local_checklist",
+      "speciesCode": "amecoo",
+      "subId": "S381322566"
+    },
+    "amecro": {
+      "howMany": 2,
+      "locId": "L8054430",
+      "locName": "Holey Land WMA (Palm Beach County)",
+      "obsDt": "2026-08-08 09:00",
+      "source": "local_checklist",
+      "speciesCode": "amecro",
+      "subId": "S381188674"
+    },
+    "amegfi": {
+      "howMany": 1,
+      "locId": "L10669780",
+      "locName": "Palmetto National Park",
+      "obsDt": "2026-03-09 12:00",
+      "source": "local_checklist",
+      "speciesCode": "amegfi",
+      "subId": "S307844345"
+    },
+    "amekes": {
+      "howMany": 1,
+      "locId": "L66081293",
+      "locName": "Canal #?",
+      "obsDt": "2026-05-13 11:00",
+      "source": "local_checklist",
+      "speciesCode": "amekes",
+      "subId": "S338312929"
+    },
+    "amekes1": {
+      "howMany": 1,
+      "locId": "L3998307",
+      "locName": "Florida Atlantic University",
+      "obsDt": "2026-04-10 16:47",
+      "source": "local_checklist",
+      "speciesCode": "amekes1",
+      "subId": "S319828069"
+    },
+    "amekes7": {
+      "howMany": 1,
+      "locId": "L127408",
+      "locName": "Loxahatchee NWR",
+      "obsDt": "2026-07-21 13:34",
+      "source": "local_checklist",
+      "speciesCode": "amekes7",
+      "subId": "S374840512"
+    },
+    "ameoys": {
+      "howMany": 2,
+      "locId": "L3187664",
+      "locName": "Palm Beach Par-3 Golf Course",
+      "obsDt": "2026-08-13 06:45",
+      "source": "local_checklist",
+      "speciesCode": "ameoys",
+      "subId": "S383021204"
+    },
+    "amepip": {
+      "howMany": 1,
+      "locId": "L4478244",
+      "locName": "Sem-Chi Rice Road (Does Not Include Atlantic Sugar Mill)",
+      "obsDt": "2026-01-31 08:09",
+      "source": "local_checklist",
+      "speciesCode": "amepip",
+      "subId": "S297262296"
+    },
+    "amered": {
+      "howMany": 2,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-08-16 09:05",
+      "source": "local_checklist",
+      "speciesCode": "amered",
+      "subId": "S384035711"
+    },
+    "amerob": {
+      "howMany": 1,
+      "locId": "L46636531",
+      "locName": "A-2 Reservoir",
+      "obsDt": "2026-07-02 09:30",
+      "source": "local_checklist",
+      "speciesCode": "amerob",
+      "subId": "S366765429"
+    },
+    "amerob1": {
+      "howMany": 1,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-02-16 14:22",
+      "source": "local_checklist",
+      "speciesCode": "amerob1",
+      "subId": "S301538217"
+    },
+    "amewig": {
+      "howMany": 1,
+      "locId": "L6176992",
+      "locName": "6 Mile Bend Ponds - (No Public Access - View From Road)",
+      "obsDt": "2026-05-09 19:05",
+      "source": "local_checklist",
+      "speciesCode": "amewig",
+      "subId": "S335875649"
+    },
+    "amewoo": {
+      "howMany": 1,
+      "locId": "L29486569",
+      "locName": "John C. and Mariana Jones/Hungryland Wildlife and Environmental Area (Palm Beach County)",
+      "obsDt": "2026-02-14 18:33",
+      "source": "local_checklist",
+      "speciesCode": "amewoo",
+      "subId": "S300723226"
+    },
+    "amgplo": {
+      "howMany": 1,
+      "locId": "L33386917",
+      "locName": "3901\u20133955 Brown's Farm Rd, Belle Glade US-FL 26.62299, -80.56378",
+      "obsDt": "2026-05-06 06:53",
+      "source": "local_checklist",
+      "speciesCode": "amgplo",
+      "subId": "S333799583"
+    },
+    "amhgul1": {
+      "howMany": 2,
+      "locId": "L127416",
+      "locName": "Spanish River Park",
+      "obsDt": "2026-08-05 10:01",
+      "source": "local_checklist",
+      "speciesCode": "amhgul1",
+      "subId": "S380201476"
+    },
+    "amwpel": {
+      "howMany": 100,
+      "locId": "L364884",
+      "locName": "Duda Farms - PRIVATE PROPERTY (Access via AE Trips Only)",
+      "obsDt": "2026-08-15 06:51",
+      "source": "local_checklist",
+      "speciesCode": "amwpel",
+      "subId": "S383776870"
+    },
+    "anhing": {
+      "howMany": 3,
+      "locId": "L4478244",
+      "locName": "Sem-Chi Rice Road (Does Not Include Atlantic Sugar Mill)",
+      "obsDt": "2026-08-16 13:58",
+      "source": "local_checklist",
+      "speciesCode": "anhing",
+      "subId": "S384135507"
+    },
+    "arcter": {
+      "howMany": 1,
+      "locId": "L588392",
+      "locName": "Jupiter Inlet",
+      "obsDt": "2026-05-26 11:49",
+      "source": "local_checklist",
+      "speciesCode": "arcter",
+      "subId": "S347244367"
+    },
+    "audshe": {
+      "howMany": 1,
+      "locId": "L74815328",
+      "locName": "Palm Beach Pelagics 8/1/26 - Leg 3",
+      "obsDt": "2026-08-01 09:19",
+      "source": "local_checklist",
+      "speciesCode": "audshe",
+      "subId": "S378812463"
+    },
+    "aythya1": {
+      "howMany": 1,
+      "locId": "L2792995",
+      "locName": "Winston Trails (Restricted Access)",
+      "obsDt": "2026-02-07 08:19",
+      "source": "local_checklist",
+      "speciesCode": "aythya1",
+      "subId": "S298598706"
+    },
+    "babwar": {
+      "howMany": 1,
+      "locId": "L17443024",
+      "locName": "North County Aquatic Center",
+      "obsDt": "2026-05-03 09:00",
+      "source": "local_checklist",
+      "speciesCode": "babwar",
+      "subId": "S331809843"
+    },
+    "bacspa": {
+      "howMany": 2,
+      "locId": "L1672227",
+      "locName": "Jupiter Lighthouse Park",
+      "obsDt": "2026-07-20 16:29",
+      "source": "local_checklist",
+      "speciesCode": "bacspa",
+      "subId": "S374533465"
+    },
+    "bahmoc": {
+      "howMany": 1,
+      "locId": "L60835441",
+      "locName": "17104 Cappuccino Way, Boca Raton US-FL 26.42138, -80.20235",
+      "obsDt": "2026-05-03 13:23",
+      "source": "local_checklist",
+      "speciesCode": "bahmoc",
+      "subId": "S332012050"
+    },
+    "baleag": {
+      "howMany": 1,
+      "locId": "L1027913",
+      "locName": "Stormwater Treatment Area 1E - Public Use Area",
+      "obsDt": "2026-08-16 15:08",
+      "source": "local_checklist",
+      "speciesCode": "baleag",
+      "subId": "S384173257"
+    },
+    "balori": {
+      "howMany": 1,
+      "locId": "L1293707",
+      "locName": "Lantana Nature Preserve",
+      "obsDt": "2026-05-04 13:19",
+      "source": "local_checklist",
+      "speciesCode": "balori",
+      "subId": "S332598047"
+    },
+    "banswa": {
+      "howMany": 2,
+      "locId": "L6176992",
+      "locName": "6 Mile Bend Ponds - (No Public Access - View From Road)",
+      "obsDt": "2026-08-16 07:27",
+      "source": "local_checklist",
+      "speciesCode": "banswa",
+      "subId": "S383955300"
+    },
+    "barowl8": {
+      "howMany": 5,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-02 20:16",
+      "source": "local_checklist",
+      "speciesCode": "barowl8",
+      "subId": "S379401286"
+    },
+    "barpet": {
+      "howMany": 1,
+      "locId": "L75333517",
+      "locName": "North Atlantic Ocean US (26.6370,-79.8920)",
+      "obsDt": "2026-08-09 07:47",
+      "source": "local_checklist",
+      "speciesCode": "barpet",
+      "subId": "S381733859"
+    },
+    "barswa": {
+      "howMany": 45,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-16 11:24",
+      "source": "local_checklist",
+      "speciesCode": "barswa",
+      "subId": "S384136402"
+    },
+    "barswa5": {
+      "howMany": 4,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-08-16 09:05",
+      "source": "local_checklist",
+      "speciesCode": "barswa5",
+      "subId": "S384035711"
+    },
+    "bawwar": {
+      "howMany": 2,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-08-16 09:05",
+      "source": "local_checklist",
+      "speciesCode": "bawwar",
+      "subId": "S384035711"
+    },
+    "bbwduc": {
+      "howMany": 4,
+      "locId": "L2726529",
+      "locName": "Winding Waters Natural Area",
+      "obsDt": "2026-08-16 13:51",
+      "source": "local_checklist",
+      "speciesCode": "bbwduc",
+      "subId": "S384155316"
+    },
+    "bcnher": {
+      "howMany": 3,
+      "locId": "L75727282",
+      "locName": "2044\u20132098 Brown's Farm Rd, Belle Glade US-FL 26.63553, -80.57461",
+      "obsDt": "2026-08-16 09:26",
+      "source": "local_checklist",
+      "speciesCode": "bcnher",
+      "subId": "S384005242"
+    },
+    "belkin1": {
+      "howMany": 1,
+      "locId": "L22198774",
+      "locName": "Atlantic Sugar Mill",
+      "obsDt": "2026-08-16 13:27",
+      "source": "local_checklist",
+      "speciesCode": "belkin1",
+      "subId": "S384135711"
+    },
+    "belvir": {
+      "howMany": 1,
+      "locId": "L127416",
+      "locName": "Spanish River Park",
+      "obsDt": "2025-10-16 08:30",
+      "source": "local_checklist",
+      "speciesCode": "belvir",
+      "subId": "S279748108"
+    },
+    "belvir1": {
+      "howMany": 1,
+      "locId": "L3998307",
+      "locName": "Florida Atlantic University",
+      "obsDt": "2025-10-18 10:16",
+      "source": "local_checklist",
+      "speciesCode": "belvir1",
+      "subId": "S280220967"
+    },
+    "bicthr": {
+      "howMany": 1,
+      "locId": "L3998307",
+      "locName": "Florida Atlantic University",
+      "obsDt": "2026-05-06 15:30",
+      "source": "local_checklist",
+      "speciesCode": "bicthr",
+      "subId": "S333798065"
+    },
+    "bird1": {
+      "howMany": 1,
+      "locId": "L75449958",
+      "locName": "James A. Rutherford Park",
+      "obsDt": "2026-08-11 13:52",
+      "source": "local_checklist",
+      "speciesCode": "bird1",
+      "subId": "S382406679"
+    },
+    "bkbplo": {
+      "howMany": 1,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-16 11:24",
+      "source": "local_checklist",
+      "speciesCode": "bkbplo",
+      "subId": "S384136402"
+    },
+    "bkbwar": {
+      "howMany": 1,
+      "locId": "L870652",
+      "locName": "Boynton Beach Inlet Park",
+      "obsDt": "2026-05-05 08:30",
+      "source": "local_checklist",
+      "speciesCode": "bkbwar",
+      "subId": "S333229151"
+    },
+    "bkbwhd1": {
+      "howMany": 6,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-08-16 09:05",
+      "source": "local_checklist",
+      "speciesCode": "bkbwhd1",
+      "subId": "S384035711"
+    },
+    "bkcnih2": {
+      "howMany": 1,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-15 09:05",
+      "source": "local_checklist",
+      "speciesCode": "bkcnih2",
+      "subId": "S383603112"
+    },
+    "bkcpet": {
+      "howMany": 1,
+      "locId": "L24915331",
+      "locName": "The Hill -- Offshore Palm Beach County",
+      "obsDt": "2026-06-14 07:51",
+      "source": "local_checklist",
+      "speciesCode": "bkcpet",
+      "subId": "S357409725"
+    },
+    "bkhgul": {
+      "howMany": 1,
+      "locId": "L10672121",
+      "locName": "Winn-Dixie Plaza",
+      "obsDt": "2026-03-10 18:13",
+      "source": "local_checklist",
+      "speciesCode": "bkhgul",
+      "subId": "S308123107"
+    },
+    "bkhpar": {
+      "howMany": 2,
+      "locId": "L1017638",
+      "locName": "Peaceful Waters Sanctuary",
+      "obsDt": "2026-08-16 11:18",
+      "source": "local_checklist",
+      "speciesCode": "bkhpar",
+      "subId": "S384094400"
+    },
+    "bknsti": {
+      "howMany": 4,
+      "locId": "L22198774",
+      "locName": "Atlantic Sugar Mill",
+      "obsDt": "2026-08-16 13:27",
+      "source": "local_checklist",
+      "speciesCode": "bknsti",
+      "subId": "S384135711"
+    },
+    "bknsti1": {
+      "howMany": 250,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-15 15:56",
+      "source": "local_checklist",
+      "speciesCode": "bknsti1",
+      "subId": "S383782290"
+    },
+    "bkpwar": {
+      "howMany": 1,
+      "locId": "L7228082",
+      "locName": "Serenoa Glade Preserve",
+      "obsDt": "2026-05-17 15:08",
+      "source": "local_checklist",
+      "speciesCode": "bkpwar",
+      "subId": "S341236005"
+    },
+    "bkwvir": {
+      "howMany": 1,
+      "locId": "L1293707",
+      "locName": "Lantana Nature Preserve",
+      "obsDt": "2026-05-24 16:40",
+      "source": "local_checklist",
+      "speciesCode": "bkwvir",
+      "subId": "S345855602"
+    },
+    "blackb": {
+      "howMany": 1,
+      "locId": "L127408",
+      "locName": "Loxahatchee NWR",
+      "obsDt": "2026-07-24 17:23",
+      "source": "local_checklist",
+      "speciesCode": "blackb",
+      "subId": "S375981081"
+    },
+    "blksco2": {
+      "howMany": 9,
+      "locId": "L870652",
+      "locName": "Boynton Beach Inlet Park",
+      "obsDt": "2026-01-28 08:17",
+      "source": "local_checklist",
+      "speciesCode": "blksco2",
+      "subId": "S296739967"
+    },
+    "blkski": {
+      "howMany": 1,
+      "locId": "L20190603",
+      "locName": "VegPro Farms - NOW CLOSED TO PUBLIC ACCESS",
+      "obsDt": "2026-08-16 07:01",
+      "source": "local_checklist",
+      "speciesCode": "blkski",
+      "subId": "S383942245"
+    },
+    "blkswa": {
+      "howMany": 2,
+      "locId": "L870652",
+      "locName": "Boynton Beach Inlet Park",
+      "obsDt": "2026-01-02 07:00",
+      "source": "local_checklist",
+      "speciesCode": "blkswa",
+      "subId": "S291857750"
+    },
+    "blkter": {
+      "howMany": 5,
+      "locId": "L22198774",
+      "locName": "Atlantic Sugar Mill",
+      "obsDt": "2026-08-16 13:27",
+      "source": "local_checklist",
+      "speciesCode": "blkter",
+      "subId": "S384135711"
+    },
+    "blkvul": {
+      "howMany": 2,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-16 11:24",
+      "source": "local_checklist",
+      "speciesCode": "blkvul",
+      "subId": "S384136402"
+    },
+    "blugrb1": {
+      "howMany": 1,
+      "locId": "L127409",
+      "locName": "J.W. Corbett Wildlife Management Area",
+      "obsDt": "2026-05-05 10:22",
+      "source": "local_checklist",
+      "speciesCode": "blugrb1",
+      "subId": "S333102642"
+    },
+    "blujay": {
+      "howMany": 1,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-08-16 15:58",
+      "source": "local_checklist",
+      "speciesCode": "blujay",
+      "subId": "S384175488"
+    },
+    "bncfly": {
+      "howMany": 1,
+      "locId": "L127416",
+      "locName": "Spanish River Park",
+      "obsDt": "2026-04-03 07:58",
+      "source": "local_checklist",
+      "speciesCode": "bncfly",
+      "subId": "S316257819"
+    },
+    "bnhcow": {
+      "howMany": 14,
+      "locId": "L4478244",
+      "locName": "Sem-Chi Rice Road (Does Not Include Atlantic Sugar Mill)",
+      "obsDt": "2026-08-16 13:58",
+      "source": "local_checklist",
+      "speciesCode": "bnhcow",
+      "subId": "S384135507"
+    },
+    "boboli": {
+      "howMany": 1,
+      "locId": "L6176992",
+      "locName": "6 Mile Bend Ponds - (No Public Access - View From Road)",
+      "obsDt": "2026-08-15 07:15",
+      "source": "local_checklist",
+      "speciesCode": "boboli",
+      "subId": "S383539977"
+    },
+    "bongul": {
+      "howMany": 3,
+      "locId": "L6961526",
+      "locName": "Manatee Lagoon",
+      "obsDt": "2026-02-19 14:03",
+      "source": "local_checklist",
+      "speciesCode": "bongul",
+      "subId": "S302260869"
+    },
+    "botgra": {
+      "howMany": 2,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-08-16 15:58",
+      "source": "local_checklist",
+      "speciesCode": "botgra",
+      "subId": "S384175488"
+    },
+    "botgra3": {
+      "howMany": 6,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-08-16 09:05",
+      "source": "local_checklist",
+      "speciesCode": "botgra3",
+      "subId": "S384035711"
+    },
+    "brdowl": {
+      "howMany": 1,
+      "locId": "L666907",
+      "locName": "Riverbend Park",
+      "obsDt": "2026-08-16 09:41",
+      "source": "local_checklist",
+      "speciesCode": "brdowl",
+      "subId": "S384044319"
+    },
+    "briter1": {
+      "howMany": 12,
+      "locId": "L75723163",
+      "locName": "Beto-lagic - Boca Inlet, Leg 1 (26.339, -80.014)",
+      "obsDt": "2026-08-16 07:53",
+      "source": "local_checklist",
+      "speciesCode": "briter1",
+      "subId": "S384091880"
+    },
+    "brnboo": {
+      "howMany": 1,
+      "locId": "L44252130",
+      "locName": "Salty",
+      "obsDt": "2026-08-14 12:14",
+      "source": "local_checklist",
+      "speciesCode": "brnboo",
+      "subId": "S383289140"
+    },
+    "brnboo2": {
+      "howMany": 4,
+      "locId": "L74815307",
+      "locName": "Palm Beach Pelagics 8/1/26 - Leg 2",
+      "obsDt": "2026-08-01 08:00",
+      "source": "local_checklist",
+      "speciesCode": "brnboo2",
+      "subId": "S378812363"
+    },
+    "brnnod": {
+      "howMany": 1,
+      "locId": "L24915331",
+      "locName": "The Hill -- Offshore Palm Beach County",
+      "obsDt": "2026-06-28 07:48",
+      "source": "local_checklist",
+      "speciesCode": "brnnod",
+      "subId": "S364924298"
+    },
+    "brnowl": {
+      "howMany": 1,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-16 11:24",
+      "source": "local_checklist",
+      "speciesCode": "brnowl",
+      "subId": "S384136402"
+    },
+    "brnpel": {
+      "howMany": 2,
+      "locId": "L127414",
+      "locName": "John D. MacArthur Beach SP",
+      "obsDt": "2026-08-16 08:02",
+      "source": "local_checklist",
+      "speciesCode": "brnpel",
+      "subId": "S384041098"
+    },
+    "brnpel2": {
+      "howMany": 2,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-08-16 15:58",
+      "source": "local_checklist",
+      "speciesCode": "brnpel2",
+      "subId": "S384175488"
+    },
+    "brnthr": {
+      "howMany": 3,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-08-16 09:05",
+      "source": "local_checklist",
+      "speciesCode": "brnthr",
+      "subId": "S384035711"
+    },
+    "brocow": {
+      "howMany": 1,
+      "locId": "L4478244",
+      "locName": "Sem-Chi Rice Road (Does Not Include Atlantic Sugar Mill)",
+      "obsDt": "2026-04-19 11:08",
+      "source": "local_checklist",
+      "speciesCode": "brocow",
+      "subId": "S324457126"
+    },
+    "brwhaw": {
+      "howMany": 1,
+      "locId": "L46636531",
+      "locName": "A-2 Reservoir",
+      "obsDt": "2026-04-17 10:21",
+      "source": "local_checklist",
+      "speciesCode": "brwhaw",
+      "subId": "S323175162"
+    },
+    "btbwar": {
+      "howMany": 1,
+      "locId": "L1773796",
+      "locName": "Pondhawk Natural Area",
+      "obsDt": "2026-08-15 10:55",
+      "source": "local_checklist",
+      "speciesCode": "btbwar",
+      "subId": "S383661964"
+    },
+    "btnwar": {
+      "howMany": 1,
+      "locId": "L1293707",
+      "locName": "Lantana Nature Preserve",
+      "obsDt": "2026-05-09 08:05",
+      "source": "local_checklist",
+      "speciesCode": "btnwar",
+      "subId": "S335316520"
+    },
+    "bucpar": {
+      "howMany": 2,
+      "locId": "L17603618",
+      "locName": "Home",
+      "obsDt": "2026-07-08 09:08",
+      "source": "local_checklist",
+      "speciesCode": "bucpar",
+      "subId": "S369317495"
+    },
+    "budger": {
+      "howMany": 1,
+      "locId": "L870652",
+      "locName": "Boynton Beach Inlet Park",
+      "obsDt": "2026-07-31 06:30",
+      "source": "local_checklist",
+      "speciesCode": "budger",
+      "subId": "S378374050"
+    },
+    "buffle": {
+      "howMany": 1,
+      "locId": "L4478244",
+      "locName": "Sem-Chi Rice Road (Does Not Include Atlantic Sugar Mill)",
+      "obsDt": "2025-12-06 11:16",
+      "source": "local_checklist",
+      "speciesCode": "buffle",
+      "subId": "S287551158"
+    },
+    "buggna": {
+      "howMany": 1,
+      "locId": "L22198774",
+      "locName": "Atlantic Sugar Mill",
+      "obsDt": "2026-08-16 13:27",
+      "source": "local_checklist",
+      "speciesCode": "buggna",
+      "subId": "S384135711"
+    },
+    "buggna1": {
+      "howMany": 2,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-08-16 09:05",
+      "source": "local_checklist",
+      "speciesCode": "buggna1",
+      "subId": "S384035711"
+    },
+    "buhvir": {
+      "howMany": 1,
+      "locId": "L241457",
+      "locName": "Seacrest Scrub Natural Area",
+      "obsDt": "2026-05-10 09:19",
+      "source": "local_checklist",
+      "speciesCode": "buhvir",
+      "subId": "S336337124"
+    },
+    "burowl": {
+      "howMany": 1,
+      "locId": "L2824594",
+      "locName": "Florida Atlantic University Ecological Site",
+      "obsDt": "2026-08-15 11:30",
+      "source": "local_checklist",
+      "speciesCode": "burowl",
+      "subId": "S383646928"
+    },
+    "burowl3": {
+      "howMany": 3,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-15 15:56",
+      "source": "local_checklist",
+      "speciesCode": "burowl3",
+      "subId": "S383782290"
+    },
+    "buteo": {
+      "howMany": 1,
+      "locId": "L46636531",
+      "locName": "A-2 Reservoir",
+      "obsDt": "2026-08-13 09:30",
+      "source": "local_checklist",
+      "speciesCode": "buteo",
+      "subId": "S382979096"
+    },
+    "buwtea": {
+      "howMany": 1,
+      "locId": "L46636531",
+      "locName": "A-2 Reservoir",
+      "obsDt": "2026-08-14 09:35",
+      "source": "local_checklist",
+      "speciesCode": "buwtea",
+      "subId": "S383353627"
+    },
+    "buwwar": {
+      "howMany": 1,
+      "locId": "L127408",
+      "locName": "Loxahatchee NWR",
+      "obsDt": "2026-04-13 17:21",
+      "source": "local_checklist",
+      "speciesCode": "buwwar",
+      "subId": "S321414982"
+    },
+    "bwxtea1": {
+      "howMany": 0,
+      "locId": "L1017638",
+      "locName": "Peaceful Waters Sanctuary",
+      "obsDt": "2026-02-20 10:53",
+      "source": "local_checklist",
+      "speciesCode": "bwxtea1",
+      "subId": "S306026391"
+    },
+    "calgul": {
+      "howMany": 1,
+      "locId": "L13783389",
+      "locName": "Solid Waste Authority of Palm Beach County Landfill (No Public Access)",
+      "obsDt": "2026-02-20 10:02",
+      "source": "local_checklist",
+      "speciesCode": "calgul",
+      "subId": "S302566218"
+    },
+    "calidr": {
+      "howMany": 1,
+      "locId": "L2597318",
+      "locName": "Eastpointe",
+      "obsDt": "2026-08-13 06:55",
+      "source": "local_checklist",
+      "speciesCode": "calidr",
+      "subId": "S382882122"
+    },
+    "camwar": {
+      "howMany": 1,
+      "locId": "L2718994",
+      "locName": "Back Yard",
+      "obsDt": "2026-05-14 14:33",
+      "source": "local_checklist",
+      "speciesCode": "camwar",
+      "subId": "S338919992"
+    },
+    "cangoo": {
+      "howMany": 0,
+      "locId": "L73921567",
+      "locName": "FL Bell Glade",
+      "obsDt": "2026-07-19 09:22",
+      "source": "local_checklist",
+      "speciesCode": "cangoo",
+      "subId": "S373941505"
+    },
+    "canvas": {
+      "howMany": 1,
+      "locId": "L7086958",
+      "locName": "Stormwater Treatment Area 1W (Limited Access)",
+      "obsDt": "2026-02-05 09:12",
+      "source": "local_checklist",
+      "speciesCode": "canvas",
+      "subId": "S298271317"
+    },
+    "canwar": {
+      "howMany": 1,
+      "locId": "L127408",
+      "locName": "Loxahatchee NWR",
+      "obsDt": "2025-10-07 07:37",
+      "source": "local_checklist",
+      "speciesCode": "canwar",
+      "subId": "S277835850"
+    },
+    "carchi": {
+      "howMany": 1,
+      "locId": "L1773796",
+      "locName": "Pondhawk Natural Area",
+      "obsDt": "2026-03-18 10:14",
+      "source": "local_checklist",
+      "speciesCode": "carchi",
+      "subId": "S310304978"
+    },
+    "carcoo1": {
+      "howMany": 1,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-02 06:56",
+      "source": "local_checklist",
+      "speciesCode": "carcoo1",
+      "subId": "S379106976"
+    },
+    "cargra1": {
+      "howMany": 1,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-02-28 10:21",
+      "source": "local_checklist",
+      "speciesCode": "cargra1",
+      "subId": "S304788871"
+    },
+    "carwre": {
+      "howMany": 1,
+      "locId": "L8278041",
+      "locName": "Fran Reich Preserve SFWMD",
+      "obsDt": "2026-08-16 06:48",
+      "source": "local_checklist",
+      "speciesCode": "carwre",
+      "subId": "S384024573"
+    },
+    "carwre1": {
+      "howMany": 2,
+      "locId": "L225752",
+      "locName": "Frenchman's Forest Nature Preserve",
+      "obsDt": "2026-08-15 06:30",
+      "source": "local_checklist",
+      "speciesCode": "carwre1",
+      "subId": "S383633768"
+    },
+    "caskin": {
+      "howMany": 1,
+      "locId": "L17950366",
+      "locName": "Paul Rardin Park",
+      "obsDt": "2026-02-07 12:12",
+      "source": "local_checklist",
+      "speciesCode": "caskin",
+      "subId": "S298671161"
+    },
+    "caster1": {
+      "howMany": 20,
+      "locId": "L364884",
+      "locName": "Duda Farms - PRIVATE PROPERTY (Access via AE Trips Only)",
+      "obsDt": "2026-08-15 06:51",
+      "source": "local_checklist",
+      "speciesCode": "caster1",
+      "subId": "S383776870"
+    },
+    "categr1": {
+      "howMany": 8,
+      "locId": "L2726529",
+      "locName": "Winding Waters Natural Area",
+      "obsDt": "2026-08-16 13:51",
+      "source": "local_checklist",
+      "speciesCode": "categr1",
+      "subId": "S384155316"
+    },
+    "cathus": {
+      "howMany": 1,
+      "locId": "L1293707",
+      "locName": "Lantana Nature Preserve",
+      "obsDt": "2026-05-09 11:00",
+      "source": "local_checklist",
+      "speciesCode": "cathus",
+      "subId": "S335744916"
+    },
+    "cavswa": {
+      "howMany": 10,
+      "locId": "L6176992",
+      "locName": "6 Mile Bend Ponds - (No Public Access - View From Road)",
+      "obsDt": "2026-08-16 07:27",
+      "source": "local_checklist",
+      "speciesCode": "cavswa",
+      "subId": "S383955300"
+    },
+    "cavswa2": {
+      "howMany": 20,
+      "locId": "L6176992",
+      "locName": "6 Mile Bend Ponds - (No Public Access - View From Road)",
+      "obsDt": "2026-08-15 07:15",
+      "source": "local_checklist",
+      "speciesCode": "cavswa2",
+      "subId": "S383539977"
+    },
+    "cedwax": {
+      "howMany": 1,
+      "locId": "L13574500",
+      "locName": "Bellagio, Florida",
+      "obsDt": "2026-05-10 10:15",
+      "source": "local_checklist",
+      "speciesCode": "cedwax",
+      "subId": "S336379782"
+    },
+    "chispa": {
+      "howMany": 1,
+      "locId": "L2726529",
+      "locName": "Winding Waters Natural Area",
+      "obsDt": "2026-02-26 07:03",
+      "source": "local_checklist",
+      "speciesCode": "chispa",
+      "subId": "S304015697"
+    },
+    "chiswi": {
+      "howMany": 1,
+      "locId": "L225752",
+      "locName": "Frenchman's Forest Nature Preserve",
+      "obsDt": "2026-08-15 06:30",
+      "source": "local_checklist",
+      "speciesCode": "chiswi",
+      "subId": "S383633768"
+    },
+    "chswar": {
+      "howMany": 2,
+      "locId": "L127416",
+      "locName": "Spanish River Park",
+      "obsDt": "2025-10-14 08:45",
+      "source": "local_checklist",
+      "speciesCode": "chswar",
+      "subId": "S279387712"
+    },
+    "chwwid": {
+      "howMany": 1,
+      "locId": "L225752",
+      "locName": "Frenchman's Forest Nature Preserve",
+      "obsDt": "2026-08-15 06:30",
+      "source": "local_checklist",
+      "speciesCode": "chwwid",
+      "subId": "S383633768"
+    },
+    "clarai1": {
+      "howMany": 1,
+      "locId": "L9948912",
+      "locName": "Jupiter Inlet Lighthouse Outstanding Natural Area",
+      "obsDt": "2026-01-26 10:45",
+      "source": "local_checklist",
+      "speciesCode": "clarai1",
+      "subId": "S296423773"
+    },
+    "clarai11": {
+      "howMany": 1,
+      "locId": "L7044989",
+      "locName": "Harvey E. Oyer Jr. Park",
+      "obsDt": "2026-01-19 06:58",
+      "source": "local_checklist",
+      "speciesCode": "clarai11",
+      "subId": "S295160249"
+    },
+    "clcspa": {
+      "howMany": 1,
+      "locId": "L17702838",
+      "locName": "Morning Star Farms Rd",
+      "obsDt": "2026-03-13 08:12",
+      "source": "local_checklist",
+      "speciesCode": "clcspa",
+      "subId": "S308835242"
+    },
+    "cliswa": {
+      "howMany": 1,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-16 11:24",
+      "source": "local_checklist",
+      "speciesCode": "cliswa",
+      "subId": "S384136402"
+    },
+    "cliswa2": {
+      "howMany": 1,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-08-16 09:05",
+      "source": "local_checklist",
+      "speciesCode": "cliswa2",
+      "subId": "S384035711"
+    },
+    "cockat": {
+      "howMany": 1,
+      "locId": "L581830",
+      "locName": "Belle Glade Marina & Torry Island",
+      "obsDt": "2026-04-17 07:06",
+      "source": "local_checklist",
+      "speciesCode": "cockat",
+      "subId": "S323216767"
+    },
+    "cogdov": {
+      "howMany": 2,
+      "locId": "L22198774",
+      "locName": "Atlantic Sugar Mill",
+      "obsDt": "2026-08-16 13:27",
+      "source": "local_checklist",
+      "speciesCode": "cogdov",
+      "subId": "S384135711"
+    },
+    "comeid": {
+      "howMany": 1,
+      "locId": "L8077009",
+      "locName": "Peanut Island Park",
+      "obsDt": "2026-03-09 19:06",
+      "source": "local_checklist",
+      "speciesCode": "comeid",
+      "subId": "S307831329"
+    },
+    "comgal1": {
+      "howMany": 11,
+      "locId": "L2726529",
+      "locName": "Winding Waters Natural Area",
+      "obsDt": "2026-08-16 13:51",
+      "source": "local_checklist",
+      "speciesCode": "comgal1",
+      "subId": "S384155316"
+    },
+    "comgra": {
+      "howMany": 1,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-08-16 15:58",
+      "source": "local_checklist",
+      "speciesCode": "comgra",
+      "subId": "S384175488"
+    },
+    "comgra1": {
+      "howMany": 4,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-08-16 09:05",
+      "source": "local_checklist",
+      "speciesCode": "comgra1",
+      "subId": "S384035711"
+    },
+    "comgra4": {
+      "howMany": 14,
+      "locId": "L4081873",
+      "locName": "Loxahatchee NWR--Lee Way (Treeline Trail)",
+      "obsDt": "2025-09-18 10:35",
+      "source": "local_checklist",
+      "speciesCode": "comgra4",
+      "subId": "S274079091"
+    },
+    "comloo": {
+      "howMany": 1,
+      "locId": "L4351584",
+      "locName": "Juno Beach Park and Pier",
+      "obsDt": "2026-04-18 08:26",
+      "source": "local_checklist",
+      "speciesCode": "comloo",
+      "subId": "S323514890"
+    },
+    "commoo2": {
+      "howMany": 38,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-08-16 09:05",
+      "source": "local_checklist",
+      "speciesCode": "commoo2",
+      "subId": "S384035711"
+    },
+    "commyn": {
+      "howMany": 1,
+      "locId": "L56911827",
+      "locName": "130 US-1 S, Tequesta US-FL 26.96072, -80.08521",
+      "obsDt": "2026-08-13 10:07",
+      "source": "local_checklist",
+      "speciesCode": "commyn",
+      "subId": "S382901541"
+    },
+    "comnig": {
+      "howMany": 2,
+      "locId": "L22198774",
+      "locName": "Atlantic Sugar Mill",
+      "obsDt": "2026-08-16 13:27",
+      "source": "local_checklist",
+      "speciesCode": "comnig",
+      "subId": "S384135711"
+    },
+    "compea": {
+      "howMany": 1,
+      "locId": "L31021369",
+      "locName": "My Neighborhood",
+      "obsDt": "2026-08-01 10:30",
+      "source": "local_checklist",
+      "speciesCode": "compea",
+      "subId": "S378750838"
+    },
+    "comshe": {
+      "howMany": 1,
+      "locId": "L57249228",
+      "locName": "33430, Belle Glade US-FL 26.45618, -80.81515",
+      "obsDt": "2026-01-15 13:19",
+      "source": "local_checklist",
+      "speciesCode": "comshe",
+      "subId": "S294372609"
+    },
+    "comter": {
+      "howMany": 1,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-08-12 11:27",
+      "source": "local_checklist",
+      "speciesCode": "comter",
+      "subId": "S382609577"
+    },
+    "comyel": {
+      "howMany": 2,
+      "locId": "L75727282",
+      "locName": "2044\u20132098 Brown's Farm Rd, Belle Glade US-FL 26.63553, -80.57461",
+      "obsDt": "2026-08-16 09:26",
+      "source": "local_checklist",
+      "speciesCode": "comyel",
+      "subId": "S384005242"
+    },
+    "comyel3": {
+      "howMany": 1,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-15 09:05",
+      "source": "local_checklist",
+      "speciesCode": "comyel3",
+      "subId": "S383603112"
+    },
+    "conwar": {
+      "howMany": 1,
+      "locId": "L1293707",
+      "locName": "Lantana Nature Preserve",
+      "obsDt": "2026-05-14 18:13",
+      "source": "local_checklist",
+      "speciesCode": "conwar",
+      "subId": "S339089762"
+    },
+    "coohaw": {
+      "howMany": 1,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-08-16 09:05",
+      "source": "local_checklist",
+      "speciesCode": "coohaw",
+      "subId": "S384035711"
+    },
+    "cormor1": {
+      "howMany": 3,
+      "locId": "L1236915",
+      "locName": "Carlin Park",
+      "obsDt": "2026-08-07 07:00",
+      "source": "local_checklist",
+      "speciesCode": "cormor1",
+      "subId": "S381080047"
+    },
+    "corshe": {
+      "howMany": 7,
+      "locId": "L72305635",
+      "locName": "North Atlantic Ocean (26.7021,-79.6591)",
+      "obsDt": "2026-07-03 10:11",
+      "source": "local_checklist",
+      "speciesCode": "corshe",
+      "subId": "S367143201"
+    },
+    "corshe1": {
+      "howMany": 1,
+      "locId": "L24915331",
+      "locName": "The Hill -- Offshore Palm Beach County",
+      "obsDt": "2026-07-06 06:53",
+      "source": "local_checklist",
+      "speciesCode": "corshe1",
+      "subId": "S368574427"
+    },
+    "corvid2": {
+      "howMany": 2,
+      "locId": "L127408",
+      "locName": "Loxahatchee NWR",
+      "obsDt": "2026-01-19 13:11",
+      "source": "local_checklist",
+      "speciesCode": "corvid2",
+      "subId": "S295277790"
+    },
+    "crecar1": {
+      "howMany": 5,
+      "locId": "L46636531",
+      "locName": "A-2 Reservoir",
+      "obsDt": "2026-08-13 09:30",
+      "source": "local_checklist",
+      "speciesCode": "crecar1",
+      "subId": "S382979096"
+    },
+    "crfpar": {
+      "howMany": 1,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-01-11 10:10",
+      "source": "local_checklist",
+      "speciesCode": "crfpar",
+      "subId": "S293732154"
+    },
+    "crow": {
+      "howMany": 50,
+      "locId": "L9585120",
+      "locName": "Lake Worth Golf Club",
+      "obsDt": "2026-07-30 18:25",
+      "source": "local_checklist",
+      "speciesCode": "crow",
+      "subId": "S378484673"
+    },
+    "dabduc1": {
+      "howMany": 10,
+      "locId": "L870652",
+      "locName": "Boynton Beach Inlet Park",
+      "obsDt": "2026-04-04 07:31",
+      "source": "local_checklist",
+      "speciesCode": "dabduc1",
+      "subId": "S316745088"
+    },
+    "dickci": {
+      "howMany": 1,
+      "locId": "L17702838",
+      "locName": "Morning Star Farms Rd",
+      "obsDt": "2026-03-14 09:37",
+      "source": "local_checklist",
+      "speciesCode": "dickci",
+      "subId": "S309275593"
+    },
+    "diurap1": {
+      "howMany": 1,
+      "locId": "L3392569",
+      "locName": "Karen T. Marcus Sandhill Crane Access Park",
+      "obsDt": "2025-09-27 09:42",
+      "source": "local_checklist",
+      "speciesCode": "diurap1",
+      "subId": "S276314283"
+    },
+    "doccor": {
+      "howMany": 4,
+      "locId": "L22198774",
+      "locName": "Atlantic Sugar Mill",
+      "obsDt": "2026-08-16 13:27",
+      "source": "local_checklist",
+      "speciesCode": "doccor",
+      "subId": "S384135711"
+    },
+    "dove1": {
+      "howMany": 1,
+      "locId": "L10062956",
+      "locName": "Dreher Park South",
+      "obsDt": "2026-04-30 18:55",
+      "source": "local_checklist",
+      "speciesCode": "dove1",
+      "subId": "S330086157"
+    },
+    "dowitc": {
+      "howMany": 3,
+      "locId": "L581841",
+      "locName": "Browns Farm Rd.",
+      "obsDt": "2026-08-16 08:10",
+      "source": "local_checklist",
+      "speciesCode": "dowitc",
+      "subId": "S384136434"
+    },
+    "dowwoo": {
+      "howMany": 1,
+      "locId": "L8278041",
+      "locName": "Fran Reich Preserve SFWMD",
+      "obsDt": "2026-08-16 06:48",
+      "source": "local_checklist",
+      "speciesCode": "dowwoo",
+      "subId": "S384024573"
+    },
+    "dowwoo1": {
+      "howMany": 1,
+      "locId": "L225752",
+      "locName": "Frenchman's Forest Nature Preserve",
+      "obsDt": "2026-08-15 06:30",
+      "source": "local_checklist",
+      "speciesCode": "dowwoo1",
+      "subId": "S383633768"
+    },
+    "duck1": {
+      "howMany": 1,
+      "locId": "L74455366",
+      "locName": "New Vandergrift Williams Rd, Pahokee US-FL 26.73994, -80.53555",
+      "obsDt": "2026-07-26 13:54",
+      "source": "local_checklist",
+      "speciesCode": "duck1",
+      "subId": "S376753073"
+    },
+    "dunlin": {
+      "howMany": 1,
+      "locId": "L51719889",
+      "locName": "South Palm Park",
+      "obsDt": "2026-05-01 16:09",
+      "source": "local_checklist",
+      "speciesCode": "dunlin",
+      "subId": "S330604708"
+    },
+    "easblu": {
+      "howMany": 1,
+      "locId": "L29486569",
+      "locName": "John C. and Mariana Jones/Hungryland Wildlife and Environmental Area (Palm Beach County)",
+      "obsDt": "2026-06-07 17:37",
+      "source": "local_checklist",
+      "speciesCode": "easblu",
+      "subId": "S354289738"
+    },
+    "easkin": {
+      "howMany": 1,
+      "locId": "L364884",
+      "locName": "Duda Farms - PRIVATE PROPERTY (Access via AE Trips Only)",
+      "obsDt": "2026-08-15 06:51",
+      "source": "local_checklist",
+      "speciesCode": "easkin",
+      "subId": "S383776870"
+    },
+    "easmea": {
+      "howMany": 1,
+      "locId": "L581841",
+      "locName": "Browns Farm Rd.",
+      "obsDt": "2026-08-16 08:10",
+      "source": "local_checklist",
+      "speciesCode": "easmea",
+      "subId": "S384136434"
+    },
+    "easmea2": {
+      "howMany": 3,
+      "locId": "L46636531",
+      "locName": "A-2 Reservoir",
+      "obsDt": "2026-08-13 09:30",
+      "source": "local_checklist",
+      "speciesCode": "easmea2",
+      "subId": "S382979096"
+    },
+    "easowl1": {
+      "howMany": 5,
+      "locId": "L225752",
+      "locName": "Frenchman's Forest Nature Preserve",
+      "obsDt": "2026-08-15 06:30",
+      "source": "local_checklist",
+      "speciesCode": "easowl1",
+      "subId": "S383633768"
+    },
+    "easpho": {
+      "howMany": 1,
+      "locId": "L8823973",
+      "locName": "Palm Bach Polo",
+      "obsDt": "2026-03-30 09:54",
+      "source": "local_checklist",
+      "speciesCode": "easpho",
+      "subId": "S315087058"
+    },
+    "eastow": {
+      "howMany": 2,
+      "locId": "L581841",
+      "locName": "Browns Farm Rd.",
+      "obsDt": "2026-08-16 08:10",
+      "source": "local_checklist",
+      "speciesCode": "eastow",
+      "subId": "S384136434"
+    },
+    "eastow2": {
+      "howMany": 1,
+      "locId": "L46636531",
+      "locName": "A-2 Reservoir",
+      "obsDt": "2026-08-03 09:30",
+      "source": "local_checklist",
+      "speciesCode": "eastow2",
+      "subId": "S379712218"
+    },
+    "easwpw1": {
+      "howMany": 1,
+      "locId": "L29486569",
+      "locName": "John C. and Mariana Jones/Hungryland Wildlife and Environmental Area (Palm Beach County)",
+      "obsDt": "2026-04-03 07:06",
+      "source": "local_checklist",
+      "speciesCode": "easwpw1",
+      "subId": "S316534975"
+    },
+    "eawpew": {
+      "howMany": 1,
+      "locId": "L127408",
+      "locName": "Loxahatchee NWR",
+      "obsDt": "2025-11-21 09:23",
+      "source": "local_checklist",
+      "speciesCode": "eawpew",
+      "subId": "S285453998"
+    },
+    "egygoo": {
+      "howMany": 2,
+      "locId": "L666907",
+      "locName": "Riverbend Park",
+      "obsDt": "2026-08-16 09:41",
+      "source": "local_checklist",
+      "speciesCode": "egygoo",
+      "subId": "S384044319"
+    },
+    "empido": {
+      "howMany": 1,
+      "locId": "L17443024",
+      "locName": "North County Aquatic Center",
+      "obsDt": "2026-01-06 08:15",
+      "source": "local_checklist",
+      "speciesCode": "empido",
+      "subId": "S292859867"
+    },
+    "erthaw1": {
+      "howMany": 1,
+      "locId": "L13783389",
+      "locName": "Solid Waste Authority of Palm Beach County Landfill (No Public Access)",
+      "obsDt": "2026-03-22 14:10",
+      "source": "local_checklist",
+      "speciesCode": "erthaw1",
+      "subId": "S312140506"
+    },
+    "eucdov": {
+      "howMany": 2,
+      "locId": "L4478244",
+      "locName": "Sem-Chi Rice Road (Does Not Include Atlantic Sugar Mill)",
+      "obsDt": "2026-08-16 13:58",
+      "source": "local_checklist",
+      "speciesCode": "eucdov",
+      "subId": "S384135507"
+    },
+    "eursta": {
+      "howMany": 5,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-08-16 15:58",
+      "source": "local_checklist",
+      "speciesCode": "eursta",
+      "subId": "S384175488"
+    },
+    "falcon": {
+      "howMany": 1,
+      "locId": "L9948912",
+      "locName": "Jupiter Inlet Lighthouse Outstanding Natural Area",
+      "obsDt": "2026-05-03 14:22",
+      "source": "local_checklist",
+      "speciesCode": "falcon",
+      "subId": "S332023634"
+    },
+    "fiespa": {
+      "howMany": 1,
+      "locId": "L127408",
+      "locName": "Loxahatchee NWR",
+      "obsDt": "2026-04-03 07:01",
+      "source": "local_checklist",
+      "speciesCode": "fiespa",
+      "subId": "S316257854"
+    },
+    "fiscro": {
+      "howMany": 2,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-08-16 15:58",
+      "source": "local_checklist",
+      "speciesCode": "fiscro",
+      "subId": "S384175488"
+    },
+    "flsjay": {
+      "howMany": 1,
+      "locId": "L5960906",
+      "locName": "Lake Worth Beach Park",
+      "obsDt": "2026-02-11 13:34",
+      "source": "local_checklist",
+      "speciesCode": "flsjay",
+      "subId": "S299587011"
+    },
+    "forter": {
+      "howMany": 5,
+      "locId": "L581841",
+      "locName": "Browns Farm Rd.",
+      "obsDt": "2026-08-15 08:30",
+      "source": "local_checklist",
+      "speciesCode": "forter",
+      "subId": "S383556876"
+    },
+    "fuwduc": {
+      "howMany": 7,
+      "locId": "L6176992",
+      "locName": "6 Mile Bend Ponds - (No Public Access - View From Road)",
+      "obsDt": "2026-08-16 07:27",
+      "source": "local_checklist",
+      "speciesCode": "fuwduc",
+      "subId": "S383955300"
+    },
+    "gadwal": {
+      "howMany": 1,
+      "locId": "L143084",
+      "locName": "Wakodahatchee Wetlands",
+      "obsDt": "2026-03-15 09:42",
+      "source": "local_checklist",
+      "speciesCode": "gadwal",
+      "subId": "S309475450"
+    },
+    "gbbgul": {
+      "howMany": 1,
+      "locId": "L3515034",
+      "locName": "Delray Beach--Atlantic Dunes Park",
+      "obsDt": "2026-03-23 13:03",
+      "source": "local_checklist",
+      "speciesCode": "gbbgul",
+      "subId": "S312459547"
+    },
+    "glagul": {
+      "howMany": 1,
+      "locId": "L13783389",
+      "locName": "Solid Waste Authority of Palm Beach County Landfill (No Public Access)",
+      "obsDt": "2026-03-16 14:00",
+      "source": "local_checklist",
+      "speciesCode": "glagul",
+      "subId": "S309843659"
+    },
+    "gloibi": {
+      "howMany": 56,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-16 11:24",
+      "source": "local_checklist",
+      "speciesCode": "gloibi",
+      "subId": "S384136402"
+    },
+    "gnwtea": {
+      "howMany": 1,
+      "locId": "L46636531",
+      "locName": "A-2 Reservoir",
+      "obsDt": "2026-04-06 10:00",
+      "source": "local_checklist",
+      "speciesCode": "gnwtea",
+      "subId": "S318135469"
+    },
+    "gowwar": {
+      "howMany": 1,
+      "locId": "L1293707",
+      "locName": "Lantana Nature Preserve",
+      "obsDt": "2026-04-25 16:15",
+      "source": "local_checklist",
+      "speciesCode": "gowwar",
+      "subId": "S327441133"
+    },
+    "grackl": {
+      "howMany": 3,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-07-31 13:08",
+      "source": "local_checklist",
+      "speciesCode": "grackl",
+      "subId": "S378443234"
+    },
+    "gragoo1": {
+      "howMany": 0,
+      "locId": "L143084",
+      "locName": "Wakodahatchee Wetlands",
+      "obsDt": "2026-04-21 14:30",
+      "source": "local_checklist",
+      "speciesCode": "gragoo1",
+      "subId": "S325187907"
+    },
+    "graspa": {
+      "howMany": 2,
+      "locId": "L22198774",
+      "locName": "Atlantic Sugar Mill",
+      "obsDt": "2026-03-22 11:26",
+      "source": "local_checklist",
+      "speciesCode": "graspa",
+      "subId": "S312078861"
+    },
+    "grbani": {
+      "howMany": 1,
+      "locId": "L28951107",
+      "locName": "Arthur R. Marshall Loxahatchee National Wildlife Refuge, Loxahatchee US-FL 26.67591, -80.38076",
+      "obsDt": "2025-11-02 06:58",
+      "source": "local_checklist",
+      "speciesCode": "grbani",
+      "subId": "S282539404"
+    },
+    "grbher": {
+      "howMany": 1,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-08-16 09:05",
+      "source": "local_checklist",
+      "speciesCode": "grbher",
+      "subId": "S384035711"
+    },
+    "grbher3": {
+      "howMany": 2,
+      "locId": "L4478244",
+      "locName": "Sem-Chi Rice Road (Does Not Include Atlantic Sugar Mill)",
+      "obsDt": "2026-08-16 13:58",
+      "source": "local_checklist",
+      "speciesCode": "grbher3",
+      "subId": "S384135507"
+    },
+    "grcfly": {
+      "howMany": 2,
+      "locId": "L127408",
+      "locName": "Loxahatchee NWR",
+      "obsDt": "2026-08-16 06:25",
+      "source": "local_checklist",
+      "speciesCode": "grcfly",
+      "subId": "S384162253"
+    },
+    "grecor": {
+      "howMany": 1,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-05-10 09:54",
+      "source": "local_checklist",
+      "speciesCode": "grecor",
+      "subId": "S336527576"
+    },
+    "greegr": {
+      "howMany": 1,
+      "locId": "L2726529",
+      "locName": "Winding Waters Natural Area",
+      "obsDt": "2026-08-16 13:51",
+      "source": "local_checklist",
+      "speciesCode": "greegr",
+      "subId": "S384155316"
+    },
+    "greegr2": {
+      "howMany": 7,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-15 15:56",
+      "source": "local_checklist",
+      "speciesCode": "greegr2",
+      "subId": "S383782290"
+    },
+    "grefla2": {
+      "howMany": 1,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-05-15 06:10",
+      "source": "local_checklist",
+      "speciesCode": "grefla2",
+      "subId": "S339456414"
+    },
+    "gresca": {
+      "howMany": 1,
+      "locId": "L870652",
+      "locName": "Boynton Beach Inlet Park",
+      "obsDt": "2026-04-19 07:00",
+      "source": "local_checklist",
+      "speciesCode": "gresca",
+      "subId": "S324408435"
+    },
+    "greshe": {
+      "howMany": 1,
+      "locId": "L72305635",
+      "locName": "North Atlantic Ocean (26.7021,-79.6591)",
+      "obsDt": "2026-07-03 10:11",
+      "source": "local_checklist",
+      "speciesCode": "greshe",
+      "subId": "S367143201"
+    },
+    "greyel": {
+      "howMany": 8,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-16 11:24",
+      "source": "local_checklist",
+      "speciesCode": "greyel",
+      "subId": "S384136402"
+    },
+    "grhowl": {
+      "howMany": 1,
+      "locId": "L3921477",
+      "locName": "Okeeheelee Park South",
+      "obsDt": "2026-08-11 18:34",
+      "source": "local_checklist",
+      "speciesCode": "grhowl",
+      "subId": "S382401337"
+    },
+    "grnher": {
+      "howMany": 3,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-16 11:24",
+      "source": "local_checklist",
+      "speciesCode": "grnher",
+      "subId": "S384136402"
+    },
+    "grnher1": {
+      "howMany": 2,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-08-16 09:05",
+      "source": "local_checklist",
+      "speciesCode": "grnher1",
+      "subId": "S384035711"
+    },
+    "grwher": {
+      "howMany": 1,
+      "locId": "L581841",
+      "locName": "Browns Farm Rd.",
+      "obsDt": "2026-08-16 08:10",
+      "source": "local_checklist",
+      "speciesCode": "grwher",
+      "subId": "S384136434"
+    },
+    "grycat": {
+      "howMany": 1,
+      "locId": "L66634047",
+      "locName": "Woodfield Country Club",
+      "obsDt": "2026-05-17 08:57",
+      "source": "local_checklist",
+      "speciesCode": "grycat",
+      "subId": "S341070373"
+    },
+    "grykin": {
+      "howMany": 1,
+      "locId": "L56918760",
+      "locName": "2220 Northwest 2nd Street, Boynton Beach, Florida, US (26.551, -80.069)",
+      "obsDt": "2026-08-16 13:07",
+      "source": "local_checklist",
+      "speciesCode": "grykin",
+      "subId": "S384097054"
+    },
+    "gubter2": {
+      "howMany": 2,
+      "locId": "L22198774",
+      "locName": "Atlantic Sugar Mill",
+      "obsDt": "2026-08-16 13:27",
+      "source": "local_checklist",
+      "speciesCode": "gubter2",
+      "subId": "S384135711"
+    },
+    "gwcspa": {
+      "howMany": 1,
+      "locId": "L127408",
+      "locName": "Loxahatchee NWR",
+      "obsDt": "2026-04-13 17:21",
+      "source": "local_checklist",
+      "speciesCode": "gwcspa",
+      "subId": "S321414982"
+    },
+    "gycthr": {
+      "howMany": 1,
+      "locId": "L1293707",
+      "locName": "Lantana Nature Preserve",
+      "obsDt": "2026-05-10 07:00",
+      "source": "local_checklist",
+      "speciesCode": "gycthr",
+      "subId": "S336421675"
+    },
+    "haiwoo": {
+      "howMany": 1,
+      "locId": "L1441984",
+      "locName": "DuPuis WEA/Management Area (Palm Beach Co.)",
+      "obsDt": "2026-05-30 11:44",
+      "source": "local_checklist",
+      "speciesCode": "haiwoo",
+      "subId": "S349717815"
+    },
+    "hawk": {
+      "howMany": 1,
+      "locId": "L38396707",
+      "locName": "Big Blue",
+      "obsDt": "2026-08-15 08:30",
+      "source": "local_checklist",
+      "speciesCode": "hawk",
+      "subId": "S383592090"
+    },
+    "helgui": {
+      "howMany": 1,
+      "locId": "L41968896",
+      "locName": "Florida Mango neighborhoods",
+      "obsDt": "2026-04-11 07:46",
+      "source": "local_checklist",
+      "speciesCode": "helgui",
+      "subId": "S319999421"
+    },
+    "heron1": {
+      "howMany": 1,
+      "locId": "L73651027",
+      "locName": "3414 Primrose Court, Palm Beach Gardens, Florida, US (26.852, -80.092)",
+      "obsDt": "2026-07-18 12:49",
+      "source": "local_checklist",
+      "speciesCode": "heron1",
+      "subId": "S373606281"
+    },
+    "herthr": {
+      "howMany": 1,
+      "locId": "L60196618",
+      "locName": "4124 Bocaire Blvd, Boca Raton US-FL 26.42355, -80.11704",
+      "obsDt": "2026-03-15 10:19",
+      "source": "local_checklist",
+      "speciesCode": "herthr",
+      "subId": "S309481060"
+    },
+    "hoomer": {
+      "howMany": 1,
+      "locId": "L39500126",
+      "locName": "Green Cay Wetlands",
+      "obsDt": "2026-05-14 07:30",
+      "source": "local_checklist",
+      "speciesCode": "hoomer",
+      "subId": "S209157333"
+    },
+    "hoowar": {
+      "howMany": 1,
+      "locId": "L127416",
+      "locName": "Spanish River Park",
+      "obsDt": "2026-05-05 09:00",
+      "source": "local_checklist",
+      "speciesCode": "hoowar",
+      "subId": "S333211641"
+    },
+    "horgre": {
+      "howMany": 1,
+      "locId": "L143084",
+      "locName": "Wakodahatchee Wetlands",
+      "obsDt": "2025-11-14 13:04",
+      "source": "local_checklist",
+      "speciesCode": "horgre",
+      "subId": "S284472465"
+    },
+    "houfin": {
+      "howMany": 2,
+      "locId": "L37551904",
+      "locName": "My home in Tequesta",
+      "obsDt": "2026-08-15 07:20",
+      "source": "local_checklist",
+      "speciesCode": "houfin",
+      "subId": "S383527436"
+    },
+    "houfin1": {
+      "howMany": 1,
+      "locId": "L3998307",
+      "locName": "Florida Atlantic University",
+      "obsDt": "2026-07-21 17:22",
+      "source": "local_checklist",
+      "speciesCode": "houfin1",
+      "subId": "S374909542"
+    },
+    "houspa": {
+      "howMany": 3,
+      "locId": "L4478244",
+      "locName": "Sem-Chi Rice Road (Does Not Include Atlantic Sugar Mill)",
+      "obsDt": "2026-08-16 13:58",
+      "source": "local_checklist",
+      "speciesCode": "houspa",
+      "subId": "S384135507"
+    },
+    "houwre": {
+      "howMany": 1,
+      "locId": "L3392569",
+      "locName": "Karen T. Marcus Sandhill Crane Access Park",
+      "obsDt": "2026-04-29 11:00",
+      "source": "local_checklist",
+      "speciesCode": "houwre",
+      "subId": "S329453454"
+    },
+    "houwre1": {
+      "howMany": 1,
+      "locId": "L127408",
+      "locName": "Loxahatchee NWR",
+      "obsDt": "2026-03-31 18:01",
+      "source": "local_checklist",
+      "speciesCode": "houwre1",
+      "subId": "S315384399"
+    },
+    "hummin": {
+      "howMany": 1,
+      "locId": "L40016371",
+      "locName": "Work Pok\u00e9mon Culvert",
+      "obsDt": "2026-03-24 12:50",
+      "source": "local_checklist",
+      "speciesCode": "hummin",
+      "subId": "S313050676"
+    },
+    "ibis1": {
+      "howMany": 1,
+      "locId": "L10672121",
+      "locName": "Winn-Dixie Plaza",
+      "obsDt": "2026-01-31 08:00",
+      "source": "local_checklist",
+      "speciesCode": "ibis1",
+      "subId": "S297212448"
+    },
+    "indbun": {
+      "howMany": 1,
+      "locId": "L7228082",
+      "locName": "Serenoa Glade Preserve",
+      "obsDt": "2026-05-06 11:00",
+      "source": "local_checklist",
+      "speciesCode": "indbun",
+      "subId": "S334066656"
+    },
+    "indpea1": {
+      "howMany": 4,
+      "locId": "L17758780",
+      "locName": "Square Lake neighborhood",
+      "obsDt": "2026-06-24 18:15",
+      "source": "local_checklist",
+      "speciesCode": "indpea1",
+      "subId": "S362876966"
+    },
+    "jaeger": {
+      "howMany": 3,
+      "locId": "L870652",
+      "locName": "Boynton Beach Inlet Park",
+      "obsDt": "2026-01-31 15:19",
+      "source": "local_checklist",
+      "speciesCode": "jaeger",
+      "subId": "S297344628"
+    },
+    "kenwar": {
+      "howMany": 1,
+      "locId": "L225752",
+      "locName": "Frenchman's Forest Nature Preserve",
+      "obsDt": "2025-09-13 07:14",
+      "source": "local_checklist",
+      "speciesCode": "kenwar",
+      "subId": "S273177859"
+    },
+    "killde": {
+      "howMany": 21,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-16 11:24",
+      "source": "local_checklist",
+      "speciesCode": "killde",
+      "subId": "S384136402"
+    },
+    "kinrai1": {
+      "howMany": 1,
+      "locId": "L6176992",
+      "locName": "6 Mile Bend Ponds - (No Public Access - View From Road)",
+      "obsDt": "2026-08-15 07:15",
+      "source": "local_checklist",
+      "speciesCode": "kinrai1",
+      "subId": "S383539977"
+    },
+    "kinrai4": {
+      "howMany": 1,
+      "locId": "L581830",
+      "locName": "Belle Glade Marina & Torry Island",
+      "obsDt": "2026-08-14 10:00",
+      "source": "local_checklist",
+      "speciesCode": "kinrai4",
+      "subId": "S383251958"
+    },
+    "krthaw1": {
+      "howMany": 1,
+      "locId": "L58567178",
+      "locName": "E Canal St S, Belle Glade US-FL",
+      "obsDt": "2026-02-14 17:26",
+      "source": "local_checklist",
+      "speciesCode": "krthaw1",
+      "subId": "S300668410"
+    },
+    "kumgul1": {
+      "howMany": 1,
+      "locId": "L58190570",
+      "locName": "ICW - Old Dredge Pipes South of Peanut Island",
+      "obsDt": "2026-02-07 13:25",
+      "source": "local_checklist",
+      "speciesCode": "kumgul1",
+      "subId": "S298712902"
+    },
+    "larus": {
+      "howMany": 3,
+      "locId": "L75733261",
+      "locName": "Beto-lagic - Boca Inlet, Leg 3 (26.407, -79.913)",
+      "obsDt": "2026-08-16 10:08",
+      "source": "local_checklist",
+      "speciesCode": "larus",
+      "subId": "S384041670"
+    },
+    "larus1": {
+      "howMany": 6,
+      "locId": "L588392",
+      "locName": "Jupiter Inlet",
+      "obsDt": "2026-01-21 13:21",
+      "source": "local_checklist",
+      "speciesCode": "larus1",
+      "subId": "S295525274"
+    },
+    "laugul": {
+      "howMany": 10,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-08-16 15:58",
+      "source": "local_checklist",
+      "speciesCode": "laugul",
+      "subId": "S384175488"
+    },
+    "lbbgul": {
+      "howMany": 1,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-08-16 15:58",
+      "source": "local_checklist",
+      "speciesCode": "lbbgul",
+      "subId": "S384175488"
+    },
+    "lbbgul3": {
+      "howMany": 3,
+      "locId": "L870652",
+      "locName": "Boynton Beach Inlet Park",
+      "obsDt": "2026-08-14 06:30",
+      "source": "local_checklist",
+      "speciesCode": "lbbgul3",
+      "subId": "S383248057"
+    },
+    "lcspet": {
+      "howMany": 1,
+      "locId": "L72305635",
+      "locName": "North Atlantic Ocean (26.7021,-79.6591)",
+      "obsDt": "2026-07-03 10:11",
+      "source": "local_checklist",
+      "speciesCode": "lcspet",
+      "subId": "S367143201"
+    },
+    "leabit": {
+      "howMany": 1,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-08-16 07:15",
+      "source": "local_checklist",
+      "speciesCode": "leabit",
+      "subId": "S384085942"
+    },
+    "leafly": {
+      "howMany": 1,
+      "locId": "L127408",
+      "locName": "Loxahatchee NWR",
+      "obsDt": "2026-08-16 06:25",
+      "source": "local_checklist",
+      "speciesCode": "leafly",
+      "subId": "S384162253"
+    },
+    "leasan": {
+      "howMany": 1,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-16 11:24",
+      "source": "local_checklist",
+      "speciesCode": "leasan",
+      "subId": "S384136402"
+    },
+    "leater1": {
+      "howMany": 6,
+      "locId": "L75723163",
+      "locName": "Beto-lagic - Boca Inlet, Leg 1 (26.339, -80.014)",
+      "obsDt": "2026-08-16 07:53",
+      "source": "local_checklist",
+      "speciesCode": "leater1",
+      "subId": "S384091880"
+    },
+    "lesnig": {
+      "howMany": 1,
+      "locId": "L127408",
+      "locName": "Loxahatchee NWR",
+      "obsDt": "2026-02-20 16:51",
+      "source": "local_checklist",
+      "speciesCode": "lesnig",
+      "subId": "S302613415"
+    },
+    "lessca": {
+      "howMany": 2,
+      "locId": "L65263710",
+      "locName": "2004\u20132006 Brown's Farm Rd, Belle Glade US-FL 26.64455, -80.58403",
+      "obsDt": "2026-05-07 06:50",
+      "source": "local_checklist",
+      "speciesCode": "lessca",
+      "subId": "S334054772"
+    },
+    "lesyel": {
+      "howMany": 7,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-16 11:24",
+      "source": "local_checklist",
+      "speciesCode": "lesyel",
+      "subId": "S384136402"
+    },
+    "libher": {
+      "howMany": 1,
+      "locId": "L2726529",
+      "locName": "Winding Waters Natural Area",
+      "obsDt": "2026-08-16 13:51",
+      "source": "local_checklist",
+      "speciesCode": "libher",
+      "subId": "S384155316"
+    },
+    "limpki": {
+      "howMany": 3,
+      "locId": "L2726529",
+      "locName": "Winding Waters Natural Area",
+      "obsDt": "2026-08-16 13:51",
+      "source": "local_checklist",
+      "speciesCode": "limpki",
+      "subId": "S384155316"
+    },
+    "limpki1": {
+      "howMany": 1,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-15 09:05",
+      "source": "local_checklist",
+      "speciesCode": "limpki1",
+      "subId": "S383603112"
+    },
+    "linspa": {
+      "howMany": 1,
+      "locId": "L1293707",
+      "locName": "Lantana Nature Preserve",
+      "obsDt": "2026-05-04 08:45",
+      "source": "local_checklist",
+      "speciesCode": "linspa",
+      "subId": "S332739831"
+    },
+    "litegr": {
+      "howMany": 1,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-01-10 16:54",
+      "source": "local_checklist",
+      "speciesCode": "litegr",
+      "subId": "S296296712"
+    },
+    "livbul1": {
+      "howMany": 1,
+      "locId": "L65632272",
+      "locName": "1404 S Dixie Hwy, Lantana US-FL 26.57351, -80.05218",
+      "obsDt": "2026-05-09 17:55",
+      "source": "local_checklist",
+      "speciesCode": "livbul1",
+      "subId": "S335933609"
+    },
+    "lobcur": {
+      "howMany": 1,
+      "locId": "L58288189",
+      "locName": "150 S Australian Ave, West Palm Beach US-FL 26.67802, -80.07253",
+      "obsDt": "2026-02-09 13:07",
+      "source": "local_checklist",
+      "speciesCode": "lobcur",
+      "subId": "S299179890"
+    },
+    "lobdow": {
+      "howMany": 5,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-16 11:24",
+      "source": "local_checklist",
+      "speciesCode": "lobdow",
+      "subId": "S384136402"
+    },
+    "logshr": {
+      "howMany": 2,
+      "locId": "L22198774",
+      "locName": "Atlantic Sugar Mill",
+      "obsDt": "2026-08-16 13:27",
+      "source": "local_checklist",
+      "speciesCode": "logshr",
+      "subId": "S384135711"
+    },
+    "lotjae": {
+      "howMany": 1,
+      "locId": "L64732211",
+      "locName": "Palm Beach Pelagics leg 2",
+      "obsDt": "2026-07-03 07:02",
+      "source": "local_checklist",
+      "speciesCode": "lotjae",
+      "subId": "S367142124"
+    },
+    "louwat": {
+      "howMany": 1,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-08-16 09:05",
+      "source": "local_checklist",
+      "speciesCode": "louwat",
+      "subId": "S384035711"
+    },
+    "magfri": {
+      "howMany": 1,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-08-15 06:10",
+      "source": "local_checklist",
+      "speciesCode": "magfri",
+      "subId": "S383729519"
+    },
+    "magwar": {
+      "howMany": 1,
+      "locId": "L225752",
+      "locName": "Frenchman's Forest Nature Preserve",
+      "obsDt": "2026-05-09 13:38",
+      "source": "local_checklist",
+      "speciesCode": "magwar",
+      "subId": "S335643422"
+    },
+    "mallar2": {
+      "howMany": 1,
+      "locId": "L1060408",
+      "locName": "Lake Ida Park",
+      "obsDt": "2026-08-11 09:50",
+      "source": "local_checklist",
+      "speciesCode": "mallar2",
+      "subId": "S382684856"
+    },
+    "mallar3": {
+      "howMany": 4,
+      "locId": "L75172852",
+      "locName": "St. Andrews Country Club, Boca Raton US-FL 26.42022, -80.16389",
+      "obsDt": "2026-08-08 08:11",
+      "source": "local_checklist",
+      "speciesCode": "mallar3",
+      "subId": "S381125458"
+    },
+    "margod": {
+      "howMany": 1,
+      "locId": "L51606716",
+      "locName": "35888\u201335890 E Canal St S, Belle Glade US-FL (26.6474,-80.5896)",
+      "obsDt": "2025-08-16 09:07",
+      "source": "local_checklist",
+      "speciesCode": "margod",
+      "subId": "S267639656"
+    },
+    "marwre": {
+      "howMany": 1,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-04-23 19:28",
+      "source": "local_checklist",
+      "speciesCode": "marwre",
+      "subId": "S326218693"
+    },
+    "masboo": {
+      "howMany": 1,
+      "locId": "L24915331",
+      "locName": "The Hill -- Offshore Palm Beach County",
+      "obsDt": "2026-06-14 06:37",
+      "source": "local_checklist",
+      "speciesCode": "masboo",
+      "subId": "S357407970"
+    },
+    "mdxmal1": {
+      "howMany": 1,
+      "locId": "L9585120",
+      "locName": "Lake Worth Golf Club",
+      "obsDt": "2026-08-15 18:30",
+      "source": "local_checklist",
+      "speciesCode": "mdxmal1",
+      "subId": "S383952692"
+    },
+    "merlin": {
+      "howMany": 1,
+      "locId": "L46636531",
+      "locName": "A-2 Reservoir",
+      "obsDt": "2026-05-05 08:00",
+      "source": "local_checklist",
+      "speciesCode": "merlin",
+      "subId": "S333221560"
+    },
+    "mitpar": {
+      "howMany": 2,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-04-22 06:52",
+      "source": "local_checklist",
+      "speciesCode": "mitpar",
+      "subId": "S325611912"
+    },
+    "monpar": {
+      "howMany": 1,
+      "locId": "L52432938",
+      "locName": "1411 Hypoluxo Road, Lantana, Florida, US (26.573, -80.067) wendys",
+      "obsDt": "2026-08-16 12:33",
+      "source": "local_checklist",
+      "speciesCode": "monpar",
+      "subId": "S384082562"
+    },
+    "motduc": {
+      "howMany": 2,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-16 11:24",
+      "source": "local_checklist",
+      "speciesCode": "motduc",
+      "subId": "S384136402"
+    },
+    "motduc1": {
+      "howMany": 12,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-15 15:56",
+      "source": "local_checklist",
+      "speciesCode": "motduc1",
+      "subId": "S383782290"
+    },
+    "moudov": {
+      "howMany": 1,
+      "locId": "L4478244",
+      "locName": "Sem-Chi Rice Road (Does Not Include Atlantic Sugar Mill)",
+      "obsDt": "2026-08-16 13:58",
+      "source": "local_checklist",
+      "speciesCode": "moudov",
+      "subId": "S384135507"
+    },
+    "musduc3": {
+      "howMany": 21,
+      "locId": "L9585120",
+      "locName": "Lake Worth Golf Club",
+      "obsDt": "2026-08-15 18:30",
+      "source": "local_checklist",
+      "speciesCode": "musduc3",
+      "subId": "S383952692"
+    },
+    "mutswa": {
+      "howMany": 0,
+      "locId": "L143084",
+      "locName": "Wakodahatchee Wetlands",
+      "obsDt": "2026-03-07 08:31",
+      "source": "local_checklist",
+      "speciesCode": "mutswa",
+      "subId": "S306841350"
+    },
+    "myrwar": {
+      "howMany": 1,
+      "locId": "L1023544",
+      "locName": "Wellington Environmental Preserve",
+      "obsDt": "2026-04-24 12:33",
+      "source": "local_checklist",
+      "speciesCode": "myrwar",
+      "subId": "S326739682"
+    },
+    "naswar": {
+      "howMany": 1,
+      "locId": "L127416",
+      "locName": "Spanish River Park",
+      "obsDt": "2026-04-20 09:08",
+      "source": "local_checklist",
+      "speciesCode": "naswar",
+      "subId": "S324695271"
+    },
+    "neocor": {
+      "howMany": 1,
+      "locId": "L1101205",
+      "locName": "Loxahatchee NWR--Cypress Swamp Boardwalk",
+      "obsDt": "2026-08-08 18:13",
+      "source": "local_checklist",
+      "speciesCode": "neocor",
+      "subId": "S381345191"
+    },
+    "norbob": {
+      "howMany": 1,
+      "locId": "L581841",
+      "locName": "Browns Farm Rd.",
+      "obsDt": "2026-08-16 08:10",
+      "source": "local_checklist",
+      "speciesCode": "norbob",
+      "subId": "S384136434"
+    },
+    "norbob1": {
+      "howMany": 1,
+      "locId": "L46636531",
+      "locName": "A-2 Reservoir",
+      "obsDt": "2026-08-14 09:35",
+      "source": "local_checklist",
+      "speciesCode": "norbob1",
+      "subId": "S383353627"
+    },
+    "norcar": {
+      "howMany": 1,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-08-16 15:58",
+      "source": "local_checklist",
+      "speciesCode": "norcar",
+      "subId": "S384175488"
+    },
+    "norcar1": {
+      "howMany": 1,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-08-16 09:05",
+      "source": "local_checklist",
+      "speciesCode": "norcar1",
+      "subId": "S384035711"
+    },
+    "norfli": {
+      "howMany": 2,
+      "locId": "L127408",
+      "locName": "Loxahatchee NWR",
+      "obsDt": "2026-08-10 06:55",
+      "source": "local_checklist",
+      "speciesCode": "norfli",
+      "subId": "S381897071"
+    },
+    "norgan": {
+      "howMany": 1,
+      "locId": "L870652",
+      "locName": "Boynton Beach Inlet Park",
+      "obsDt": "2026-06-12 16:56",
+      "source": "local_checklist",
+      "speciesCode": "norgan",
+      "subId": "S356367830"
+    },
+    "norhar2": {
+      "howMany": 1,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-07-22 14:43",
+      "source": "local_checklist",
+      "speciesCode": "norhar2",
+      "subId": "S375180673"
+    },
+    "normoc": {
+      "howMany": 1,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-08-16 15:58",
+      "source": "local_checklist",
+      "speciesCode": "normoc",
+      "subId": "S384175488"
+    },
+    "norpar": {
+      "howMany": 1,
+      "locId": "L127408",
+      "locName": "Loxahatchee NWR",
+      "obsDt": "2026-08-16 06:25",
+      "source": "local_checklist",
+      "speciesCode": "norpar",
+      "subId": "S384162253"
+    },
+    "norpin": {
+      "howMany": 2,
+      "locId": "L842122",
+      "locName": "Stormwater Treatment Area 3/4",
+      "obsDt": "2026-03-26 07:12",
+      "source": "local_checklist",
+      "speciesCode": "norpin",
+      "subId": "S313292565"
+    },
+    "norsho": {
+      "howMany": 1,
+      "locId": "L581841",
+      "locName": "Browns Farm Rd.",
+      "obsDt": "2026-05-09 17:46",
+      "source": "local_checklist",
+      "speciesCode": "norsho",
+      "subId": "S335859445"
+    },
+    "norwat": {
+      "howMany": 1,
+      "locId": "L127408",
+      "locName": "Loxahatchee NWR",
+      "obsDt": "2026-08-14 06:30",
+      "source": "local_checklist",
+      "speciesCode": "norwat",
+      "subId": "S383330842"
+    },
+    "nrwswa": {
+      "howMany": 50,
+      "locId": "L581830",
+      "locName": "Belle Glade Marina & Torry Island",
+      "obsDt": "2026-08-14 10:00",
+      "source": "local_checklist",
+      "speciesCode": "nrwswa",
+      "subId": "S383251958"
+    },
+    "nrwswa1": {
+      "howMany": 3,
+      "locId": "L6176992",
+      "locName": "6 Mile Bend Ponds - (No Public Access - View From Road)",
+      "obsDt": "2026-08-15 07:15",
+      "source": "local_checklist",
+      "speciesCode": "nrwswa1",
+      "subId": "S383539977"
+    },
+    "orcori": {
+      "howMany": 2,
+      "locId": "L581830",
+      "locName": "Belle Glade Marina & Torry Island",
+      "obsDt": "2026-07-28 06:39",
+      "source": "local_checklist",
+      "speciesCode": "orcori",
+      "subId": "S377312949"
+    },
+    "orcwar": {
+      "howMany": 1,
+      "locId": "L210479",
+      "locName": "Frenchman's Forest Natural Area",
+      "obsDt": "2026-04-25 17:30",
+      "source": "local_checklist",
+      "speciesCode": "orcwar",
+      "subId": "S327450088"
+    },
+    "orcwar1": {
+      "howMany": 1,
+      "locId": "L58242128",
+      "locName": "819 Bacom Point Rd, Pahokee US-FL 26.81981, -80.67265",
+      "obsDt": "2026-02-08 13:10",
+      "source": "local_checklist",
+      "speciesCode": "orcwar1",
+      "subId": "S298952819"
+    },
+    "osprey": {
+      "howMany": 1,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-08-16 15:58",
+      "source": "local_checklist",
+      "speciesCode": "osprey",
+      "subId": "S384175488"
+    },
+    "osprey1": {
+      "howMany": 3,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-08-16 09:05",
+      "source": "local_checklist",
+      "speciesCode": "osprey1",
+      "subId": "S384035711"
+    },
+    "ovenbi1": {
+      "howMany": 3,
+      "locId": "L225752",
+      "locName": "Frenchman's Forest Nature Preserve",
+      "obsDt": "2026-08-15 06:30",
+      "source": "local_checklist",
+      "speciesCode": "ovenbi1",
+      "subId": "S383633768"
+    },
+    "paibun": {
+      "howMany": 1,
+      "locId": "L1017638",
+      "locName": "Peaceful Waters Sanctuary",
+      "obsDt": "2026-08-16 07:37",
+      "source": "local_checklist",
+      "speciesCode": "paibun",
+      "subId": "S383941034"
+    },
+    "palwar": {
+      "howMany": 1,
+      "locId": "L9948912",
+      "locName": "Jupiter Inlet Lighthouse Outstanding Natural Area",
+      "obsDt": "2026-08-12 08:13",
+      "source": "local_checklist",
+      "speciesCode": "palwar",
+      "subId": "S382564768"
+    },
+    "palwar3": {
+      "howMany": 2,
+      "locId": "L46636531",
+      "locName": "A-2 Reservoir",
+      "obsDt": "2026-05-07 09:00",
+      "source": "local_checklist",
+      "speciesCode": "palwar3",
+      "subId": "S334100214"
+    },
+    "palwar4": {
+      "howMany": 1,
+      "locId": "L12579636",
+      "locName": "4439 Golfers Cir W, Palm Beach Gardens US-FL (26.8289,-80.1042)",
+      "obsDt": "2026-03-31 10:42",
+      "source": "local_checklist",
+      "speciesCode": "palwar4",
+      "subId": "S315156732"
+    },
+    "parake": {
+      "howMany": 1,
+      "locId": "L9585120",
+      "locName": "Lake Worth Golf Club",
+      "obsDt": "2026-08-10 18:50",
+      "source": "local_checklist",
+      "speciesCode": "parake",
+      "subId": "S382207520"
+    },
+    "parjae": {
+      "howMany": 1,
+      "locId": "L5960906",
+      "locName": "Lake Worth Beach Park",
+      "obsDt": "2026-06-06 15:22",
+      "source": "local_checklist",
+      "speciesCode": "parjae",
+      "subId": "S353641979"
+    },
+    "passer1": {
+      "howMany": 1,
+      "locId": "L64732099",
+      "locName": "Palm Beach Pelagics leg 1",
+      "obsDt": "2026-07-03 06:03",
+      "source": "local_checklist",
+      "speciesCode": "passer1",
+      "subId": "S367140497"
+    },
+    "pecsan": {
+      "howMany": 1,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-16 11:24",
+      "source": "local_checklist",
+      "speciesCode": "pecsan",
+      "subId": "S384136402"
+    },
+    "perfal": {
+      "howMany": 2,
+      "locId": "L40301299",
+      "locName": "Abacoa Golf Club, Jupiter US-FL 26.89002, -80.12041",
+      "obsDt": "2026-05-10 08:53",
+      "source": "local_checklist",
+      "speciesCode": "perfal",
+      "subId": "S336307762"
+    },
+    "phivir": {
+      "howMany": 1,
+      "locId": "L127416",
+      "locName": "Spanish River Park",
+      "obsDt": "2025-10-16 08:30",
+      "source": "local_checklist",
+      "speciesCode": "phivir",
+      "subId": "S279748108"
+    },
+    "pibgre": {
+      "howMany": 5,
+      "locId": "L581841",
+      "locName": "Browns Farm Rd.",
+      "obsDt": "2026-08-16 08:10",
+      "source": "local_checklist",
+      "speciesCode": "pibgre",
+      "subId": "S384136434"
+    },
+    "pilwoo": {
+      "howMany": 3,
+      "locId": "L666907",
+      "locName": "Riverbend Park",
+      "obsDt": "2026-08-16 09:41",
+      "source": "local_checklist",
+      "speciesCode": "pilwoo",
+      "subId": "S384044319"
+    },
+    "pinwar": {
+      "howMany": 1,
+      "locId": "L8251783",
+      "locName": "Hungryland Slough Natural Area",
+      "obsDt": "2026-08-10 07:07",
+      "source": "local_checklist",
+      "speciesCode": "pinwar",
+      "subId": "S381940529"
+    },
+    "pipplo": {
+      "howMany": 1,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-08-16 15:58",
+      "source": "local_checklist",
+      "speciesCode": "pipplo",
+      "subId": "S384175488"
+    },
+    "plegad": {
+      "howMany": 1,
+      "locId": "L66314556",
+      "locName": "Wakodahatchee",
+      "obsDt": "2026-05-15 08:31",
+      "source": "local_checklist",
+      "speciesCode": "plegad",
+      "subId": "S339469203"
+    },
+    "pomjae": {
+      "howMany": 1,
+      "locId": "L63328265",
+      "locName": "North Atlantic Ocean (26.6132,-79.7612)",
+      "obsDt": "2026-04-19 08:25",
+      "source": "local_checklist",
+      "speciesCode": "pomjae",
+      "subId": "S324316986"
+    },
+    "prawar": {
+      "howMany": 1,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-16 11:24",
+      "source": "local_checklist",
+      "speciesCode": "prawar",
+      "subId": "S384136402"
+    },
+    "prowar": {
+      "howMany": 1,
+      "locId": "L127408",
+      "locName": "Loxahatchee NWR",
+      "obsDt": "2026-08-06 08:45",
+      "source": "local_checklist",
+      "speciesCode": "prowar",
+      "subId": "S380548742"
+    },
+    "psitta2": {
+      "howMany": 1,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-01-12 11:00",
+      "source": "local_checklist",
+      "speciesCode": "psitta2",
+      "subId": "S293902931"
+    },
+    "purgal2": {
+      "howMany": 3,
+      "locId": "L2726529",
+      "locName": "Winding Waters Natural Area",
+      "obsDt": "2026-08-16 13:51",
+      "source": "local_checklist",
+      "speciesCode": "purgal2",
+      "subId": "S384155316"
+    },
+    "purmar": {
+      "howMany": 1,
+      "locId": "L6176992",
+      "locName": "6 Mile Bend Ponds - (No Public Access - View From Road)",
+      "obsDt": "2026-08-16 07:27",
+      "source": "local_checklist",
+      "speciesCode": "purmar",
+      "subId": "S383955300"
+    },
+    "purmar1": {
+      "howMany": 1,
+      "locId": "L58020918",
+      "locName": "Evening rail attempt, 03 Feb 2026",
+      "obsDt": "2026-02-03 18:07",
+      "source": "local_checklist",
+      "speciesCode": "purmar1",
+      "subId": "S297953233"
+    },
+    "purswa3": {
+      "howMany": 15,
+      "locId": "L2726529",
+      "locName": "Winding Waters Natural Area",
+      "obsDt": "2026-08-16 13:51",
+      "source": "local_checklist",
+      "speciesCode": "purswa3",
+      "subId": "S384155316"
+    },
+    "rebmer": {
+      "howMany": 1,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-06-02 06:00",
+      "source": "local_checklist",
+      "speciesCode": "rebmer",
+      "subId": "S351511435"
+    },
+    "rebtro": {
+      "howMany": 1,
+      "locId": "L70129518",
+      "locName": "Palm Beach Pelagics leg 3",
+      "obsDt": "2026-07-25 09:03",
+      "source": "local_checklist",
+      "speciesCode": "rebtro",
+      "subId": "S376315818"
+    },
+    "rebwoo": {
+      "howMany": 1,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-08-16 15:58",
+      "source": "local_checklist",
+      "speciesCode": "rebwoo",
+      "subId": "S384175488"
+    },
+    "recpar": {
+      "howMany": 36,
+      "locId": "L65851064",
+      "locName": "West Palm Beach",
+      "obsDt": "2026-08-15 18:18",
+      "source": "local_checklist",
+      "speciesCode": "recpar",
+      "subId": "S383780120"
+    },
+    "recwoo": {
+      "howMany": 3,
+      "locId": "L29486569",
+      "locName": "John C. and Mariana Jones/Hungryland Wildlife and Environmental Area (Palm Beach County)",
+      "obsDt": "2026-07-14 17:02",
+      "source": "local_checklist",
+      "speciesCode": "recwoo",
+      "subId": "S372177212"
+    },
+    "redegr": {
+      "howMany": 1,
+      "locId": "L127414",
+      "locName": "John D. MacArthur Beach SP",
+      "obsDt": "2026-08-14 08:16",
+      "source": "local_checklist",
+      "speciesCode": "redegr",
+      "subId": "S383985762"
+    },
+    "redhea": {
+      "howMany": 2,
+      "locId": "L17096221",
+      "locName": "Royal Palm Post Office Retention Pond",
+      "obsDt": "2026-01-14 12:09",
+      "source": "local_checklist",
+      "speciesCode": "redhea",
+      "subId": "S294208495"
+    },
+    "redjun": {
+      "howMany": 2,
+      "locId": "L17950366",
+      "locName": "Paul Rardin Park",
+      "obsDt": "2026-02-03 16:30",
+      "source": "local_checklist",
+      "speciesCode": "redjun",
+      "subId": "S297958499"
+    },
+    "redjun1": {
+      "howMany": 16,
+      "locId": "L581841",
+      "locName": "Browns Farm Rd.",
+      "obsDt": "2026-08-16 08:10",
+      "source": "local_checklist",
+      "speciesCode": "redjun1",
+      "subId": "S384136434"
+    },
+    "redkno": {
+      "howMany": 1,
+      "locId": "L17299515",
+      "locName": "Lakeside and 9th Avenue (Please Do Not Trespass On Neighbors Property)",
+      "obsDt": "2026-01-27 09:49",
+      "source": "local_checklist",
+      "speciesCode": "redkno",
+      "subId": "S296591825"
+    },
+    "reevir1": {
+      "howMany": 1,
+      "locId": "L127408",
+      "locName": "Loxahatchee NWR",
+      "obsDt": "2026-08-16 06:25",
+      "source": "local_checklist",
+      "speciesCode": "reevir1",
+      "subId": "S384162253"
+    },
+    "rehwoo": {
+      "howMany": 1,
+      "locId": "L3921477",
+      "locName": "Okeeheelee Park South",
+      "obsDt": "2026-06-21 07:30",
+      "source": "local_checklist",
+      "speciesCode": "rehwoo",
+      "subId": "S360894627"
+    },
+    "rempar": {
+      "howMany": 1,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-08-13 06:05",
+      "source": "local_checklist",
+      "speciesCode": "rempar",
+      "subId": "S382997773"
+    },
+    "renpha": {
+      "howMany": 2,
+      "locId": "L870652",
+      "locName": "Boynton Beach Inlet Park",
+      "obsDt": "2026-08-08 06:58",
+      "source": "local_checklist",
+      "speciesCode": "renpha",
+      "subId": "S381126775"
+    },
+    "reshaw": {
+      "howMany": 1,
+      "locId": "L1017638",
+      "locName": "Peaceful Waters Sanctuary",
+      "obsDt": "2026-08-16 11:18",
+      "source": "local_checklist",
+      "speciesCode": "reshaw",
+      "subId": "S384094400"
+    },
+    "reshaw2": {
+      "howMany": 1,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-15 09:05",
+      "source": "local_checklist",
+      "speciesCode": "reshaw2",
+      "subId": "S383603112"
+    },
+    "reshaw5": {
+      "howMany": 1,
+      "locId": "L1587159",
+      "locName": "Stormwater Treatment Area 3/4--lower",
+      "obsDt": "2026-08-15 09:00",
+      "source": "local_checklist",
+      "speciesCode": "reshaw5",
+      "subId": "S383591924"
+    },
+    "rethaw": {
+      "howMany": 1,
+      "locId": "L38396707",
+      "locName": "Big Blue",
+      "obsDt": "2026-08-14 08:39",
+      "source": "local_checklist",
+      "speciesCode": "rethaw",
+      "subId": "S383261709"
+    },
+    "rethaw8": {
+      "howMany": 1,
+      "locId": "L3998307",
+      "locName": "Florida Atlantic University",
+      "obsDt": "2026-08-04 17:47",
+      "source": "local_checklist",
+      "speciesCode": "rethaw8",
+      "subId": "S380035930"
+    },
+    "rewbla": {
+      "howMany": 6,
+      "locId": "L4478244",
+      "locName": "Sem-Chi Rice Road (Does Not Include Atlantic Sugar Mill)",
+      "obsDt": "2026-08-16 13:58",
+      "source": "local_checklist",
+      "speciesCode": "rewbla",
+      "subId": "S384135507"
+    },
+    "rewbla1": {
+      "howMany": 1,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-08-16 09:05",
+      "source": "local_checklist",
+      "speciesCode": "rewbla1",
+      "subId": "S384035711"
+    },
+    "ribgul": {
+      "howMany": 3,
+      "locId": "L26272671",
+      "locName": "Florida Condo",
+      "obsDt": "2026-08-10 18:18",
+      "source": "local_checklist",
+      "speciesCode": "ribgul",
+      "subId": "S382087833"
+    },
+    "rinduc": {
+      "howMany": 1,
+      "locId": "L13051455",
+      "locName": "Alton Large Retention Ponds",
+      "obsDt": "2026-07-26 19:26",
+      "source": "local_checklist",
+      "speciesCode": "rinduc",
+      "subId": "S376842825"
+    },
+    "robgro": {
+      "howMany": 1,
+      "locId": "L10669780",
+      "locName": "Palmetto National Park",
+      "obsDt": "2026-05-04 09:36",
+      "source": "local_checklist",
+      "speciesCode": "robgro",
+      "subId": "S333596753"
+    },
+    "rocpig": {
+      "howMany": 8,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-06-21 08:27",
+      "source": "local_checklist",
+      "speciesCode": "rocpig",
+      "subId": "S360869664"
+    },
+    "rocpig1": {
+      "howMany": 22,
+      "locId": "L4478244",
+      "locName": "Sem-Chi Rice Road (Does Not Include Atlantic Sugar Mill)",
+      "obsDt": "2026-08-16 13:58",
+      "source": "local_checklist",
+      "speciesCode": "rocpig1",
+      "subId": "S384135507"
+    },
+    "rosspo1": {
+      "howMany": 15,
+      "locId": "L22198774",
+      "locName": "Atlantic Sugar Mill",
+      "obsDt": "2026-08-16 13:27",
+      "source": "local_checklist",
+      "speciesCode": "rosspo1",
+      "subId": "S384135711"
+    },
+    "roster": {
+      "howMany": 1,
+      "locId": "L5960906",
+      "locName": "Lake Worth Beach Park",
+      "obsDt": "2026-07-27 06:36",
+      "source": "local_checklist",
+      "speciesCode": "roster",
+      "subId": "S377026052"
+    },
+    "royter1": {
+      "howMany": 1,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-08-16 15:58",
+      "source": "local_checklist",
+      "speciesCode": "royter1",
+      "subId": "S384175488"
+    },
+    "rthhum": {
+      "howMany": 1,
+      "locId": "L1017638",
+      "locName": "Peaceful Waters Sanctuary",
+      "obsDt": "2026-08-16 11:18",
+      "source": "local_checklist",
+      "speciesCode": "rthhum",
+      "subId": "S384094400"
+    },
+    "ruckin": {
+      "howMany": 1,
+      "locId": "L143084",
+      "locName": "Wakodahatchee Wetlands",
+      "obsDt": "2026-04-08 07:40",
+      "source": "local_checklist",
+      "speciesCode": "ruckin",
+      "subId": "S329837190"
+    },
+    "rudduc": {
+      "howMany": 1,
+      "locId": "L581841",
+      "locName": "Browns Farm Rd.",
+      "obsDt": "2026-07-04 11:06",
+      "source": "local_checklist",
+      "speciesCode": "rudduc",
+      "subId": "S367565618"
+    },
+    "rudtur": {
+      "howMany": 15,
+      "locId": "L127414",
+      "locName": "John D. MacArthur Beach SP",
+      "obsDt": "2026-08-16 08:02",
+      "source": "local_checklist",
+      "speciesCode": "rudtur",
+      "subId": "S384041098"
+    },
+    "ruff": {
+      "howMany": 1,
+      "locId": "L364884",
+      "locName": "Duda Farms - PRIVATE PROPERTY (Access via AE Trips Only)",
+      "obsDt": "2026-08-15 06:51",
+      "source": "local_checklist",
+      "speciesCode": "ruff",
+      "subId": "S383776870"
+    },
+    "rufhum": {
+      "howMany": 1,
+      "locId": "L241457",
+      "locName": "Seacrest Scrub Natural Area",
+      "obsDt": "2026-01-05 14:37",
+      "source": "local_checklist",
+      "speciesCode": "rufhum",
+      "subId": "S292649162"
+    },
+    "rusbla": {
+      "howMany": 1,
+      "locId": "L1017638",
+      "locName": "Peaceful Waters Sanctuary",
+      "obsDt": "2026-02-15 10:32",
+      "source": "local_checklist",
+      "speciesCode": "rusbla",
+      "subId": "S301011503"
+    },
+    "saffin": {
+      "howMany": 1,
+      "locId": "L66991741",
+      "locName": "J W Corbett Wildlife Management Area Trail, Jupiter US-FL 26.85448, -80.32122",
+      "obsDt": "2026-05-20 12:25",
+      "source": "local_checklist",
+      "speciesCode": "saffin",
+      "subId": "S342912114"
+    },
+    "sancra": {
+      "howMany": 2,
+      "locId": "L75604959",
+      "locName": "Okeeheelee Park (North), West Palm Beach US-FL 26.65394, -80.16639",
+      "obsDt": "2026-08-14 13:35",
+      "source": "local_checklist",
+      "speciesCode": "sancra",
+      "subId": "S383308424"
+    },
+    "sancra2": {
+      "howMany": 4,
+      "locId": "L14380568",
+      "locName": "Home",
+      "obsDt": "2026-03-06 12:09",
+      "source": "local_checklist",
+      "speciesCode": "sancra2",
+      "subId": "S306493384"
+    },
+    "sancra5": {
+      "howMany": 6,
+      "locId": "L874187",
+      "locName": "Loxahatchee Slough Natural Area",
+      "obsDt": "2026-08-11 18:47",
+      "source": "local_checklist",
+      "speciesCode": "sancra5",
+      "subId": "S382584750"
+    },
+    "sander": {
+      "howMany": 2,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-08-16 15:58",
+      "source": "local_checklist",
+      "speciesCode": "sander",
+      "subId": "S384175488"
+    },
+    "santer1": {
+      "howMany": 2,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-08-16 15:58",
+      "source": "local_checklist",
+      "speciesCode": "santer1",
+      "subId": "S384175488"
+    },
+    "santer2": {
+      "howMany": 5,
+      "locId": "L3187664",
+      "locName": "Palm Beach Par-3 Golf Course",
+      "obsDt": "2026-08-16 06:45",
+      "source": "local_checklist",
+      "speciesCode": "santer2",
+      "subId": "S383953153"
+    },
+    "savspa": {
+      "howMany": 1,
+      "locId": "L143084",
+      "locName": "Wakodahatchee Wetlands",
+      "obsDt": "2026-05-30 10:38",
+      "source": "local_checklist",
+      "speciesCode": "savspa",
+      "subId": "S349532630"
+    },
+    "savspa4": {
+      "howMany": 1,
+      "locId": "L46636531",
+      "locName": "A-2 Reservoir",
+      "obsDt": "2026-04-09 10:00",
+      "source": "local_checklist",
+      "speciesCode": "savspa4",
+      "subId": "S319371900"
+    },
+    "scatan": {
+      "howMany": 1,
+      "locId": "L2792995",
+      "locName": "Winston Trails (Restricted Access)",
+      "obsDt": "2026-05-04 08:13",
+      "source": "local_checklist",
+      "speciesCode": "scatan",
+      "subId": "S332549907"
+    },
+    "scaup": {
+      "howMany": 1,
+      "locId": "L1017638",
+      "locName": "Peaceful Waters Sanctuary",
+      "obsDt": "2026-02-07 07:48",
+      "source": "local_checklist",
+      "speciesCode": "scaup",
+      "subId": "S298639660"
+    },
+    "scoshe1": {
+      "howMany": 1,
+      "locId": "L73846695",
+      "locName": "2010 N Federal Hwy, Boynton Beach US-FL 26.54603, -80.05311",
+      "obsDt": "2026-07-18 06:12",
+      "source": "local_checklist",
+      "speciesCode": "scoshe1",
+      "subId": "S373634842"
+    },
+    "scoter": {
+      "howMany": 20,
+      "locId": "L870652",
+      "locName": "Boynton Beach Inlet Park",
+      "obsDt": "2026-01-13 08:00",
+      "source": "local_checklist",
+      "speciesCode": "scoter",
+      "subId": "S294062022"
+    },
+    "sctfly": {
+      "howMany": 1,
+      "locId": "L6465176",
+      "locName": "A-1 Flow Equalization Basin (A-1 FEB) [Open Friday - Sunday]",
+      "obsDt": "2026-02-13 12:29",
+      "source": "local_checklist",
+      "speciesCode": "sctfly",
+      "subId": "S300164640"
+    },
+    "sedwre1": {
+      "howMany": 1,
+      "locId": "L842122",
+      "locName": "Stormwater Treatment Area 3/4",
+      "obsDt": "2026-04-11 07:35",
+      "source": "local_checklist",
+      "speciesCode": "sedwre1",
+      "subId": "S320124731"
+    },
+    "semplo": {
+      "howMany": 6,
+      "locId": "L581841",
+      "locName": "Browns Farm Rd.",
+      "obsDt": "2026-08-16 08:10",
+      "source": "local_checklist",
+      "speciesCode": "semplo",
+      "subId": "S384136434"
+    },
+    "semsan": {
+      "howMany": 2,
+      "locId": "L75727713",
+      "locName": "5455\u20135529 Brown's Farm Rd, Belle Glade US-FL 26.59562, -80.54140",
+      "obsDt": "2026-08-16 07:13",
+      "source": "local_checklist",
+      "speciesCode": "semsan",
+      "subId": "S384007896"
+    },
+    "shbdow": {
+      "howMany": 2,
+      "locId": "L364884",
+      "locName": "Duda Farms - PRIVATE PROPERTY (Access via AE Trips Only)",
+      "obsDt": "2026-08-15 06:51",
+      "source": "local_checklist",
+      "speciesCode": "shbdow",
+      "subId": "S383776870"
+    },
+    "shbdow1": {
+      "howMany": 2,
+      "locId": "L127414",
+      "locName": "John D. MacArthur Beach SP",
+      "obsDt": "2026-08-04 07:00",
+      "source": "local_checklist",
+      "speciesCode": "shbdow1",
+      "subId": "S379907441"
+    },
+    "shbdow2": {
+      "howMany": 3,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-02 12:50",
+      "source": "local_checklist",
+      "speciesCode": "shbdow2",
+      "subId": "S379400902"
+    },
+    "shearw": {
+      "howMany": 2,
+      "locId": "L64732099",
+      "locName": "Palm Beach Pelagics leg 1",
+      "obsDt": "2026-07-03 06:03",
+      "source": "local_checklist",
+      "speciesCode": "shearw",
+      "subId": "S367140497"
+    },
+    "shicow": {
+      "howMany": 1,
+      "locId": "L4478244",
+      "locName": "Sem-Chi Rice Road (Does Not Include Atlantic Sugar Mill)",
+      "obsDt": "2026-08-11 09:09",
+      "source": "local_checklist",
+      "speciesCode": "shicow",
+      "subId": "S382263195"
+    },
+    "shoreb1": {
+      "howMany": 500,
+      "locId": "L364884",
+      "locName": "Duda Farms - PRIVATE PROPERTY (Access via AE Trips Only)",
+      "obsDt": "2026-08-15 06:51",
+      "source": "local_checklist",
+      "speciesCode": "shoreb1",
+      "subId": "S383776870"
+    },
+    "shshaw": {
+      "howMany": 1,
+      "locId": "L210479",
+      "locName": "Frenchman's Forest Natural Area",
+      "obsDt": "2026-05-02 08:00",
+      "source": "local_checklist",
+      "speciesCode": "shshaw",
+      "subId": "S331152484"
+    },
+    "shshaw2": {
+      "howMany": 1,
+      "locId": "L13783389",
+      "locName": "Solid Waste Authority of Palm Beach County Landfill (No Public Access)",
+      "obsDt": "2026-03-22 14:10",
+      "source": "local_checklist",
+      "speciesCode": "shshaw2",
+      "subId": "S312140506"
+    },
+    "shthaw": {
+      "howMany": 2,
+      "locId": "L1587159",
+      "locName": "Stormwater Treatment Area 3/4--lower",
+      "obsDt": "2026-08-15 09:00",
+      "source": "local_checklist",
+      "speciesCode": "shthaw",
+      "subId": "S383591924"
+    },
+    "smafal": {
+      "howMany": 1,
+      "locId": "L241457",
+      "locName": "Seacrest Scrub Natural Area",
+      "obsDt": "2026-05-04 08:47",
+      "source": "local_checklist",
+      "speciesCode": "smafal",
+      "subId": "S332530625"
+    },
+    "smaplo1": {
+      "howMany": 1,
+      "locId": "L74455366",
+      "locName": "New Vandergrift Williams Rd, Pahokee US-FL 26.73994, -80.53555",
+      "obsDt": "2026-07-26 13:54",
+      "source": "local_checklist",
+      "speciesCode": "smaplo1",
+      "subId": "S376753073"
+    },
+    "smbani": {
+      "howMany": 1,
+      "locId": "L581841",
+      "locName": "Browns Farm Rd.",
+      "obsDt": "2026-07-05 06:21",
+      "source": "local_checklist",
+      "speciesCode": "smbani",
+      "subId": "S368140433"
+    },
+    "snakit": {
+      "howMany": 4,
+      "locId": "L874187",
+      "locName": "Loxahatchee Slough Natural Area",
+      "obsDt": "2026-08-11 18:47",
+      "source": "local_checklist",
+      "speciesCode": "snakit",
+      "subId": "S382584750"
+    },
+    "snoegr": {
+      "howMany": 7,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-16 11:24",
+      "source": "local_checklist",
+      "speciesCode": "snoegr",
+      "subId": "S384136402"
+    },
+    "snogoo": {
+      "howMany": 1,
+      "locId": "L46636531",
+      "locName": "A-2 Reservoir",
+      "obsDt": "2025-12-30 08:00",
+      "source": "local_checklist",
+      "speciesCode": "snogoo",
+      "subId": "S291310781"
+    },
+    "solsan": {
+      "howMany": 1,
+      "locId": "L75727713",
+      "locName": "5455\u20135529 Brown's Farm Rd, Belle Glade US-FL 26.59562, -80.54140",
+      "obsDt": "2026-08-16 07:13",
+      "source": "local_checklist",
+      "speciesCode": "solsan",
+      "subId": "S384007896"
+    },
+    "sooter1": {
+      "howMany": 1,
+      "locId": "L75728699",
+      "locName": "Beto-lagic - Boca Inlet, Leg 2 (26.399, -79.959)",
+      "obsDt": "2026-08-16 08:55",
+      "source": "local_checklist",
+      "speciesCode": "sooter1",
+      "subId": "S384091881"
+    },
+    "sora": {
+      "howMany": 1,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-06-13 10:20",
+      "source": "local_checklist",
+      "speciesCode": "sora",
+      "subId": "S357347788"
+    },
+    "sparro1": {
+      "howMany": 1,
+      "locId": "L127408",
+      "locName": "Loxahatchee NWR",
+      "obsDt": "2026-04-10 06:48",
+      "source": "local_checklist",
+      "speciesCode": "sparro1",
+      "subId": "S319676180"
+    },
+    "spbori": {
+      "howMany": 2,
+      "locId": "L31213397",
+      "locName": "1301 SW 25th Ave, Boynton Beach US-FL 26.50526, -80.08593",
+      "obsDt": "2026-08-16 15:02",
+      "source": "local_checklist",
+      "speciesCode": "spbori",
+      "subId": "S384141480"
+    },
+    "sposan": {
+      "howMany": 1,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-16 11:24",
+      "source": "local_checklist",
+      "speciesCode": "sposan",
+      "subId": "S384136402"
+    },
+    "stisan": {
+      "howMany": 11,
+      "locId": "L581841",
+      "locName": "Browns Farm Rd.",
+      "obsDt": "2026-08-16 08:10",
+      "source": "local_checklist",
+      "speciesCode": "stisan",
+      "subId": "S384136434"
+    },
+    "stopet": {
+      "howMany": 2,
+      "locId": "L72305635",
+      "locName": "North Atlantic Ocean (26.7021,-79.6591)",
+      "obsDt": "2026-07-03 10:11",
+      "source": "local_checklist",
+      "speciesCode": "stopet",
+      "subId": "S367143201"
+    },
+    "sulid": {
+      "howMany": 1,
+      "locId": "L870652",
+      "locName": "Boynton Beach Inlet Park",
+      "obsDt": "2026-05-09 07:35",
+      "source": "local_checklist",
+      "speciesCode": "sulid",
+      "subId": "S335251867"
+    },
+    "sumtan": {
+      "howMany": 1,
+      "locId": "L210479",
+      "locName": "Frenchman's Forest Natural Area",
+      "obsDt": "2026-05-03 07:15",
+      "source": "local_checklist",
+      "speciesCode": "sumtan",
+      "subId": "S331822416"
+    },
+    "swagoo2": {
+      "howMany": 0,
+      "locId": "L143084",
+      "locName": "Wakodahatchee Wetlands",
+      "obsDt": "2026-03-07 08:31",
+      "source": "local_checklist",
+      "speciesCode": "swagoo2",
+      "subId": "S306841350"
+    },
+    "swahaw": {
+      "howMany": 3,
+      "locId": "L581387",
+      "locName": "Bolles Canal  CR 827",
+      "obsDt": "2026-03-21 14:55",
+      "source": "local_checklist",
+      "speciesCode": "swahaw",
+      "subId": "S314910806"
+    },
+    "swallo": {
+      "howMany": 3,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-08-16 07:15",
+      "source": "local_checklist",
+      "speciesCode": "swallo",
+      "subId": "S384085942"
+    },
+    "swaspa": {
+      "howMany": 1,
+      "locId": "L46636531",
+      "locName": "A-2 Reservoir",
+      "obsDt": "2026-04-30 08:00",
+      "source": "local_checklist",
+      "speciesCode": "swaspa",
+      "subId": "S330008100"
+    },
+    "swathr": {
+      "howMany": 2,
+      "locId": "L127416",
+      "locName": "Spanish River Park",
+      "obsDt": "2026-05-05 09:00",
+      "source": "local_checklist",
+      "speciesCode": "swathr",
+      "subId": "S333211641"
+    },
+    "swathr2": {
+      "howMany": 1,
+      "locId": "L1293707",
+      "locName": "Lantana Nature Preserve",
+      "obsDt": "2026-05-04 07:00",
+      "source": "local_checklist",
+      "speciesCode": "swathr2",
+      "subId": "S332727109"
+    },
+    "swawar": {
+      "howMany": 1,
+      "locId": "L1512409",
+      "locName": "South Inlet Park",
+      "obsDt": "2026-05-04 17:16",
+      "source": "local_checklist",
+      "speciesCode": "swawar",
+      "subId": "S332710627"
+    },
+    "swtkit": {
+      "howMany": 1,
+      "locId": "L581830",
+      "locName": "Belle Glade Marina & Torry Island",
+      "obsDt": "2026-08-14 10:00",
+      "source": "local_checklist",
+      "speciesCode": "swtkit",
+      "subId": "S383251958"
+    },
+    "taimer1": {
+      "howMany": 1,
+      "locId": "L870652",
+      "locName": "Boynton Beach Inlet Park",
+      "obsDt": "2026-04-30 07:00",
+      "source": "local_checklist",
+      "speciesCode": "taimer1",
+      "subId": "S329835811"
+    },
+    "tenwar": {
+      "howMany": 1,
+      "locId": "L581830",
+      "locName": "Belle Glade Marina & Torry Island",
+      "obsDt": "2026-04-26 14:37",
+      "source": "local_checklist",
+      "speciesCode": "tenwar",
+      "subId": "S329674896"
+    },
+    "tern1": {
+      "howMany": 3,
+      "locId": "L5960906",
+      "locName": "Lake Worth Beach Park",
+      "obsDt": "2026-08-15 08:15",
+      "source": "local_checklist",
+      "speciesCode": "tern1",
+      "subId": "S383561280"
+    },
+    "thagul": {
+      "howMany": 1,
+      "locId": "L127414",
+      "locName": "John D. MacArthur Beach SP",
+      "obsDt": "2026-02-23 13:00",
+      "source": "local_checklist",
+      "speciesCode": "thagul",
+      "subId": "S303391932"
+    },
+    "thbvir": {
+      "howMany": 1,
+      "locId": "L3998307",
+      "locName": "Florida Atlantic University",
+      "obsDt": "2025-05-03 09:13",
+      "source": "local_checklist",
+      "speciesCode": "thbvir",
+      "subId": "S232737080"
+    },
+    "towwar": {
+      "howMany": 1,
+      "locId": "L143084",
+      "locName": "Wakodahatchee Wetlands",
+      "obsDt": "2026-03-04 10:21",
+      "source": "local_checklist",
+      "speciesCode": "towwar",
+      "subId": "S305989315"
+    },
+    "treswa": {
+      "howMany": 1,
+      "locId": "L581841",
+      "locName": "Browns Farm Rd.",
+      "obsDt": "2026-08-09 08:40",
+      "source": "local_checklist",
+      "speciesCode": "treswa",
+      "subId": "S381729160"
+    },
+    "triher": {
+      "howMany": 2,
+      "locId": "L2726529",
+      "locName": "Winding Waters Natural Area",
+      "obsDt": "2026-08-16 13:51",
+      "source": "local_checklist",
+      "speciesCode": "triher",
+      "subId": "S384155316"
+    },
+    "trimun": {
+      "howMany": 2,
+      "locId": "L581830",
+      "locName": "Belle Glade Marina & Torry Island",
+      "obsDt": "2026-04-12 07:12",
+      "source": "local_checklist",
+      "speciesCode": "trimun",
+      "subId": "S320701729"
+    },
+    "trokin": {
+      "howMany": 1,
+      "locId": "L842122",
+      "locName": "Stormwater Treatment Area 3/4",
+      "obsDt": "2026-04-22 09:13",
+      "source": "local_checklist",
+      "speciesCode": "trokin",
+      "subId": "S325581360"
+    },
+    "truswa": {
+      "howMany": 5,
+      "locId": "L8823973",
+      "locName": "Palm Bach Polo",
+      "obsDt": "2026-08-13 12:43",
+      "source": "local_checklist",
+      "speciesCode": "truswa",
+      "subId": "S383032131"
+    },
+    "turvul": {
+      "howMany": 1,
+      "locId": "L4478244",
+      "locName": "Sem-Chi Rice Road (Does Not Include Atlantic Sugar Mill)",
+      "obsDt": "2026-08-16 13:58",
+      "source": "local_checklist",
+      "speciesCode": "turvul",
+      "subId": "S384135507"
+    },
+    "turvul2": {
+      "howMany": 2,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-08-16 09:05",
+      "source": "local_checklist",
+      "speciesCode": "turvul2",
+      "subId": "S384035711"
+    },
+    "tyrann1": {
+      "howMany": 1,
+      "locId": "L127408",
+      "locName": "Loxahatchee NWR",
+      "obsDt": "2026-08-15 06:27",
+      "source": "local_checklist",
+      "speciesCode": "tyrann1",
+      "subId": "S383723105"
+    },
+    "uplsan": {
+      "howMany": 1,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2025-08-10 17:45",
+      "source": "local_checklist",
+      "speciesCode": "uplsan",
+      "subId": "S266473079"
+    },
+    "varfly": {
+      "howMany": 0,
+      "locId": "L4081873",
+      "locName": "Loxahatchee NWR--Lee Way (Treeline Trail)",
+      "obsDt": "2025-09-22 15:28",
+      "source": "local_checklist",
+      "speciesCode": "varfly",
+      "subId": "S274960544"
+    },
+    "veery": {
+      "howMany": 1,
+      "locId": "L1293707",
+      "locName": "Lantana Nature Preserve",
+      "obsDt": "2026-05-10 16:58",
+      "source": "local_checklist",
+      "speciesCode": "veery",
+      "subId": "S336797520"
+    },
+    "verfly": {
+      "howMany": 1,
+      "locId": "L1023544",
+      "locName": "Wellington Environmental Preserve",
+      "obsDt": "2026-03-11 07:16",
+      "source": "local_checklist",
+      "speciesCode": "verfly",
+      "subId": "S308266047"
+    },
+    "verfly5": {
+      "howMany": 1,
+      "locId": "L17950366",
+      "locName": "Paul Rardin Park",
+      "obsDt": "2026-02-08 12:21",
+      "source": "local_checklist",
+      "speciesCode": "verfly5",
+      "subId": "S298940337"
+    },
+    "vireo1": {
+      "howMany": 1,
+      "locId": "L127416",
+      "locName": "Spanish River Park",
+      "obsDt": "2026-05-03 06:44",
+      "source": "local_checklist",
+      "speciesCode": "vireo1",
+      "subId": "S332385186"
+    },
+    "virrai": {
+      "howMany": 1,
+      "locId": "L1017638",
+      "locName": "Peaceful Waters Sanctuary",
+      "obsDt": "2026-02-22 07:46",
+      "source": "local_checklist",
+      "speciesCode": "virrai",
+      "subId": "S303045068"
+    },
+    "vultur1": {
+      "howMany": 1,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-06-09 11:21",
+      "source": "local_checklist",
+      "speciesCode": "vultur1",
+      "subId": "S355044916"
+    },
+    "warble": {
+      "howMany": 1,
+      "locId": "L127408",
+      "locName": "Loxahatchee NWR",
+      "obsDt": "2026-08-16 06:25",
+      "source": "local_checklist",
+      "speciesCode": "warble",
+      "subId": "S384162253"
+    },
+    "weskin": {
+      "howMany": 2,
+      "locId": "L581830",
+      "locName": "Belle Glade Marina & Torry Island",
+      "obsDt": "2026-05-01 09:15",
+      "source": "local_checklist",
+      "speciesCode": "weskin",
+      "subId": "S334733215"
+    },
+    "wessan": {
+      "howMany": 7,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-16 11:24",
+      "source": "local_checklist",
+      "speciesCode": "wessan",
+      "subId": "S384136402"
+    },
+    "westan": {
+      "howMany": 1,
+      "locId": "L17443024",
+      "locName": "North County Aquatic Center",
+      "obsDt": "2026-01-24 08:47",
+      "source": "local_checklist",
+      "speciesCode": "westan",
+      "subId": "S295966407"
+    },
+    "whcspa": {
+      "howMany": 2,
+      "locId": "L127408",
+      "locName": "Loxahatchee NWR",
+      "obsDt": "2026-04-14 07:00",
+      "source": "local_checklist",
+      "speciesCode": "whcspa",
+      "subId": "S321700232"
+    },
+    "whepar2": {
+      "howMany": 4,
+      "locId": "L870652",
+      "locName": "Boynton Beach Inlet Park",
+      "obsDt": "2026-08-16 08:30",
+      "source": "local_checklist",
+      "speciesCode": "whepar2",
+      "subId": "S384014495"
+    },
+    "whevir": {
+      "howMany": 1,
+      "locId": "L8278041",
+      "locName": "Fran Reich Preserve SFWMD",
+      "obsDt": "2026-08-16 06:48",
+      "source": "local_checklist",
+      "speciesCode": "whevir",
+      "subId": "S384024573"
+    },
+    "whevir1": {
+      "howMany": 2,
+      "locId": "L46636531",
+      "locName": "A-2 Reservoir",
+      "obsDt": "2026-07-14 09:30",
+      "source": "local_checklist",
+      "speciesCode": "whevir1",
+      "subId": "S372187135"
+    },
+    "whfibi": {
+      "howMany": 1,
+      "locId": "L1101205",
+      "locName": "Loxahatchee NWR--Cypress Swamp Boardwalk",
+      "obsDt": "2026-08-08 18:13",
+      "source": "local_checklist",
+      "speciesCode": "whfibi",
+      "subId": "S381345191"
+    },
+    "whiegr1": {
+      "howMany": 1,
+      "locId": "L1017638",
+      "locName": "Peaceful Waters Sanctuary",
+      "obsDt": "2026-07-17 09:30",
+      "source": "local_checklist",
+      "speciesCode": "whiegr1",
+      "subId": "S376762330"
+    },
+    "whiibi": {
+      "howMany": 7,
+      "locId": "L4478244",
+      "locName": "Sem-Chi Rice Road (Does Not Include Atlantic Sugar Mill)",
+      "obsDt": "2026-08-16 13:58",
+      "source": "local_checklist",
+      "speciesCode": "whiibi",
+      "subId": "S384135507"
+    },
+    "whimbr3": {
+      "howMany": 1,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-08-15 06:10",
+      "source": "local_checklist",
+      "speciesCode": "whimbr3",
+      "subId": "S383729519"
+    },
+    "whistl1": {
+      "howMany": 2,
+      "locId": "L74455366",
+      "locName": "New Vandergrift Williams Rd, Pahokee US-FL 26.73994, -80.53555",
+      "obsDt": "2026-07-26 13:54",
+      "source": "local_checklist",
+      "speciesCode": "whistl1",
+      "subId": "S376753073"
+    },
+    "whrsan": {
+      "howMany": 2,
+      "locId": "L581841",
+      "locName": "Browns Farm Rd.",
+      "obsDt": "2026-06-07 06:28",
+      "source": "local_checklist",
+      "speciesCode": "whrsan",
+      "subId": "S354100900"
+    },
+    "whtkit": {
+      "howMany": 2,
+      "locId": "L842122",
+      "locName": "Stormwater Treatment Area 3/4",
+      "obsDt": "2026-07-02 11:18",
+      "source": "local_checklist",
+      "speciesCode": "whtkit",
+      "subId": "S366631479"
+    },
+    "whwdov": {
+      "howMany": 4,
+      "locId": "L22198774",
+      "locName": "Atlantic Sugar Mill",
+      "obsDt": "2026-08-16 13:27",
+      "source": "local_checklist",
+      "speciesCode": "whwdov",
+      "subId": "S384135711"
+    },
+    "willet1": {
+      "howMany": 1,
+      "locId": "L127414",
+      "locName": "John D. MacArthur Beach SP",
+      "obsDt": "2026-08-16 06:57",
+      "source": "local_checklist",
+      "speciesCode": "willet1",
+      "subId": "S383939430"
+    },
+    "willet2": {
+      "howMany": 1,
+      "locId": "L6666238",
+      "locName": "Gulfstream Park",
+      "obsDt": "2026-07-08 06:00",
+      "source": "local_checklist",
+      "speciesCode": "willet2",
+      "subId": "S369492295"
+    },
+    "willet3": {
+      "howMany": 2,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-15 15:56",
+      "source": "local_checklist",
+      "speciesCode": "willet3",
+      "subId": "S383782290"
+    },
+    "wilpha": {
+      "howMany": 1,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-16 11:24",
+      "source": "local_checklist",
+      "speciesCode": "wilpha",
+      "subId": "S384136402"
+    },
+    "wilplo": {
+      "howMany": 1,
+      "locId": "L588392",
+      "locName": "Jupiter Inlet",
+      "obsDt": "2026-08-02 06:41",
+      "source": "local_checklist",
+      "speciesCode": "wilplo",
+      "subId": "S379194861"
+    },
+    "wilsni1": {
+      "howMany": 1,
+      "locId": "L581841",
+      "locName": "Browns Farm Rd.",
+      "obsDt": "2026-05-02 06:58",
+      "source": "local_checklist",
+      "speciesCode": "wilsni1",
+      "subId": "S331273773"
+    },
+    "wiltur": {
+      "howMany": 4,
+      "locId": "L874187",
+      "locName": "Loxahatchee Slough Natural Area",
+      "obsDt": "2026-07-26 07:42",
+      "source": "local_checklist",
+      "speciesCode": "wiltur",
+      "subId": "S376647654"
+    },
+    "wispet": {
+      "howMany": 1,
+      "locId": "L44252130",
+      "locName": "Salty",
+      "obsDt": "2026-08-14 12:14",
+      "source": "local_checklist",
+      "speciesCode": "wispet",
+      "subId": "S383289140"
+    },
+    "wlswar": {
+      "howMany": 1,
+      "locId": "L1017638",
+      "locName": "Peaceful Waters Sanctuary",
+      "obsDt": "2026-03-26 13:17",
+      "source": "local_checklist",
+      "speciesCode": "wlswar",
+      "subId": "S320340835"
+    },
+    "woewar1": {
+      "howMany": 1,
+      "locId": "L225752",
+      "locName": "Frenchman's Forest Nature Preserve",
+      "obsDt": "2026-05-04 09:49",
+      "source": "local_checklist",
+      "speciesCode": "woewar1",
+      "subId": "S332593395"
+    },
+    "woodpe1": {
+      "howMany": 1,
+      "locId": "L38396707",
+      "locName": "Big Blue",
+      "obsDt": "2026-08-15 08:30",
+      "source": "local_checklist",
+      "speciesCode": "woodpe1",
+      "subId": "S383592090"
+    },
+    "wooduc": {
+      "howMany": 2,
+      "locId": "L874187",
+      "locName": "Loxahatchee Slough Natural Area",
+      "obsDt": "2026-08-11 18:47",
+      "source": "local_checklist",
+      "speciesCode": "wooduc",
+      "subId": "S382584750"
+    },
+    "woosto": {
+      "howMany": 16,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-16 11:24",
+      "source": "local_checklist",
+      "speciesCode": "woosto",
+      "subId": "S384136402"
+    },
+    "wren1": {
+      "howMany": 1,
+      "locId": "L4081873",
+      "locName": "Loxahatchee NWR--Lee Way (Treeline Trail)",
+      "obsDt": "2025-09-19 08:42",
+      "source": "local_checklist",
+      "speciesCode": "wren1",
+      "subId": "S274263376"
+    },
+    "x00422": {
+      "howMany": 12,
+      "locId": "L9585120",
+      "locName": "Lake Worth Golf Club",
+      "obsDt": "2026-08-15 18:30",
+      "source": "local_checklist",
+      "speciesCode": "x00422",
+      "subId": "S383952692"
+    },
+    "x00428": {
+      "howMany": 1,
+      "locId": "L10672121",
+      "locName": "Winn-Dixie Plaza",
+      "obsDt": "2026-03-15 15:04",
+      "source": "local_checklist",
+      "speciesCode": "x00428",
+      "subId": "S309822136"
+    },
+    "y00225": {
+      "howMany": 1,
+      "locId": "L1293707",
+      "locName": "Lantana Nature Preserve",
+      "obsDt": "2026-05-07 16:00",
+      "source": "local_checklist",
+      "speciesCode": "y00225",
+      "subId": "S334204205"
+    },
+    "y00318": {
+      "howMany": 1,
+      "locId": "L75728699",
+      "locName": "Beto-lagic - Boca Inlet, Leg 2 (26.399, -79.959)",
+      "obsDt": "2026-08-16 08:55",
+      "source": "local_checklist",
+      "speciesCode": "y00318",
+      "subId": "S384091881"
+    },
+    "y00475": {
+      "howMany": 1,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-08-16 07:15",
+      "source": "local_checklist",
+      "speciesCode": "y00475",
+      "subId": "S384085942"
+    },
+    "y00476": {
+      "howMany": 3,
+      "locId": "L581841",
+      "locName": "Browns Farm Rd.",
+      "obsDt": "2026-08-16 08:10",
+      "source": "local_checklist",
+      "speciesCode": "y00476",
+      "subId": "S384136434"
+    },
+    "y00478": {
+      "howMany": 1,
+      "locId": "L870652",
+      "locName": "Boynton Beach Inlet Park",
+      "obsDt": "2026-02-02 15:00",
+      "source": "local_checklist",
+      "speciesCode": "y00478",
+      "subId": "S298711483"
+    },
+    "y00496": {
+      "howMany": 1,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-07-24 18:12",
+      "source": "local_checklist",
+      "speciesCode": "y00496",
+      "subId": "S376103972"
+    },
+    "y00598": {
+      "howMany": 1,
+      "locId": "L75333421",
+      "locName": "Palm Beach Pelagics 8/9/2026",
+      "obsDt": "2026-08-09 06:37",
+      "source": "local_checklist",
+      "speciesCode": "y00598",
+      "subId": "S381733378"
+    },
+    "y00604": {
+      "howMany": 10,
+      "locId": "L75727713",
+      "locName": "5455\u20135529 Brown's Farm Rd, Belle Glade US-FL 26.59562, -80.54140",
+      "obsDt": "2026-08-16 07:13",
+      "source": "local_checklist",
+      "speciesCode": "y00604",
+      "subId": "S384007896"
+    },
+    "y00610": {
+      "howMany": 2,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-01-17 13:54",
+      "source": "local_checklist",
+      "speciesCode": "y00610",
+      "subId": "S294844657"
+    },
+    "y00612": {
+      "howMany": 1,
+      "locId": "L3392569",
+      "locName": "Karen T. Marcus Sandhill Crane Access Park",
+      "obsDt": "2026-02-18 17:06",
+      "source": "local_checklist",
+      "speciesCode": "y00612",
+      "subId": "S302067262"
+    },
+    "y00619": {
+      "howMany": 1,
+      "locId": "L17950366",
+      "locName": "Paul Rardin Park",
+      "obsDt": "2026-01-09 14:51",
+      "source": "local_checklist",
+      "speciesCode": "y00619",
+      "subId": "S294591718"
+    },
+    "y00632": {
+      "howMany": 13,
+      "locId": "L1017638",
+      "locName": "Peaceful Waters Sanctuary",
+      "obsDt": "2026-08-13 09:35",
+      "source": "local_checklist",
+      "speciesCode": "y00632",
+      "subId": "S383039775"
+    },
+    "y00678": {
+      "howMany": 1,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-15 09:11",
+      "source": "local_checklist",
+      "speciesCode": "y00678",
+      "subId": "S383656256"
+    },
+    "y00728": {
+      "howMany": 1,
+      "locId": "L74455366",
+      "locName": "New Vandergrift Williams Rd, Pahokee US-FL 26.73994, -80.53555",
+      "obsDt": "2026-07-26 13:54",
+      "source": "local_checklist",
+      "speciesCode": "y00728",
+      "subId": "S376753073"
+    },
+    "y00833": {
+      "howMany": 9,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-08-10 07:20",
+      "source": "local_checklist",
+      "speciesCode": "y00833",
+      "subId": "S382006499"
+    },
+    "ycnher": {
+      "howMany": 4,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-08-16 11:24",
+      "source": "local_checklist",
+      "speciesCode": "ycnher",
+      "subId": "S384136402"
+    },
+    "yebcha": {
+      "howMany": 1,
+      "locId": "L127416",
+      "locName": "Spanish River Park",
+      "obsDt": "2026-04-14 08:35",
+      "source": "local_checklist",
+      "speciesCode": "yebcha",
+      "subId": "S321678507"
+    },
+    "yebcuc": {
+      "howMany": 2,
+      "locId": "L127408",
+      "locName": "Loxahatchee NWR",
+      "obsDt": "2026-08-16 06:25",
+      "source": "local_checklist",
+      "speciesCode": "yebcuc",
+      "subId": "S384162253"
+    },
+    "yebfly": {
+      "howMany": 1,
+      "locId": "L127408",
+      "locName": "Loxahatchee NWR",
+      "obsDt": "2025-01-08 10:20",
+      "source": "local_checklist",
+      "speciesCode": "yebfly",
+      "subId": "S208783987"
+    },
+    "yebsap": {
+      "howMany": 1,
+      "locId": "L10258897",
+      "locName": "Dubois Park",
+      "obsDt": "2026-04-01 16:00",
+      "source": "local_checklist",
+      "speciesCode": "yebsap",
+      "subId": "S315682285"
+    },
+    "yecnih1": {
+      "howMany": 1,
+      "locId": "L3187664",
+      "locName": "Palm Beach Par-3 Golf Course",
+      "obsDt": "2026-08-16 06:45",
+      "source": "local_checklist",
+      "speciesCode": "yecnih1",
+      "subId": "S383953153"
+    },
+    "yehbla": {
+      "howMany": 2,
+      "locId": "L4795535",
+      "locName": "Gladeview Rd.",
+      "obsDt": "2026-04-19 07:56",
+      "source": "local_checklist",
+      "speciesCode": "yehbla",
+      "subId": "S324062762"
+    },
+    "yelwar1": {
+      "howMany": 2,
+      "locId": "L75727282",
+      "locName": "2044\u20132098 Brown's Farm Rd, Belle Glade US-FL 26.63553, -80.57461",
+      "obsDt": "2026-08-16 09:26",
+      "source": "local_checklist",
+      "speciesCode": "yelwar1",
+      "subId": "S384005242"
+    },
+    "yerwar": {
+      "howMany": 1,
+      "locId": "L3521741",
+      "locName": "Mounts Botanical Garden",
+      "obsDt": "2026-05-01 10:00",
+      "source": "local_checklist",
+      "speciesCode": "yerwar",
+      "subId": "S330402776"
+    },
+    "yesfli": {
+      "howMany": 1,
+      "locId": "L874187",
+      "locName": "Loxahatchee Slough Natural Area",
+      "obsDt": "2026-07-28 18:20",
+      "source": "local_checklist",
+      "speciesCode": "yesfli",
+      "subId": "S377964447"
+    },
+    "yetvir": {
+      "howMany": 1,
+      "locId": "L225752",
+      "locName": "Frenchman's Forest Nature Preserve",
+      "obsDt": "2026-04-29 09:30",
+      "source": "local_checklist",
+      "speciesCode": "yetvir",
+      "subId": "S329525955"
+    },
+    "yetwar": {
+      "howMany": 1,
+      "locId": "L127408",
+      "locName": "Loxahatchee NWR",
+      "obsDt": "2026-08-16 06:25",
+      "source": "local_checklist",
+      "speciesCode": "yetwar",
+      "subId": "S384162253"
+    },
+    "yetwar1": {
+      "howMany": 1,
+      "locId": "L1293707",
+      "locName": "Lantana Nature Preserve",
+      "obsDt": "2026-04-11 08:19",
+      "source": "local_checklist",
+      "speciesCode": "yetwar1",
+      "subId": "S320262835"
+    },
+    "yetwar2": {
+      "howMany": 3,
+      "locId": "L246929",
+      "locName": "Green Cay Wetlands & Nature Center",
+      "obsDt": "2026-08-16 09:05",
+      "source": "local_checklist",
+      "speciesCode": "yetwar2",
+      "subId": "S384035711"
+    }
+  },
+  "region_code": "US-FL-099",
+  "signature": {
+    "file_count": 19422,
+    "newest_mtime": 1787068841.2349744
+  },
+  "updated_at": "2026-08-18T12:01:30.546661-04:00"
+}
