@@ -800,6 +800,9 @@ def general_cache_inventory(
             elif name == "ebird_region_list_cache.json" and isinstance(payload, dict):
                 lists = payload.get("lists")
                 entry_count = len(lists) if isinstance(lists, dict) else 0
+            elif name.endswith("_local_last_seen.json") and isinstance(payload, dict):
+                by_code = payload.get("by_code")
+                entry_count = len(by_code) if isinstance(by_code, dict) else 0
             elif isinstance(payload, dict) and isinstance(payload.get("hotspots"), list):
                 entry_count = len(payload["hotspots"])
             elif isinstance(payload, (dict, list)):

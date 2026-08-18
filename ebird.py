@@ -893,6 +893,21 @@ def build_local_last_seen_index(
                 "source": "local_checklist",
             }
 
+    previous_files = int((existing.get("signature") or {}).get("file_count") or 0)
+    previous_by_code = existing.get("by_code")
+    if previous_files > len(files) and isinstance(previous_by_code, dict):
+        # Deploy/subset trees have fewer checklist files than the index was
+        # built from; keep last-seen rows that this disk scan cannot see.
+        for code, row in previous_by_code.items():
+            if not isinstance(row, dict):
+                continue
+            key = str(code)
+            current = by_code.get(key)
+            if current is None:
+                by_code[key] = row
+            elif str(row.get("obsDt") or "") > str(current.get("obsDt") or ""):
+                by_code[key] = row
+
     _save_json_file(
         index_path,
         {
