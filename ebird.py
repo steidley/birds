@@ -999,12 +999,47 @@ def note_rate_limit(seconds: float, *, path: str) -> None:
         pass
 
 
+_TAXONOMY_NAME_INDEX: dict[str, str] | None = None
+
+
+def _taxonomy_code_for_name(
+    *,
+    scientific_name: str = "",
+    common_name: str = "",
+) -> str | None:
+    """Map a scientific or common name to an eBird code from the local taxonomy dump."""
+    global _TAXONOMY_NAME_INDEX
+    if _TAXONOMY_NAME_INDEX is None:
+        index: dict[str, str] = {}
+        for row in load_complete_taxonomy_rows():
+            code = str(row.get("speciesCode") or "").strip()
+            if not code:
+                continue
+            sci_name = str(row.get("sciName") or "").strip().casefold()
+            com_name = str(row.get("comName") or "").strip().casefold()
+            if sci_name:
+                index.setdefault(f"sci:{sci_name}", code)
+            if com_name:
+                index.setdefault(f"common:{com_name}", code)
+        _TAXONOMY_NAME_INDEX = index
+    sci = scientific_name.strip().casefold()
+    common = common_name.strip().casefold()
+    if sci:
+        code = _TAXONOMY_NAME_INDEX.get(f"sci:{sci}")
+        if code:
+            return code
+    if common:
+        return _TAXONOMY_NAME_INDEX.get(f"common:{common}")
+    return None
+
+
 def resolve_ebird_code(
     *,
     scientific_name: str | None = None,
     common_name: str | None = None,
+    local_only: bool = False,
 ) -> str | None:
-    """Resolve an eBird species code via BirdNET taxonomy (disk-cached)."""
+    """Resolve an eBird species code from local caches, then BirdNET if needed."""
     sci = (scientific_name or "").strip()
     common = (common_name or "").strip()
     lookup = sci or common
@@ -1015,6 +1050,11 @@ def resolve_ebird_code(
     if cache_key in cache:
         value = cache[cache_key]
         return str(value) if value else None
+    local_code = _taxonomy_code_for_name(scientific_name=sci, common_name=common)
+    if local_code:
+        return local_code
+    if local_only:
+        return None
     url = f"https://birdnet.cornell.edu/taxonomy/api/species/{quote(lookup, safe='')}"
     started = time.perf_counter()
     log_api_send(
@@ -1412,14 +1452,14 @@ class EBirdClient:
         if local:
             return dict(local)
 
-        if not allow_api:
-            return None
-
         cache = _load_json_file(LAST_SEEN_CACHE_PATH)
         cache_key = f"{region}|{code}|{back}"
         cached = cache.get(cache_key)
         if isinstance(cached, dict) and "fetched_at" in cached:
             return cached.get("observation") or None
+
+        if not allow_api:
+            return None
 
         observation: dict[str, Any] | None = None
         try:

@@ -3,10 +3,12 @@ import csv
 import html
 import json
 import os
+import re
 import subprocess
 import sys
 import time
 from datetime import date, datetime, timedelta
+from urllib.parse import urlparse, urlunparse
 
 import requests
 import streamlit as st
@@ -23,6 +25,7 @@ from ebird import (
     list_local_checklist_regions,
     load_cached_hotspots,
     load_disk_region_species_codes,
+    load_taxonomy_cache,
     load_local_checklists_for_hotspot,
     rebuild_local_last_seen_indexes,
     region_historical_species_cache_coverage,
@@ -39,6 +42,7 @@ from download_checklists import (
 )
 from inaturalist import (
     CACHE_PATH as INAT_PHOTO_CACHE_PATH,
+    DEFAULT_MAX_PHOTOS,
     GALLERY_CACHE_PATH as INAT_GALLERY_CACHE_PATH,
     GALLERY_CACHE_VERSION,
     SIMILAR_CACHE_PATH as INAT_SIMILAR_CACHE_PATH,
@@ -50,6 +54,9 @@ from inaturalist import (
 load_dotenv(Path(__file__).parent / ".env")
 
 LIFE_LISTS_DIR = Path(__file__).parent / "lifeLists"
+SAVED_GALLERIES_DIR = Path(__file__).parent / "saved_galleries"
+SAVED_GALLERY_QUERY = "saved_gallery"
+SAVED_GALLERY_ID_RE = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{6}(?:_\d+)?$")
 DEFAULT_HOTSPOT_ID = os.environ.get("EBIRD_DEFAULT_HOTSPOT", "L364884")
 WORLD_LIFE_LIST_CODE = "world"
 BUSY_CURSOR_CSS = """
@@ -62,6 +69,104 @@ html *, body *,
 }
 </style>
 """
+UI_HEADING_CSS = """
+<style>
+.stApp [data-testid="stHeading"] h1,
+.stApp h1 {
+  font-size: 1.2rem !important;
+  font-weight: 650 !important;
+  line-height: 1.25 !important;
+  margin: 0 0 0.35rem 0 !important;
+  padding: 0 !important;
+}
+.stApp [data-testid="stTextInput"] input[aria-label="Gallery name"] {
+  font-size: 1.2rem !important;
+  font-weight: 650 !important;
+  line-height: 1.25 !important;
+}
+.stApp [data-testid="stHeading"] h2,
+.stApp h2 {
+  font-size: 1.05rem !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  margin: 0.75rem 0 0.25rem 0 !important;
+  padding: 0 !important;
+}
+.stApp [data-testid="stHeading"] h3,
+.stApp h3 {
+  font-size: 0.98rem !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  margin: 0.6rem 0 0.2rem 0 !important;
+  padding: 0 !important;
+}
+.stApp [data-testid="stMainBlockContainer"],
+.stApp .block-container {
+  padding-top: 1.1rem !important;
+}
+#MainMenu, footer,
+.stApp [data-testid="stHeader"],
+.stApp [data-testid="stToolbar"],
+.stApp [data-testid="stDecoration"],
+.stApp [data-testid="stStatusWidget"],
+.stApp [data-testid="stAppToolbar"],
+.stApp .stAppToolbar,
+.stApp header {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+}
+</style>
+"""
+UI_LAYOUT_DESKTOP_CSS = """
+<style>
+.stApp [data-testid="stMainBlockContainer"],
+.stApp .block-container {
+  max-width: 100% !important;
+  width: 100% !important;
+  padding-left: 2rem;
+  padding-right: 2rem;
+}
+</style>
+"""
+UI_LAYOUT_MOBILE_CSS = """
+<style>
+.stApp [data-testid="stMainBlockContainer"],
+.stApp .block-container {
+  max-width: 430px !important;
+  width: 100% !important;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+</style>
+"""
+
+
+def project_git_commit_stamp() -> str | None:
+    """Return the latest project commit time, or None if git is unavailable."""
+    try:
+        completed = subprocess.run(
+            ["git", "log", "-1", "--format=%cI"],
+            cwd=Path(__file__).parent,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    raw = (completed.stdout or "").strip()
+    if completed.returncode != 0 or not raw:
+        return None
+    try:
+        when = datetime.fromisoformat(raw)
+    except ValueError:
+        return raw
+    if when.tzinfo is None:
+        when = when.astimezone()
+    return when.astimezone().strftime("%Y-%m-%d %H:%M %Z")
 
 
 def set_busy_cursor(enabled: bool = True) -> None:
@@ -72,6 +177,23 @@ def set_busy_cursor(enabled: bool = True) -> None:
     """
     if enabled:
         st.markdown(BUSY_CURSOR_CSS, unsafe_allow_html=True)
+
+
+def apply_ui_layout() -> None:
+    """Apply desktop (full width) or mobile (narrow) layout CSS."""
+    mode = str(st.session_state.get("ui_layout_pref") or "desktop")
+    if mode not in {"desktop", "mobile"}:
+        mode = "desktop"
+    st.session_state.ui_layout_pref = mode
+    css = UI_LAYOUT_MOBILE_CSS if mode == "mobile" else UI_LAYOUT_DESKTOP_CSS
+    st.markdown(UI_HEADING_CSS + css, unsafe_allow_html=True)
+
+
+def _sync_ui_layout_pref() -> None:
+    """Copy the layout radio into a key that survives leaving this screen."""
+    chosen = st.session_state.get("ui_layout_mode_radio")
+    if chosen in {"desktop", "mobile"}:
+        st.session_state.ui_layout_pref = chosen
 
 
 def render_ebird_rate_limit_notices() -> None:
@@ -186,13 +308,13 @@ def render_species_thumbnail_table(
     *,
     columns: int = 6,
     width: int = 144,
+    click_hrefs: list[str | None] | None = None,
 ) -> None:
     """Render species as a thumbnail-only grid with 1px gaps."""
     if not items:
         return
-    cols_n = max(1, columns)
     cells: list[str] = []
-    for item in items:
+    for index, item in enumerate(items):
         code = item.get("code")
         sci = item.get("sciName") or None
         name = str(item.get("Species") or item.get("name") or code or "")
@@ -200,32 +322,39 @@ def render_species_thumbnail_table(
         if photo and photo.get("image_url"):
             src = html.escape(str(photo["image_url"]), quote=True)
             alt = html.escape(name or "species", quote=True)
-            cells.append(
+            inner = (
                 f'<img src="{src}" alt="{alt}" '
                 f'style="width:{width}px;height:{width}px;object-fit:cover;'
                 f'display:block;margin:0;padding:0;border:0"/>'
             )
         else:
             label = html.escape((name[:10] or "—"), quote=False)
-            cells.append(
+            inner = (
                 f'<div style="width:{width}px;height:{width}px;display:flex;'
                 f'align-items:center;justify-content:center;font-size:11px;'
                 f'color:#64748b;background:#f1f5f9;margin:0;padding:0">'
                 f"{label}</div>"
             )
-    # Fill the last row so the CSS grid stays aligned.
-    while len(cells) % cols_n:
-        cells.append(
-            f'<div style="width:{width}px;height:{width}px;margin:0;padding:0"></div>'
-        )
+        href = None
+        if click_hrefs is not None and index < len(click_hrefs):
+            href = click_hrefs[index]
+        if href:
+            safe_href = html.escape(str(href), quote=True)
+            alt_title = html.escape(name or "species", quote=True)
+            inner = (
+                f'<a href="{safe_href}" title="{alt_title}" '
+                f'style="display:block;line-height:0;text-decoration:none">'
+                f"{inner}</a>"
+            )
+        cells.append(inner)
     grid = "".join(
         f'<div style="margin:0;padding:0;line-height:0">{cell}</div>'
         for cell in cells
     )
     st.markdown(
-        f'<div style="display:grid;grid-template-columns:repeat({cols_n},{width}px);'
-        f'gap:1px;padding:0;margin:0;width:max-content;max-width:100%;'
-        f'overflow-x:auto;line-height:0">{grid}</div>',
+        f'<div style="display:grid;grid-template-columns:repeat(auto-fill,{width}px);'
+        f'gap:1px;padding:0;margin:0;width:100%;justify-content:start;'
+        f'line-height:0">{grid}</div>',
         unsafe_allow_html=True,
     )
 
@@ -1173,6 +1302,226 @@ def warm_missing_region_similar_cache(region_code: str) -> dict[str, int]:
     return result
 
 
+def _load_json_object(path: Path) -> dict:
+    """Load a JSON object from disk, or {} if missing/invalid."""
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def similar_cache_result_species() -> list[dict]:
+    """Unique species that appear as similar-species *results* (not just sources)."""
+    similar_cache = _load_json_object(INAT_SIMILAR_CACHE_PATH)
+    unique: dict[str, dict] = {}
+    for value in similar_cache.values():
+        if not isinstance(value, list):
+            continue
+        for item in value:
+            if not isinstance(item, dict):
+                continue
+            taxon_id = item.get("taxon_id")
+            sci = str(item.get("scientific_name") or "").strip()
+            common = str(item.get("common_name") or "").strip()
+            key = str(taxon_id) if taxon_id is not None else sci.casefold()
+            if not key or key in unique:
+                continue
+            unique[key] = {
+                "taxon_id": taxon_id,
+                "code": "",
+                "name": common or sci or "Unknown",
+                "sciName": sci,
+            }
+    for bird in unique.values():
+        code = resolve_ebird_code(
+            scientific_name=bird["sciName"] or None,
+            common_name=bird["name"] or None,
+            local_only=True,
+        )
+        bird["code"] = str(code or "").strip()
+    return list(unique.values())
+
+
+def _gallery_cache_current_keys() -> tuple[set[str], set[str], set[str]]:
+    """Current-version gallery entries indexed by code, taxon id, and sci name."""
+    gallery_cache = _load_json_object(INAT_GALLERY_CACHE_PATH)
+    codes: set[str] = set()
+    taxon_ids: set[str] = set()
+    sci_names: set[str] = set()
+    for key, value in gallery_cache.items():
+        if not isinstance(value, dict) or not value:
+            continue
+        if value.get("cache_version") != GALLERY_CACHE_VERSION:
+            continue
+        text_key = str(key).strip()
+        if text_key:
+            codes.add(text_key)
+        nested = str(value.get("ebird_code") or "").strip()
+        if nested:
+            codes.add(nested)
+        taxon_id = value.get("taxon_id")
+        if taxon_id is not None:
+            taxon_ids.add(str(taxon_id))
+        sci = str(value.get("scientific_name") or "").strip().casefold()
+        if sci:
+            sci_names.add(sci)
+    return codes, taxon_ids, sci_names
+
+
+def _similar_result_has_gallery(
+    bird: dict,
+    *,
+    gallery_codes: set[str],
+    gallery_taxon_ids: set[str],
+    gallery_sci_names: set[str],
+) -> bool:
+    code = str(bird.get("code") or "").strip()
+    if code and code in gallery_codes:
+        return True
+    taxon_id = bird.get("taxon_id")
+    if taxon_id is not None and str(taxon_id) in gallery_taxon_ids:
+        return True
+    sci = str(bird.get("sciName") or "").strip().casefold()
+    return bool(sci and sci in gallery_sci_names)
+
+
+def similar_cache_media_coverage() -> dict:
+    """How many similar-species result birds have photo and gallery caches."""
+    birds = similar_cache_result_species()
+    photo_cache = _load_json_object(INAT_PHOTO_CACHE_PATH)
+    gallery_codes, gallery_taxon_ids, gallery_sci_names = _gallery_cache_current_keys()
+    photo_covered = 0
+    gallery_covered = 0
+    unresolved = 0
+    for bird in birds:
+        code = str(bird.get("code") or "").strip()
+        if not code:
+            unresolved += 1
+        elif code in photo_cache:
+            photo_covered += 1
+        if _similar_result_has_gallery(
+            bird,
+            gallery_codes=gallery_codes,
+            gallery_taxon_ids=gallery_taxon_ids,
+            gallery_sci_names=gallery_sci_names,
+        ):
+            gallery_covered += 1
+    total = len(birds)
+    return {
+        "total": total,
+        "unresolved": unresolved,
+        "photo_covered": photo_covered,
+        "photo_missing": max(0, total - photo_covered),
+        "gallery_covered": gallery_covered,
+        "gallery_missing": max(0, total - gallery_covered),
+    }
+
+
+def missing_similar_result_photo_codes() -> list[str]:
+    """eBird codes for similar-species results missing from the photo cache."""
+    photo_cache = _load_json_object(INAT_PHOTO_CACHE_PATH)
+    missing: list[str] = []
+    seen: set[str] = set()
+    for bird in similar_cache_result_species():
+        code = str(bird.get("code") or "").strip()
+        if not code or code in seen or code in photo_cache:
+            continue
+        seen.add(code)
+        missing.append(code)
+    return missing
+
+
+def missing_similar_result_gallery_codes() -> list[str]:
+    """eBird codes (or sci names) for similar-species results missing gallery cache."""
+    gallery_codes, gallery_taxon_ids, gallery_sci_names = _gallery_cache_current_keys()
+    missing: list[str] = []
+    seen: set[str] = set()
+    for bird in similar_cache_result_species():
+        if _similar_result_has_gallery(
+            bird,
+            gallery_codes=gallery_codes,
+            gallery_taxon_ids=gallery_taxon_ids,
+            gallery_sci_names=gallery_sci_names,
+        ):
+            continue
+        lookup = str(bird.get("code") or "").strip() or str(
+            bird.get("sciName") or ""
+        ).strip()
+        if not lookup or lookup in seen:
+            continue
+        seen.add(lookup)
+        missing.append(lookup)
+    return missing
+
+
+def missing_similar_result_display_rows(kind: str) -> list[dict]:
+    """Display rows for similar-species results missing photo or gallery cache."""
+    photo_cache = _load_json_object(INAT_PHOTO_CACHE_PATH)
+    gallery_codes, gallery_taxon_ids, gallery_sci_names = _gallery_cache_current_keys()
+    rows: list[dict] = []
+    for bird in similar_cache_result_species():
+        if kind == "photo":
+            code = str(bird.get("code") or "").strip()
+            if code and code in photo_cache:
+                continue
+        elif kind == "gallery":
+            if _similar_result_has_gallery(
+                bird,
+                gallery_codes=gallery_codes,
+                gallery_taxon_ids=gallery_taxon_ids,
+                gallery_sci_names=gallery_sci_names,
+            ):
+                continue
+        else:
+            continue
+        rows.append(
+            {
+                "Code": str(bird.get("code") or "").strip() or "—",
+                "Common name": str(bird.get("name") or "—"),
+                "Scientific name": str(bird.get("sciName") or "—"),
+            }
+        )
+    return rows
+
+
+def warm_missing_similar_result_photo_cache() -> dict[str, int]:
+    """Fetch iNaturalist photo metadata for similar-species results missing it."""
+    def _worker(code: str, sci: str | None) -> bool:
+        return bool(species_photo(code, scientific_name=sci))
+
+    result = _warm_codes_with_progress(
+        missing_similar_result_photo_codes(),
+        label="similar-bird photo cache",
+        worker=_worker,
+    )
+    try:
+        inaturalist_photo_for_code.clear()
+    except Exception:
+        pass
+    return result
+
+
+def warm_missing_similar_result_gallery_cache() -> dict[str, int]:
+    """Fetch gallery payloads for similar-species results missing a current cache."""
+    def _worker(code: str, sci: str | None) -> bool:
+        payload = gallery_payload_for_code(
+            code, sci, max_photos=DEFAULT_MAX_PHOTOS
+        )
+        return bool(payload and (payload.get("photos") or payload.get("common_name")))
+
+    result = _warm_codes_with_progress(
+        missing_similar_result_gallery_codes(),
+        label="similar-bird gallery cache",
+        worker=_worker,
+    )
+    try:
+        gallery_payload_for_code.clear()
+    except Exception:
+        pass
+    return result
+
+
 def warm_missing_region_species_list(region_code: str) -> dict[str, int]:
     """Fetch and persist the historical species list for a region."""
     region = (region_code or "").strip()
@@ -1187,7 +1536,15 @@ def warm_missing_region_species_list(region_code: str) -> dict[str, int]:
     return {"missing": 1, "attempted": 1, "found": len(codes)}
 
 
-def open_gallery(birds: list[dict], *, title: str = "Gallery") -> None:
+def open_gallery(
+    birds: list[dict],
+    *,
+    title: str = "Gallery",
+    saved_id: str | None = None,
+    view_mode: str | None = None,
+    source_title: str | None = None,
+    sort: str | None = None,
+) -> None:
     """Store a bird list in session state and open the gallery view."""
     cleaned: list[dict] = []
     seen: set[str] = set()
@@ -1234,10 +1591,633 @@ def open_gallery(birds: list[dict], *, title: str = "Gallery") -> None:
     st.session_state.gallery_show_info = False
     st.session_state.gallery_show_similar = True
     st.session_state.setdefault("gallery_hide_similar_never_seen", True)
-    st.session_state.gallery_view_mode_pending = "list"
+    if view_mode in {"summary", "list", "standard"}:
+        st.session_state.gallery_view_mode = view_mode
+        st.session_state.gallery_view_mode_pending = view_mode
+    else:
+        st.session_state.gallery_view_mode_pending = "summary"
+    if sort in GALLERY_SORT_OPTIONS:
+        st.session_state.gallery_sort = sort
+        st.session_state.gallery_sort_pref = sort
+        st.session_state.gallery_sort_pending = sort
     st.session_state.gallery_list_image_indices = {}
     st.session_state.pop("gallery_image_cache_warmed", None)
+    st.session_state.pop("gallery_summary_page", None)
+    origin = source_title or title
+    if saved_id:
+        st.session_state.gallery_saved_id = saved_id
+        st.session_state.gallery_saved_dirty = False
+        st.session_state.gallery_source_title = origin
+        st.session_state.gallery_name = title
+        st.session_state.gallery_title = title
+        _set_saved_gallery_query(saved_id)
+    else:
+        st.session_state.pop("gallery_saved_id", None)
+        st.session_state.gallery_saved_dirty = False
+        st.session_state.gallery_source_title = origin
+        st.session_state.gallery_name = default_gallery_name()
+        st.session_state.gallery_title = st.session_state.gallery_name
+        _clear_saved_gallery_query()
+    st.session_state.dashboard_pref = "gallery"
     st.rerun()
+
+
+def default_gallery_name(when: datetime | None = None) -> str:
+    """Date/time used when a gallery has no specific name."""
+    return (when or datetime.now()).strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _saved_gallery_path(gallery_id: str) -> Path:
+    return SAVED_GALLERIES_DIR / f"{gallery_id}.json"
+
+
+def _valid_saved_gallery_id(gallery_id: str) -> bool:
+    return bool(SAVED_GALLERY_ID_RE.fullmatch((gallery_id or "").strip()))
+
+
+def _new_saved_gallery_id(when: datetime | None = None) -> str:
+    when = when or datetime.now()
+    base = when.strftime("%Y-%m-%d_%H%M%S")
+    if not _saved_gallery_path(base).exists():
+        return base
+    for suffix in range(2, 100):
+        candidate = f"{base}_{suffix}"
+        if not _saved_gallery_path(candidate).exists():
+            return candidate
+    return f"{base}_{os.getpid()}"
+
+
+def _query_param_raw(name: str) -> str | None:
+    params = getattr(st, "query_params", None)
+    if params is None:
+        return None
+    try:
+        if name not in params:
+            return None
+        raw = params.get(name)
+    except Exception:
+        return None
+    if isinstance(raw, (list, tuple)):
+        raw = raw[0] if raw else None
+    value = str(raw or "").strip()
+    return value or None
+
+
+def _clear_saved_gallery_query() -> None:
+    params = getattr(st, "query_params", None)
+    if params is None:
+        return
+    try:
+        if SAVED_GALLERY_QUERY in params:
+            del params[SAVED_GALLERY_QUERY]
+    except Exception:
+        try:
+            params.pop(SAVED_GALLERY_QUERY, None)
+        except Exception:
+            pass
+
+
+def _set_saved_gallery_query(gallery_id: str) -> None:
+    params = getattr(st, "query_params", None)
+    if params is None:
+        return
+    try:
+        params[SAVED_GALLERY_QUERY] = gallery_id
+    except Exception:
+        pass
+
+
+def app_base_url() -> str:
+    """Current app origin+path with query string removed."""
+    raw = ""
+    try:
+        raw = str(getattr(st.context, "url", "") or "")
+    except Exception:
+        raw = ""
+    if not raw:
+        return ""
+    parts = urlparse(raw)
+    return urlunparse((parts.scheme, parts.netloc, parts.path, "", "", ""))
+
+
+def saved_gallery_url(gallery_id: str) -> str:
+    base = app_base_url()
+    if not base:
+        return f"?{SAVED_GALLERY_QUERY}={gallery_id}"
+    return f"{base}?{SAVED_GALLERY_QUERY}={gallery_id}"
+
+
+def load_saved_gallery(gallery_id: str) -> dict | None:
+    if not _valid_saved_gallery_id(gallery_id):
+        return None
+    path = _saved_gallery_path(gallery_id)
+    if not path.is_file():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    if not isinstance(payload, dict):
+        return None
+    birds = payload.get("birds")
+    if not isinstance(birds, list) or not birds:
+        return None
+    payload["id"] = str(payload.get("id") or gallery_id)
+    payload["birds"] = birds
+    return payload
+
+
+def list_saved_galleries() -> list[dict]:
+    if not SAVED_GALLERIES_DIR.is_dir():
+        return []
+    listed: list[dict] = []
+    for path in SAVED_GALLERIES_DIR.glob("*.json"):
+        payload = load_saved_gallery(path.stem)
+        if payload:
+            listed.append(payload)
+    listed.sort(key=lambda item: str(item.get("saved_at") or item.get("id") or ""), reverse=True)
+    return listed
+
+
+def delete_saved_gallery(gallery_id: str) -> None:
+    """Remove a saved gallery file from disk."""
+    if not _valid_saved_gallery_id(gallery_id):
+        return
+    path = _saved_gallery_path(gallery_id)
+    try:
+        path.unlink(missing_ok=True)
+    except OSError:
+        pass
+    if st.session_state.get("gallery_saved_id") == gallery_id:
+        st.session_state.pop("gallery_saved_id", None)
+        st.session_state.pop("gallery_saved_dirty", None)
+        _clear_saved_gallery_query()
+
+
+def rename_saved_gallery(gallery_id: str, name: str) -> str | None:
+    """Update the display name of an existing saved gallery."""
+    payload = load_saved_gallery(gallery_id)
+    if not payload:
+        return None
+    cleaned = str(name or "").strip() or default_gallery_name()
+    payload["title"] = cleaned
+    try:
+        _saved_gallery_path(gallery_id).write_text(
+            json.dumps(payload, indent=2),
+            encoding="utf-8",
+        )
+    except OSError as exc:
+        st.error(f"Could not rename gallery: {exc}")
+        return None
+    if st.session_state.get("gallery_saved_id") == gallery_id:
+        st.session_state.gallery_name = cleaned
+        st.session_state.gallery_title = cleaned
+    return cleaned
+
+
+def _on_gallery_name_change() -> None:
+    if st.session_state.get("gallery_saved_id"):
+        st.session_state.gallery_saved_dirty = True
+
+
+def save_current_gallery() -> str | None:
+    """Persist the current gallery under its name and return its id."""
+    birds = list(st.session_state.get("gallery_birds") or [])
+    if not birds:
+        st.warning("Nothing to save.")
+        return None
+    now = datetime.now()
+    old_id = str(st.session_state.get("gallery_saved_id") or "").strip()
+    new_id = _new_saved_gallery_id(now)
+    title = str(st.session_state.get("gallery_name") or "").strip() or default_gallery_name(now)
+    source_title = (
+        str(st.session_state.get("gallery_source_title") or "").strip() or "Gallery"
+    )
+    view_mode = st.session_state.get("gallery_view_mode")
+    if view_mode not in {"summary", "list", "standard"}:
+        view_mode = "summary"
+    payload = {
+        "id": new_id,
+        "saved_at": now.isoformat(timespec="seconds"),
+        "title": title,
+        "source_title": source_title,
+        "view_mode": view_mode,
+        "sort": current_gallery_sort(),
+        "birds": birds,
+    }
+    try:
+        SAVED_GALLERIES_DIR.mkdir(parents=True, exist_ok=True)
+        _saved_gallery_path(new_id).write_text(
+            json.dumps(payload, indent=2),
+            encoding="utf-8",
+        )
+    except OSError as exc:
+        st.error(f"Could not save gallery: {exc}")
+        return None
+    if old_id and old_id != new_id:
+        old_path = _saved_gallery_path(old_id)
+        try:
+            if old_path.is_file():
+                old_path.unlink()
+        except OSError:
+            pass
+    st.session_state.gallery_saved_id = new_id
+    st.session_state.gallery_name = title
+    st.session_state.gallery_title = title
+    st.session_state.gallery_source_title = source_title
+    st.session_state.gallery_saved_dirty = False
+    _set_saved_gallery_query(new_id)
+    return new_id
+
+
+def maybe_open_saved_gallery_from_query() -> None:
+    """Open a saved gallery when the URL contains ``?saved_gallery=``."""
+    gallery_id = _query_param_raw(SAVED_GALLERY_QUERY)
+    if not gallery_id:
+        return
+    if (
+        st.session_state.get("gallery_saved_id") == gallery_id
+        and st.session_state.get("gallery_birds")
+    ):
+        return
+    payload = load_saved_gallery(gallery_id)
+    if not payload:
+        st.session_state.saved_gallery_missing = gallery_id
+        _clear_saved_gallery_query()
+        return
+    open_gallery(
+        payload.get("birds") or [],
+        title=str(payload.get("title") or gallery_id),
+        saved_id=str(payload.get("id") or gallery_id),
+        view_mode=payload.get("view_mode") if isinstance(payload.get("view_mode"), str) else None,
+        source_title=payload.get("source_title") if isinstance(payload.get("source_title"), str) else None,
+        sort=payload.get("sort") if isinstance(payload.get("sort"), str) else None,
+    )
+
+
+GALLERY_SESSION_KEYS = (
+    "gallery_birds",
+    "gallery_title",
+    "gallery_name",
+    "gallery_source_title",
+    "gallery_saved_id",
+    "gallery_saved_dirty",
+    "gallery_bird_index",
+    "gallery_image_index",
+    "gallery_show_info",
+    "gallery_show_similar",
+    "gallery_hide_similar_never_seen",
+    "gallery_last_swipe_t",
+    "gallery_compare_birds",
+    "gallery_compare_bird_index",
+    "gallery_compare_image_index",
+    "gallery_compare_last_swipe_t",
+    "gallery_visible_indices",
+    "gallery_view_mode",
+    "gallery_view_mode_pending",
+    "gallery_sort",
+    "gallery_sort_radio",
+    "gallery_sort_pending",
+    "gallery_list_image_indices",
+    "gallery_list_last_swipe_t",
+    "gallery_image_cache_warmed",
+    "gallery_summary_last_click_t",
+    "gallery_summary_page",
+    "gallery_show_filter",
+    "gallery_show_view_picker",
+    "gallery_show_legends",
+    "gallery_show_nav_buttons",
+    "gallery_view_mode_radio",
+    "gallery_filter_radio",
+)
+
+
+HOME_SCREEN = "saved"
+DASHBOARD_SCREENS = {
+    "saved": "Saved galleries",
+    "checklists": "Checklists",
+    "cache": "Checklist cache",
+    "maintenance": "Cache maintenance",
+}
+
+
+def close_gallery() -> None:
+    """Leave the gallery and return to saved galleries."""
+    for key in GALLERY_SESSION_KEYS:
+        st.session_state.pop(key, None)
+    _clear_saved_gallery_query()
+    st.session_state.dashboard_pref = HOME_SCREEN
+    st.rerun()
+
+
+def current_dashboard() -> str:
+    """Which home-section screen to show (not a widget key — survives navigation)."""
+    value = st.session_state.get("dashboard_pref")
+    if value == "gallery" and st.session_state.get("gallery_birds"):
+        return "gallery"
+    if value not in DASHBOARD_SCREENS:
+        legacy = st.session_state.get("dashboard_screen")
+        value = legacy if legacy in DASHBOARD_SCREENS else HOME_SCREEN
+        st.session_state.dashboard_pref = value
+    return value
+
+
+def go_dashboard(screen: str) -> None:
+    if screen == "gallery":
+        if st.session_state.get("gallery_birds"):
+            st.session_state.dashboard_pref = "gallery"
+            st.rerun()
+        screen = HOME_SCREEN
+    if screen not in DASHBOARD_SCREENS:
+        screen = HOME_SCREEN
+    st.session_state.dashboard_pref = screen
+    st.rerun()
+
+
+def render_app_nav_buttons(*, current: str, key_prefix: str) -> None:
+    """Screen links for the hamburger menu."""
+    if st.session_state.get("gallery_birds"):
+        is_gallery = current == "gallery"
+        if st.button(
+            "Gallery",
+            use_container_width=True,
+            type="primary" if is_gallery else "tertiary",
+            disabled=is_gallery,
+            key=f"{key_prefix}_gallery",
+        ):
+            go_dashboard("gallery")
+    for key, label in DASHBOARD_SCREENS.items():
+        if st.button(
+            label,
+            use_container_width=True,
+            type="primary" if key == current else "tertiary",
+            disabled=key == current,
+            key=f"{key_prefix}_{key}",
+        ):
+            go_dashboard(key)
+
+
+def render_page_header(title: str, *, screen: str) -> None:
+    """Title row with a hamburger menu for Checklists / cache / maintenance."""
+    menu_col, title_col = st.columns([1, 16], vertical_alignment="center")
+    with menu_col:
+        with st.popover(
+            " ",
+            icon=":material/menu:",
+            help="Open saved galleries, Gallery, Checklists, downloads, or cache maintenance",
+        ):
+            render_app_nav_buttons(current=screen, key_prefix=f"dashboard_nav_{screen}")
+            if screen == "saved":
+                st.divider()
+                render_gallery_sort_controls()
+    with title_col:
+        st.title(title)
+
+
+def render_saved_galleries() -> None:
+    """Browse previously saved galleries and reopen or delete them."""
+    render_page_header("Saved galleries", screen="saved")
+    missing = st.session_state.pop("saved_gallery_missing", None)
+    if missing:
+        st.warning(f"Saved gallery `{missing}` was not found.")
+    galleries = list_saved_galleries()
+    if not galleries:
+        st.info("No saved galleries yet. Open a gallery and tap the save icon.")
+        return
+    st.caption(
+        f"{len(galleries)} saved · defaults to the date and time; you can give each gallery a name. "
+        "Open, rename, or delete from each gallery below."
+    )
+    for index, item in enumerate(galleries):
+        gallery_id = str(item.get("id") or "")
+        title = str(item.get("title") or gallery_id)
+        source = str(item.get("source_title") or "").strip()
+        birds = item.get("birds") if isinstance(item.get("birds"), list) else []
+        count = len(birds)
+        url = saved_gallery_url(gallery_id)
+        header = f"{title} · {count} species"
+        if source and source != title:
+            header = f"{title} · {source} · {count} species"
+        with st.expander(header, expanded=index == 0):
+            name_key = f"saved_gallery_name_{gallery_id}"
+            if name_key not in st.session_state:
+                st.session_state[name_key] = title
+            name_col, rename_col, delete_col = st.columns(
+                [4, 1, 1], vertical_alignment="bottom"
+            )
+            with name_col:
+                st.text_input("Name", key=name_key)
+            with rename_col:
+                if st.button(
+                    "Rename",
+                    key=f"rename_saved_gallery_{gallery_id}",
+                    use_container_width=True,
+                ):
+                    renamed = rename_saved_gallery(
+                        gallery_id, str(st.session_state.get(name_key) or "")
+                    )
+                    if renamed:
+                        st.rerun()
+            with delete_col:
+                confirm_key = f"confirm_delete_saved_{gallery_id}"
+                if st.session_state.get(confirm_key):
+                    if st.button(
+                        "Confirm delete",
+                        key=f"confirm_delete_saved_gallery_{gallery_id}",
+                        use_container_width=True,
+                        type="primary",
+                    ):
+                        st.session_state.pop(confirm_key, None)
+                        delete_saved_gallery(gallery_id)
+                        st.rerun()
+                elif st.button(
+                    "Delete",
+                    key=f"delete_saved_gallery_{gallery_id}",
+                    use_container_width=True,
+                ):
+                    st.session_state[confirm_key] = True
+                    st.rerun()
+            render_species_thumbnail_table(
+                sorted_gallery_birds(birds), columns=6, width=144
+            )
+            st.markdown(f"[Direct link]({url})")
+            if st.button(
+                "Open gallery",
+                key=f"open_saved_gallery_{gallery_id}",
+                use_container_width=True,
+                type="primary",
+            ):
+                open_gallery(
+                    birds,
+                    title=title,
+                    saved_id=gallery_id,
+                    view_mode=item.get("view_mode")
+                    if isinstance(item.get("view_mode"), str)
+                    else None,
+                    source_title=source or None,
+                    sort=current_gallery_sort(),
+                )
+
+
+def _sync_life_list_scope_pref() -> None:
+    value = st.session_state.get("life_list_scope")
+    if value in {"all", "region", "world"}:
+        st.session_state.life_list_scope_pref = value
+
+
+def current_life_list_scope() -> str:
+    """Life-list filter that survives gallery toolbar panels closing."""
+    for key in ("life_list_scope", "life_list_scope_pref"):
+        value = st.session_state.get(key)
+        if value in {"all", "region", "world"}:
+            return value
+    return "all"
+
+
+def current_gallery_view_mode() -> str:
+    value = st.session_state.get("gallery_view_mode")
+    if value in {"summary", "list", "standard"}:
+        return value
+    return "summary"
+
+
+GALLERY_SORT_OPTIONS = {
+    "taxonomic": "Taxonomic",
+    "alpha": "Alphabetical",
+    "original": "Original",
+    "new_first": "New birds first",
+    "scientific": "Scientific name",
+}
+DEFAULT_GALLERY_SORT = "taxonomic"
+
+_TAXON_ORDER_BY_CODE: dict[str, float] | None = None
+_TAXON_ORDER_BY_SCI: dict[str, float] | None = None
+
+
+def current_gallery_sort() -> str:
+    for key in ("gallery_sort_radio", "gallery_sort", "gallery_sort_pref"):
+        value = st.session_state.get(key)
+        if value in GALLERY_SORT_OPTIONS:
+            return value
+    return DEFAULT_GALLERY_SORT
+
+
+def _on_gallery_sort_change() -> None:
+    value = st.session_state.get("gallery_sort_radio")
+    if value in GALLERY_SORT_OPTIONS:
+        st.session_state.gallery_sort = value
+        st.session_state.gallery_sort_pref = value
+    st.session_state.pop("gallery_summary_page", None)
+
+
+def render_gallery_sort_controls() -> None:
+    """Shared sort radio for gallery and saved-galleries hamburger menus."""
+    pending = st.session_state.pop("gallery_sort_pending", None)
+    if pending in GALLERY_SORT_OPTIONS:
+        st.session_state.gallery_sort_radio = pending
+    elif "gallery_sort_radio" not in st.session_state:
+        st.session_state.gallery_sort_radio = current_gallery_sort()
+    st.radio(
+        "Sort birds",
+        options=list(GALLERY_SORT_OPTIONS),
+        format_func=lambda value: GALLERY_SORT_OPTIONS[value],
+        key="gallery_sort_radio",
+        on_change=_on_gallery_sort_change,
+        help="Original keeps the order this gallery was built with. Taxonomic follows the eBird / Clements sequence.",
+    )
+    st.session_state.gallery_sort = st.session_state.gallery_sort_radio
+    st.session_state.gallery_sort_pref = st.session_state.gallery_sort_radio
+
+
+def ebird_taxon_order_maps() -> tuple[dict[str, float], dict[str, float]]:
+    """speciesCode / scientific name → eBird taxonOrder."""
+    global _TAXON_ORDER_BY_CODE, _TAXON_ORDER_BY_SCI
+    if _TAXON_ORDER_BY_CODE is None:
+        by_code: dict[str, float] = {}
+        by_sci: dict[str, float] = {}
+        taxa = load_taxonomy_cache().get("taxa") or {}
+        if isinstance(taxa, dict):
+            for code, row in taxa.items():
+                if not isinstance(row, dict):
+                    continue
+                raw_order = row.get("taxonOrder")
+                if raw_order is None:
+                    continue
+                try:
+                    order = float(raw_order)
+                except (TypeError, ValueError):
+                    continue
+                by_code[str(code)] = order
+                sci = str(row.get("sciName") or "").strip()
+                if sci:
+                    by_sci[sci.casefold()] = order
+                    by_sci[binomial_sci_name(sci)] = order
+        _TAXON_ORDER_BY_CODE = by_code
+        _TAXON_ORDER_BY_SCI = by_sci
+    return _TAXON_ORDER_BY_CODE, _TAXON_ORDER_BY_SCI
+
+
+def gallery_taxon_order(bird: dict) -> float:
+    """eBird taxonomic sequence; missing taxa sort last."""
+    by_code, by_sci = ebird_taxon_order_maps()
+    code = str(bird.get("code") or "").strip()
+    if code and code in by_code:
+        return by_code[code]
+    sci = str(bird.get("sciName") or "").strip()
+    if sci:
+        order = by_sci.get(sci.casefold())
+        if order is not None:
+            return order
+        order = by_sci.get(binomial_sci_name(sci))
+        if order is not None:
+            return order
+    return float("inf")
+
+
+def gallery_sort_key(bird: dict, index: int, mode: str) -> tuple:
+    name = str(bird.get("name") or bird.get("Species") or "").casefold()
+    sci = str(bird.get("sciName") or "").casefold()
+    if mode == "alpha":
+        return (name, sci, index)
+    if mode == "scientific":
+        return (sci or name, name, index)
+    if mode == "taxonomic":
+        return (gallery_taxon_order(bird), name, index)
+    if mode == "new_first":
+        if gallery_bird_is_new_world(bird):
+            rank = 0
+        elif gallery_bird_is_new_region(bird):
+            rank = 1
+        else:
+            rank = 2
+        return (rank, name, index)
+    return (index,)
+
+
+def sort_gallery_visible_indices(birds: list[dict], visible_indices: list[int]) -> list[int]:
+    mode = current_gallery_sort()
+    if mode == "original" or len(visible_indices) < 2:
+        return list(visible_indices)
+    return sorted(
+        visible_indices,
+        key=lambda idx: gallery_sort_key(birds[idx], idx, mode),
+    )
+
+
+def sorted_gallery_birds(birds: list[dict]) -> list[dict]:
+    """Return a gallery bird list in the current sort order."""
+    if not birds:
+        return []
+    annotated = annotate_gallery_birds_with_life_lists(list(birds))
+    indices = sort_gallery_visible_indices(annotated, list(range(len(annotated))))
+    return [annotated[i] for i in indices]
+
+
+def gallery_nav_buttons_visible() -> bool:
+    """Whether ◀▶ / ←→ bird and photo buttons are shown."""
+    if "gallery_show_nav_buttons" not in st.session_state:
+        return True
+    return bool(st.session_state.gallery_show_nav_buttons)
 
 
 def gallery_list_image_index(bird_index: int) -> int:
@@ -1251,13 +2231,43 @@ def set_gallery_list_image_index(bird_index: int, image_index: int) -> None:
 
 
 def open_gallery_standard_for_bird(bird_index: int) -> None:
-    """Switch from list mode into standard view for a specific bird."""
+    """Switch into standard view for a specific bird."""
     st.session_state.gallery_bird_index = bird_index
     st.session_state.gallery_image_index = gallery_list_image_index(bird_index)
     # Widget keys can't be written after instantiation; apply on the next run.
+    st.session_state.gallery_view_mode = "standard"
     st.session_state.gallery_view_mode_pending = "standard"
     st.session_state.gallery_show_info = False
+    st.session_state.gallery_show_view_picker = False
+    if "gallery_view_mode_radio" in st.session_state:
+        st.session_state.gallery_view_mode_radio = "standard"
     st.rerun()
+
+
+def consume_gallery_open_query() -> int | None:
+    """Read and strip ``?gallery_open=<index>`` used by summary-view thumbnails."""
+    params = getattr(st, "query_params", None)
+    if params is None:
+        return None
+    try:
+        if "gallery_open" not in params:
+            return None
+        raw = params.get("gallery_open")
+    except Exception:
+        return None
+    try:
+        del params["gallery_open"]
+    except Exception:
+        try:
+            params.pop("gallery_open")
+        except Exception:
+            pass
+    if isinstance(raw, (list, tuple)):
+        raw = raw[0] if raw else None
+    try:
+        return int(str(raw).strip())
+    except (TypeError, ValueError):
+        return None
 
 
 def apply_gallery_swipe(action: str, *, bird_count: int, image_count: int) -> bool:
@@ -1303,6 +2313,32 @@ def apply_gallery_swipe(action: str, *, bird_count: int, image_count: int) -> bo
             st.session_state.gallery_bird_index = bird_index - 1
         st.session_state.gallery_image_index = 0
         st.session_state.gallery_show_info = False
+        return True
+    return False
+
+
+def apply_compare_swipe(action: str, *, bird_count: int, image_count: int) -> bool:
+    """Apply a swipe on the compare image. Returns True if state changed."""
+    bird_index = int(st.session_state.get("gallery_compare_bird_index", 0))
+    image_index = int(st.session_state.get("gallery_compare_image_index", 0))
+
+    if action == "image_next" and image_index < image_count - 1:
+        st.session_state.gallery_compare_image_index = image_index + 1
+        return True
+    if action == "image_prev" and image_index > 0:
+        st.session_state.gallery_compare_image_index = image_index - 1
+        return True
+    if action == "bird_next":
+        if bird_index >= bird_count - 1:
+            return False
+        st.session_state.gallery_compare_bird_index = bird_index + 1
+        st.session_state.gallery_compare_image_index = 0
+        return True
+    if action == "bird_prev":
+        if bird_index <= 0:
+            return False
+        st.session_state.gallery_compare_bird_index = bird_index - 1
+        st.session_state.gallery_compare_image_index = 0
         return True
     return False
 
@@ -1500,13 +2536,14 @@ def enrich_similar_with_region_history(
         if code and code in local_index:
             observation = dict(local_index[code])
         elif ever_seen and code and client is not None:
-            # Local checklist cache missed; only then ask the API.
+            # Historical region bird, but not in downloaded checklists.
+            # Use local last-seen / prior disk cache only — do not hit live eBird.
             try:
                 observation = client.last_seen_in_region(
                     region,
                     code,
                     back=30,
-                    allow_api=True,
+                    allow_api=False,
                 )
             except MissingEbirdApiKey:
                 ensure_api_key()
@@ -1647,6 +2684,40 @@ def remove_compare_bird(bird: dict) -> None:
         st.session_state.pop("gallery_compare_image_index", None)
 
 
+def remove_gallery_bird(bird_index: int) -> None:
+    """Remove one bird from the current gallery working list."""
+    birds = list(st.session_state.get("gallery_birds") or [])
+    if not (0 <= bird_index < len(birds)):
+        return
+    removed = birds.pop(bird_index)
+    remove_compare_bird(removed)
+    if not birds:
+        close_gallery()
+        return
+    st.session_state.gallery_birds = birds
+    current = int(st.session_state.get("gallery_bird_index", 0))
+    if current == bird_index:
+        st.session_state.gallery_bird_index = min(bird_index, len(birds) - 1)
+        st.session_state.gallery_image_index = 0
+        st.session_state.gallery_show_info = False
+    elif current > bird_index:
+        st.session_state.gallery_bird_index = current - 1
+    indices = st.session_state.get("gallery_list_image_indices") or {}
+    shifted: dict[str, int] = {}
+    for key, value in indices.items():
+        try:
+            index = int(key)
+        except (TypeError, ValueError):
+            continue
+        if index == bird_index:
+            continue
+        shifted[str(index - 1 if index > bird_index else index)] = int(value)
+    st.session_state.gallery_list_image_indices = shifted
+    if st.session_state.get("gallery_saved_id"):
+        st.session_state.gallery_saved_dirty = True
+    st.rerun()
+
+
 def clear_compare_list() -> None:
     """Remove every bird from the compare list."""
     st.session_state.gallery_compare_birds = []
@@ -1678,48 +2749,42 @@ def render_compare_gallery() -> None:
     )
 
     st.subheader("Compare birds")
-    header_cap, header_clear = st.columns([3, 1], vertical_alignment="center")
-    with header_cap:
-        st.caption(f"Bird {compare_index + 1} of {len(compare_birds)}")
-    with header_clear:
-        if st.button(
-            "Remove all",
-            key="compare_remove_all",
-            use_container_width=True,
-            help="Clear the entire compare list",
-        ):
-            clear_compare_list()
-            st.rerun()
-    prev_col, name_col, next_col = st.columns(
-        [1, 4, 1], vertical_alignment="center"
-    )
-    with prev_col:
-        if st.button(
-            "◀",
-            disabled=compare_index == 0,
-            use_container_width=True,
-            key="compare_prev_bird",
-            help="Previous comparison bird",
-        ):
-            st.session_state.gallery_compare_bird_index = compare_index - 1
-            st.session_state.gallery_compare_image_index = 0
-            st.rerun()
+    show_nav = gallery_nav_buttons_visible()
+    if show_nav:
+        prev_col, name_col, next_col = st.columns(
+            [1, 4, 1], vertical_alignment="center"
+        )
+        with prev_col:
+            if st.button(
+                "◀",
+                disabled=compare_index == 0,
+                use_container_width=True,
+                key="compare_prev_bird",
+                help="Previous comparison bird",
+            ):
+                st.session_state.gallery_compare_bird_index = compare_index - 1
+                st.session_state.gallery_compare_image_index = 0
+                st.rerun()
+        with next_col:
+            if st.button(
+                "▶",
+                disabled=compare_index >= len(compare_birds) - 1,
+                use_container_width=True,
+                key="compare_next_bird",
+                help="Next comparison bird",
+            ):
+                st.session_state.gallery_compare_bird_index = compare_index + 1
+                st.session_state.gallery_compare_image_index = 0
+                st.rerun()
+    else:
+        name_col = st.container()
     with name_col:
+        count_label = f"{compare_index + 1}/{len(compare_birds)}"
         st.markdown(
-            f"<div style='text-align:center; font-weight:600; padding-top:0.35rem'>{common}</div>",
+            f"<div style='text-align:center; font-weight:600; padding-top:0.35rem'>"
+            f"{html.escape(common)} · {count_label}</div>",
             unsafe_allow_html=True,
         )
-    with next_col:
-        if st.button(
-            "▶",
-            disabled=compare_index >= len(compare_birds) - 1,
-            use_container_width=True,
-            key="compare_next_bird",
-            help="Next comparison bird",
-        ):
-            st.session_state.gallery_compare_bird_index = compare_index + 1
-            st.session_state.gallery_compare_image_index = 0
-            st.rerun()
 
     if not photos:
         st.info("No iNaturalist photos found for this comparison bird.")
@@ -1728,128 +2793,241 @@ def render_compare_gallery() -> None:
         image_index = max(0, min(image_index, len(photos) - 1))
         photo = photos[image_index]
         compare_frame = gallery_frame_color(compare_bird)
-        st.markdown(
-            f"<div style='border:4px solid {compare_frame}; border-radius:10px; "
-            f"padding:4px; box-sizing:border-box'>",
-            unsafe_allow_html=True,
+        swipe = swipe_image(
+            photo["image_url"],
+            height=420,
+            frame_color=compare_frame,
+            key=f"compare_swipe_{compare_index}_{image_index}_{gallery_bird_key(compare_bird)}",
         )
-        st.image(photo["image_url"], width="stretch")
-        st.markdown("</div>", unsafe_allow_html=True)
+        if isinstance(swipe, dict):
+            action = str(swipe.get("action") or "")
+            swipe_t = swipe.get("t")
+            if action and swipe_t != st.session_state.get("gallery_compare_last_swipe_t"):
+                st.session_state.gallery_compare_last_swipe_t = swipe_t
+                if apply_compare_swipe(
+                    action,
+                    bird_count=len(compare_birds),
+                    image_count=len(photos),
+                ):
+                    st.rerun()
 
-        prev_col, pos_col, next_col = st.columns([1, 2, 1])
-        with prev_col:
-            if st.button(
-                "←",
-                disabled=image_index == 0,
-                use_container_width=True,
-                key="compare_prev_image",
-                help="Previous comparison photo",
-            ):
-                st.session_state.gallery_compare_image_index = image_index - 1
-                st.rerun()
-        with pos_col:
-            st.markdown(
-                f"<div style='text-align:center'>Image {image_index + 1}/{len(photos)}</div>",
-                unsafe_allow_html=True,
-            )
-        with next_col:
-            if st.button(
-                "→",
-                disabled=image_index >= len(photos) - 1,
-                use_container_width=True,
-                key="compare_next_image",
-                help="Next comparison photo",
-            ):
-                st.session_state.gallery_compare_image_index = image_index + 1
-                st.rerun()
+        show_nav = gallery_nav_buttons_visible()
+        show_image_pos = bool(st.session_state.get("gallery_show_legends", True))
+        image_pos_html = (
+            f"<div style='text-align:center'>Image {image_index + 1}/{len(photos)}</div>"
+        )
+        if show_nav:
+            if show_image_pos:
+                prev_col, pos_col, next_col = st.columns([1, 2, 1])
+            else:
+                prev_col, next_col = st.columns(2)
+                pos_col = None
+            with prev_col:
+                if st.button(
+                    "←",
+                    disabled=image_index == 0,
+                    use_container_width=True,
+                    key="compare_prev_image",
+                    help="Previous comparison photo",
+                ):
+                    st.session_state.gallery_compare_image_index = image_index - 1
+                    st.rerun()
+            with next_col:
+                if st.button(
+                    "→",
+                    disabled=image_index >= len(photos) - 1,
+                    use_container_width=True,
+                    key="compare_next_image",
+                    help="Next comparison photo",
+                ):
+                    st.session_state.gallery_compare_image_index = image_index + 1
+                    st.rerun()
+            if pos_col is not None:
+                with pos_col:
+                    st.markdown(image_pos_html, unsafe_allow_html=True)
+        elif show_image_pos:
+            st.markdown(image_pos_html, unsafe_allow_html=True)
 
-    if st.button(
-        "Remove from compare list",
-        key=f"compare_remove_{gallery_bird_key(compare_bird)}",
-    ):
-        remove_compare_bird(compare_bird)
-        st.rerun()
+    clear_col, remove_col = st.columns([1, 2])
+    with clear_col:
+        if st.button(
+            "Remove all",
+            key="compare_remove_all",
+            use_container_width=True,
+            help="Clear the entire compare list",
+        ):
+            clear_compare_list()
+            st.rerun()
+    with remove_col:
+        if st.button(
+            "Remove from compare list",
+            key=f"compare_remove_{gallery_bird_key(compare_bird)}",
+            use_container_width=True,
+        ):
+            remove_compare_bird(compare_bird)
+            st.rerun()
 
 
 def render_gallery() -> None:
     birds = st.session_state.get("gallery_birds") or []
     if not birds:
         st.session_state.pop("gallery_birds", None)
-        render_checklists()
+        st.session_state.dashboard_pref = HOME_SCREEN
+        render_saved_galleries()
         return
 
     birds = annotate_gallery_birds_with_life_lists(birds)
     st.session_state.gallery_birds = birds
 
-    title = st.session_state.get("gallery_title", "Gallery")
     region_code = st.session_state.get("checklists_region") or os.environ.get(
         "EBIRD_HOME_REGION", "US-FL-099"
     )
 
     pending_mode = st.session_state.pop("gallery_view_mode_pending", None)
-    if pending_mode in {"list", "standard"}:
+    if pending_mode in {"summary", "list", "standard"}:
         st.session_state.gallery_view_mode = pending_mode
+        if "gallery_view_mode_radio" in st.session_state:
+            st.session_state.gallery_view_mode_radio = pending_mode
+    if "gallery_view_mode" not in st.session_state:
+        st.session_state.gallery_view_mode = "summary"
 
-    if st.button("← Back to checklists"):
-        for key in (
-            "gallery_birds",
-            "gallery_title",
-            "gallery_bird_index",
-            "gallery_image_index",
-            "gallery_show_info",
-            "gallery_show_similar",
-            "gallery_hide_similar_never_seen",
-            "gallery_last_swipe_t",
-            "gallery_compare_birds",
-            "gallery_compare_bird_index",
-            "gallery_compare_image_index",
-            "gallery_visible_indices",
-            "gallery_view_mode",
-            "gallery_view_mode_pending",
-            "gallery_list_image_indices",
-            "gallery_list_last_swipe_t",
-            "gallery_image_cache_warmed",
+    open_idx = consume_gallery_open_query()
+    if open_idx is not None and 0 <= open_idx < len(birds):
+        open_gallery_standard_for_bird(open_idx)
+
+    if "gallery_show_legends" not in st.session_state:
+        st.session_state.gallery_show_legends = True
+    if "gallery_show_nav_buttons" not in st.session_state:
+        st.session_state.gallery_show_nav_buttons = True
+
+    saved_id = str(st.session_state.get("gallery_saved_id") or "").strip()
+    menu_col, title_col = st.columns([1, 16], vertical_alignment="center")
+    with menu_col:
+        with st.popover(
+            " ",
+            icon=":material/menu:",
+            help="Navigation, save, filter, view, and legends",
         ):
-            st.session_state.pop(key, None)
-        st.rerun()
+            render_app_nav_buttons(current="gallery", key_prefix="gallery_nav")
+            st.divider()
+            if st.button(
+                "Save gallery",
+                icon=":material/save:",
+                help="Save this gallery and get a link",
+                type="primary" if st.session_state.get("gallery_saved_dirty") else "secondary",
+                use_container_width=True,
+                key="gallery_save",
+            ):
+                if save_current_gallery():
+                    st.rerun()
+            if saved_id:
+                confirm_key = "confirm_delete_open_gallery"
+                if st.session_state.get(confirm_key) == saved_id:
+                    if st.button(
+                        "Confirm delete",
+                        icon=":material/delete:",
+                        help="Tap to permanently delete this saved gallery",
+                        type="primary",
+                        use_container_width=True,
+                        key="gallery_delete_confirm",
+                    ):
+                        st.session_state.pop(confirm_key, None)
+                        delete_saved_gallery(saved_id)
+                        close_gallery()
+                elif st.button(
+                    "Delete saved gallery",
+                    icon=":material/delete:",
+                    help="Delete this saved gallery",
+                    use_container_width=True,
+                    key="gallery_delete",
+                ):
+                    st.session_state[confirm_key] = saved_id
+                    st.rerun()
+            st.divider()
+            gallery_scope = current_life_list_scope()
+            if "life_list_scope" not in st.session_state:
+                st.session_state.life_list_scope = gallery_scope
+            st.radio(
+                "Filter new birds by",
+                options=["all", "region", "world"],
+                format_func=lambda value: {
+                    "all": "All birds",
+                    "region": f"New to region ({region_code or 'region'})",
+                    "world": "New to world",
+                }[value],
+                key="life_list_scope",
+                on_change=_sync_life_list_scope_pref,
+                help="Same filter as the checklists screen. Highlights: teal = new to world, amber = new to region, gray = already on both lists.",
+            )
+            st.session_state.life_list_scope_pref = current_life_list_scope()
+            st.divider()
+            gallery_mode = current_gallery_view_mode()
+            if "gallery_view_mode_radio" not in st.session_state:
+                st.session_state.gallery_view_mode_radio = gallery_mode
+            st.radio(
+                "Gallery view",
+                options=["summary", "list", "standard"],
+                format_func=lambda value: {
+                    "summary": "Summary",
+                    "list": "List",
+                    "standard": "Standard",
+                }[value],
+                key="gallery_view_mode_radio",
+                help="Summary matches the checklist thumbnail grid. List shows swipeable photos. Standard is one bird at a time. Tap a summary photo for Standard view.",
+            )
+            st.session_state.gallery_view_mode = st.session_state.gallery_view_mode_radio
+            st.divider()
+            render_gallery_sort_controls()
+            st.divider()
+            st.checkbox(
+                "Show legends",
+                key="gallery_show_legends",
+                help="Also shows the Image 1/200 counter and the × buttons that remove a bird from this gallery.",
+            )
+            st.checkbox(
+                "Show bird and photo buttons",
+                key="gallery_show_nav_buttons",
+                help="◀ ▶ change birds and ← → change photos. When off, swipe the image instead.",
+            )
+    with title_col:
+        if "gallery_name" not in st.session_state:
+            st.session_state.gallery_name = str(
+                st.session_state.get("gallery_title") or default_gallery_name()
+            )
+        st.text_input(
+            "Gallery name",
+            key="gallery_name",
+            label_visibility="collapsed",
+            placeholder="Name (defaults to date and time)",
+            help="Defaults to the date and time. Edit to give this gallery a specific name.",
+            on_change=_on_gallery_name_change,
+        )
+    st.session_state.gallery_title = (
+        str(st.session_state.get("gallery_name") or "").strip()
+        or default_gallery_name()
+    )
 
-    st.title(title)
-    gallery_scope = st.radio(
-        "Filter new birds by",
-        options=["all", "region", "world"],
-        format_func=lambda value: {
-            "all": "All birds",
-            "region": f"New to region ({region_code or 'region'})",
-            "world": "New to world",
-        }[value],
-        horizontal=True,
-        key="life_list_scope",
-        help="Same filter as the checklists screen. Highlights: teal = new to world, amber = new to region, gray = already on both lists.",
-    )
-    st.markdown(
-        f"Frame colors · "
-        f"<span style='color:{FRAME_COLOR_WORLD}'>■</span> new to world · "
-        f"<span style='color:{FRAME_COLOR_REGION}'>■</span> new to region · "
-        f"<span style='color:{FRAME_COLOR_SEEN}'>■</span> already counted",
-        unsafe_allow_html=True,
-    )
-    gallery_mode = st.radio(
-        "Gallery view",
-        options=["list", "standard"],
-        format_func=lambda value: {
-            "list": "List",
-            "standard": "Standard",
-        }[value],
-        horizontal=True,
-        key="gallery_view_mode",
-        help="List shows every bird with a swipeable photo. Tap a name to open Standard view for that bird.",
-    )
+    gallery_scope = current_life_list_scope()
+    gallery_mode = current_gallery_view_mode()
+    show_legends = bool(st.session_state.get("gallery_show_legends", True))
 
-    visible_indices = [
-        idx
-        for idx, item in enumerate(birds)
-        if gallery_bird_matches_scope(item, gallery_scope)
-    ]
+    if show_legends and gallery_mode != "summary":
+        st.markdown(
+            f"Frame colors · "
+            f"<span style='color:{FRAME_COLOR_WORLD}'>■</span> new to world · "
+            f"<span style='color:{FRAME_COLOR_REGION}'>■</span> new to region · "
+            f"<span style='color:{FRAME_COLOR_SEEN}'>■</span> already counted",
+            unsafe_allow_html=True,
+        )
+
+    visible_indices = sort_gallery_visible_indices(
+        birds,
+        [
+            idx
+            for idx, item in enumerate(birds)
+            if gallery_bird_matches_scope(item, gallery_scope)
+        ],
+    )
     st.session_state.gallery_visible_indices = visible_indices
     if not visible_indices:
         st.info(
@@ -1859,11 +3037,129 @@ def render_gallery() -> None:
         )
         return
 
+    if gallery_mode == "summary":
+        render_gallery_summary(birds, visible_indices)
+        return
     if gallery_mode == "list":
         render_gallery_list(birds, visible_indices, gallery_scope)
         return
 
     render_gallery_standard(birds, visible_indices, gallery_scope)
+
+
+def render_gallery_summary(birds: list[dict], visible_indices: list[int]) -> None:
+    """Thumbnail grid; tap a photo to open Standard view without leaving the session."""
+    width = 144
+    st.markdown(
+        f"""
+<style>
+div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-gallery_summary_open_"]) {{
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, {width}px) !important;
+  gap: 1px !important;
+  justify-content: start !important;
+  align-items: start !important;
+  flex-wrap: unset !important;
+}}
+div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-gallery_summary_open_"]) > div {{
+  width: {width}px !important;
+  min-width: {width}px !important;
+  max-width: {width}px !important;
+  flex: none !important;
+  padding: 0 !important;
+  position: relative !important;
+  height: {width}px !important;
+  overflow: hidden !important;
+}}
+div[data-testid="column"]:has(div[class*="st-key-gallery_summary_open_"]) [data-testid="stVerticalBlock"],
+div[data-testid="stColumn"]:has(div[class*="st-key-gallery_summary_open_"]) [data-testid="stVerticalBlock"] {{
+  gap: 0 !important;
+  height: {width}px !important;
+  position: relative !important;
+}}
+div[class*="st-key-gallery_summary_open_"] {{
+  position: absolute !important;
+  inset: 0 !important;
+  margin: 0 !important;
+  height: {width}px !important;
+  z-index: 2;
+}}
+div[class*="st-key-gallery_summary_open_"] button {{
+  width: {width}px !important;
+  height: {width}px !important;
+  min-height: {width}px !important;
+  opacity: 0 !important;
+  cursor: pointer !important;
+  border: 0 !important;
+  padding: 0 !important;
+}}
+div[class*="st-key-gallery_summary_remove_"] {{
+  position: absolute !important;
+  top: 0 !important;
+  right: 0 !important;
+  margin: 0 !important;
+  width: 32px !important;
+  height: 32px !important;
+  z-index: 4;
+}}
+div[class*="st-key-gallery_summary_remove_"] button {{
+  width: 32px !important;
+  height: 32px !important;
+  min-height: 32px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 4px !important;
+  background: rgba(15, 23, 42, 0.62) !important;
+  color: #fff !important;
+}}
+</style>
+        """,
+        unsafe_allow_html=True,
+    )
+    cols = st.columns(len(visible_indices), gap="small")
+    for col, bird_index in zip(cols, visible_indices):
+        with col:
+            bird = birds[bird_index]
+            code = bird.get("code")
+            sci = bird.get("sciName") or None
+            name = str(bird.get("name") or code or "Open")
+            photo = inaturalist_photo_for_code(str(code), sci) if code else None
+            alt = html.escape(name or "species", quote=True)
+            if photo and photo.get("image_url"):
+                src = html.escape(str(photo["image_url"]), quote=True)
+                inner = (
+                    f'<img src="{src}" alt="{alt}" '
+                    f'style="width:{width}px;height:{width}px;'
+                    f'object-fit:cover;display:block;margin:0;padding:0;border:0"/>'
+                )
+            else:
+                label = html.escape((name[:10] or "—"), quote=False)
+                inner = (
+                    f'<div style="width:{width}px;height:{width}px;'
+                    f'display:flex;align-items:center;justify-content:center;'
+                    f'font-size:11px;color:#64748b;background:#f1f5f9;'
+                    f'margin:0;padding:0">{label}</div>'
+                )
+            st.markdown(inner, unsafe_allow_html=True)
+            if st.button(
+                " ",
+                key=f"gallery_summary_open_{bird_index}",
+                help=name,
+                type="tertiary",
+                use_container_width=True,
+            ):
+                open_gallery_standard_for_bird(bird_index)
+            if st.session_state.get("gallery_show_legends", True) and st.button(
+                "×",
+                key=f"gallery_summary_remove_{bird_index}",
+                help=f"Remove {name} from this gallery",
+                type="tertiary",
+            ):
+                remove_gallery_bird(bird_index)
+    if st.session_state.get("gallery_show_legends", True):
+        st.caption(f"{len(visible_indices)} species · tap a photo for Standard view · × removes")
+    else:
+        st.caption(f"{len(visible_indices)} species")
 
 
 def render_gallery_list(
@@ -1872,7 +3168,8 @@ def render_gallery_list(
     gallery_scope: str,
 ) -> None:
     """Browse all matching birds with swipeable main photos."""
-    st.caption(f"{len(visible_indices)} birds · tap a name for Standard view")
+    if st.session_state.get("gallery_show_legends", True):
+        st.caption(f"{len(visible_indices)} birds · tap a name for Standard view · × removes")
     visible_birds = [birds[idx] for idx in visible_indices]
     ensure_gallery_image_cache(visible_birds, max_photos=24)
     last_swipe = st.session_state.setdefault("gallery_list_last_swipe_t", {})
@@ -1900,13 +3197,32 @@ def render_gallery_list(
                 elif gallery_bird_is_new_region(bird):
                     label = f"{label} · new to region"
 
-                if st.button(
-                    label,
-                    use_container_width=True,
-                    key=f"gallery_list_open_{bird_index}",
-                    help="Open Standard view for this bird",
-                ):
-                    open_gallery_standard_for_bird(bird_index)
+                show_remove = st.session_state.get("gallery_show_legends", True)
+                if show_remove:
+                    open_col, remove_col = st.columns(
+                        [6, 1], vertical_alignment="center"
+                    )
+                else:
+                    open_col = st.container()
+                    remove_col = None
+                with open_col:
+                    if st.button(
+                        label,
+                        use_container_width=True,
+                        key=f"gallery_list_open_{bird_index}",
+                        help="Open Standard view for this bird",
+                    ):
+                        open_gallery_standard_for_bird(bird_index)
+                if remove_col is not None:
+                    with remove_col:
+                        if st.button(
+                            "×",
+                            use_container_width=True,
+                            key=f"gallery_list_remove_{bird_index}",
+                            help=f"Remove {common} from this gallery",
+                            type="tertiary",
+                        ):
+                            remove_gallery_bird(bird_index)
 
                 if not photos:
                     st.info("No photos found.")
@@ -1941,7 +3257,8 @@ def render_gallery_list(
                             set_gallery_list_image_index(bird_index, image_index - 1)
                             st.rerun()
 
-                st.caption(f"Photo {image_index + 1} of {len(photos)}")
+                if st.session_state.get("gallery_show_legends", True):
+                    st.caption(f"Photo {image_index + 1} of {len(photos)}")
 
 
 def render_gallery_standard(
@@ -1962,8 +3279,6 @@ def render_gallery_standard(
     bird = birds[bird_index]
     frame_color = gallery_frame_color(bird)
 
-    st.caption(f"Bird {visible_pos + 1} of {len(visible_indices)}")
-
     payload = gallery_payload_for_code(
         bird.get("code") or "",
         bird.get("sciName") or None,
@@ -1971,29 +3286,54 @@ def render_gallery_standard(
     photos = (payload or {}).get("photos") or []
     common = (payload or {}).get("common_name") or bird.get("name") or "Unknown"
 
-    nav_prev, nav_name, nav_next = st.columns([1, 4, 1], vertical_alignment="center")
-    with nav_prev:
-        if st.button(
-            "◀",
-            use_container_width=True,
-            disabled=visible_pos == 0,
-            key="gallery_prev_bird",
-            help="Previous bird (↑)",
-            shortcut="Up",
-        ):
-            st.session_state.gallery_bird_index = visible_indices[visible_pos - 1]
-            st.session_state.gallery_image_index = 0
-            st.session_state.gallery_show_info = False
-            st.rerun()
+    show_nav = gallery_nav_buttons_visible()
+    if show_nav:
+        nav_prev, nav_name, nav_next = st.columns(
+            [1, 4, 1], vertical_alignment="center"
+        )
+        with nav_prev:
+            if st.button(
+                "◀",
+                use_container_width=True,
+                disabled=visible_pos == 0,
+                key="gallery_prev_bird",
+                help="Previous bird (↑)",
+                shortcut="Up",
+            ):
+                st.session_state.gallery_bird_index = visible_indices[visible_pos - 1]
+                st.session_state.gallery_image_index = 0
+                st.session_state.gallery_show_info = False
+                st.rerun()
+        with nav_next:
+            if st.button(
+                "▶",
+                use_container_width=True,
+                disabled=visible_pos >= len(visible_indices) - 1,
+                key="gallery_next_bird",
+                help="Next bird (↓)",
+                shortcut="Down",
+            ):
+                st.session_state.gallery_bird_index = visible_indices[visible_pos + 1]
+                st.session_state.gallery_image_index = 0
+                st.session_state.gallery_show_info = False
+                st.rerun()
+    else:
+        nav_name = st.container()
     with nav_name:
         label = common
         if gallery_bird_is_new_world(bird):
             label = f"{label} · new to world"
         elif gallery_bird_is_new_region(bird):
             label = f"{label} · new to region"
-        name_col, compare_col = st.columns(
-            [6, 1], vertical_alignment="center"
-        )
+        label = f"{label} · {visible_pos + 1}/{len(visible_indices)}"
+        show_remove = st.session_state.get("gallery_show_legends", True)
+        if show_remove:
+            name_col, remove_col = st.columns(
+                [6, 1], vertical_alignment="center"
+            )
+        else:
+            name_col = st.container()
+            remove_col = None
         with name_col:
             if st.button(
                 label,
@@ -2004,40 +3344,16 @@ def render_gallery_standard(
                     "gallery_show_info", False
                 )
                 st.rerun()
-        with compare_col:
-            main_bird_in_compare = is_in_compare_list(bird)
-            if main_bird_in_compare:
+        if remove_col is not None:
+            with remove_col:
                 if st.button(
-                    "−",
+                    "×",
                     use_container_width=True,
-                    key=f"main_compare_remove_{gallery_bird_key(bird)}",
-                    help="Remove from compare list",
+                    key=f"gallery_standard_remove_{bird_index}",
+                    help="Remove this bird from the gallery",
                     type="tertiary",
                 ):
-                    remove_compare_bird(bird)
-                    st.rerun()
-            elif st.button(
-                "+",
-                use_container_width=True,
-                key=f"main_compare_add_{gallery_bird_key(bird)}",
-                help="Add to compare list",
-                type="tertiary",
-            ):
-                add_compare_bird(bird)
-                st.rerun()
-    with nav_next:
-        if st.button(
-            "▶",
-            use_container_width=True,
-            disabled=visible_pos >= len(visible_indices) - 1,
-            key="gallery_next_bird",
-            help="Next bird (↓)",
-            shortcut="Down",
-        ):
-            st.session_state.gallery_bird_index = visible_indices[visible_pos + 1]
-            st.session_state.gallery_image_index = 0
-            st.session_state.gallery_show_info = False
-            st.rerun()
+                    remove_gallery_bird(bird_index)
 
     if not photos:
         st.info("No iNaturalist photos found for this species.")
@@ -2064,34 +3380,46 @@ def render_gallery_standard(
                 ):
                     st.rerun()
 
-        img_prev, img_pos, img_next = st.columns([1, 2, 1], vertical_alignment="center")
-        with img_prev:
-            if st.button(
-                "←",
-                use_container_width=True,
-                disabled=image_index == 0,
-                key="gallery_prev_image",
-                help="Previous photo (←)",
-                shortcut="Left",
-            ):
-                st.session_state.gallery_image_index = image_index - 1
-                st.rerun()
-        with img_pos:
-            st.markdown(
-                f"<div style='text-align:center'>Image {image_index + 1}/{len(photos)}</div>",
-                unsafe_allow_html=True,
-            )
-        with img_next:
-            if st.button(
-                "→",
-                use_container_width=True,
-                disabled=image_index >= len(photos) - 1,
-                key="gallery_next_image",
-                help="Next photo (→)",
-                shortcut="Right",
-            ):
-                st.session_state.gallery_image_index = image_index + 1
-                st.rerun()
+        show_nav = gallery_nav_buttons_visible()
+        show_image_pos = bool(st.session_state.get("gallery_show_legends", True))
+        image_pos_html = (
+            f"<div style='text-align:center'>Image {image_index + 1}/{len(photos)}</div>"
+        )
+        if show_nav:
+            if show_image_pos:
+                img_prev, img_pos, img_next = st.columns(
+                    [1, 2, 1], vertical_alignment="center"
+                )
+            else:
+                img_prev, img_next = st.columns(2, vertical_alignment="center")
+                img_pos = None
+            with img_prev:
+                if st.button(
+                    "←",
+                    use_container_width=True,
+                    disabled=image_index == 0,
+                    key="gallery_prev_image",
+                    help="Previous photo (←)",
+                    shortcut="Left",
+                ):
+                    st.session_state.gallery_image_index = image_index - 1
+                    st.rerun()
+            if img_pos is not None:
+                with img_pos:
+                    st.markdown(image_pos_html, unsafe_allow_html=True)
+            with img_next:
+                if st.button(
+                    "→",
+                    use_container_width=True,
+                    disabled=image_index >= len(photos) - 1,
+                    key="gallery_next_image",
+                    help="Next photo (→)",
+                    shortcut="Right",
+                ):
+                    st.session_state.gallery_image_index = image_index + 1
+                    st.rerun()
+        elif show_image_pos:
+            st.markdown(image_pos_html, unsafe_allow_html=True)
 
     render_compare_gallery()
 
@@ -2129,22 +3457,44 @@ def render_gallery_standard(
         st.rerun()
 
     if st.session_state.get("gallery_show_similar", True):
-        st.subheader("Similar birds")
-        st.caption(
-            "Species often confused with this one on iNaturalist. "
-            f"Regional last-seen uses eBird data for {region_code}."
-        )
-        st.markdown(
-            f"Highlights · "
-            f"<span style='color:{FRAME_COLOR_WORLD}'>■</span> new to world · "
-            f"<span style='color:{FRAME_COLOR_REGION}'>■</span> new to region · "
-            f"<span style='color:{FRAME_COLOR_SEEN}'>■</span> already counted",
-            unsafe_allow_html=True,
-        )
+        title_col, compare_col = st.columns([3, 2], vertical_alignment="bottom")
+        with title_col:
+            st.subheader("Similar birds")
+        with compare_col:
+            if is_in_compare_list(bird):
+                if st.button(
+                    "Remove from compare list",
+                    key=f"main_compare_remove_{gallery_bird_key(bird)}",
+                    use_container_width=True,
+                    help=f"Remove {common} from the compare list",
+                ):
+                    remove_compare_bird(bird)
+                    st.rerun()
+            elif st.button(
+                "Add to compare list",
+                key=f"main_compare_add_{gallery_bird_key(bird)}",
+                use_container_width=True,
+                help=f"Add {common} to the compare list",
+            ):
+                add_compare_bird(bird)
+                st.rerun()
+        if st.session_state.get("gallery_show_legends", True):
+            st.caption(
+                "Species often confused with this one on iNaturalist. "
+                f"Regional last-seen uses eBird data for {region_code}."
+            )
+            st.markdown(
+                f"Highlights · "
+                f"<span style='color:{FRAME_COLOR_WORLD}'>■</span> new to world · "
+                f"<span style='color:{FRAME_COLOR_REGION}'>■</span> new to region · "
+                f"<span style='color:{FRAME_COLOR_SEEN}'>■</span> already counted",
+                unsafe_allow_html=True,
+            )
         if "gallery_hide_similar_never_seen" not in st.session_state:
             st.session_state.gallery_hide_similar_never_seen = True
         hide_never_seen = st.checkbox(
             f"Hide species never recorded in {region_code}",
+            value=True,
             key="gallery_hide_similar_never_seen",
             help="When checked, similar species with no regional eBird records are omitted.",
         )
@@ -2884,7 +4234,27 @@ def ensure_api_key() -> bool:
 
 def render_general_cache_maintenance() -> None:
     """Show the size and freshness of all non-checklist local caches."""
-    st.title("Cache maintenance")
+    render_page_header("Cache maintenance", screen="maintenance")
+    commit_stamp = project_git_commit_stamp()
+    if commit_stamp:
+        st.caption(f"Last git commit: **{commit_stamp}**")
+    if "ui_layout_mode_radio" not in st.session_state:
+        st.session_state.ui_layout_mode_radio = st.session_state.get(
+            "ui_layout_pref", "desktop"
+        )
+    st.radio(
+        "Display width",
+        options=["desktop", "mobile"],
+        format_func=lambda value: {
+            "desktop": "Desktop (full window)",
+            "mobile": "Mobile (narrow)",
+        }[value],
+        horizontal=True,
+        key="ui_layout_mode_radio",
+        on_change=_sync_ui_layout_pref,
+        help="Applies to every screen. Desktop uses the full browser width. "
+        "Mobile constrains the layout to a phone-sized column.",
+    )
     st.caption(
         "Local API and image caches. Checklist feeds/details are reported separately "
         "under Checklist cache. Region bird coverage is based on the selected "
@@ -3062,6 +4432,153 @@ def render_general_cache_maintenance() -> None:
                 st.dataframe(missing_rows, use_container_width=True, hide_index=True)
             else:
                 st.info("Nothing missing for this cache and region list.")
+
+    render_similar_cache_media_maintenance()
+
+
+def _format_coverage_pct(covered: int, total: int) -> str:
+    if total <= 0:
+        return "—"
+    return f"{covered / total:.1%}"
+
+
+def render_similar_cache_media_maintenance() -> None:
+    """Ensure similar-species *results* have photo and gallery caches."""
+    st.subheader("Similar-species photo & gallery cache")
+    st.caption(
+        "Unique birds that appear in similar-species lists, including species that "
+        "are not on this region’s historical list. Photo = `inaturalist_cache.json`. "
+        "Gallery = current `inaturalist_gallery_cache.json`."
+    )
+    coverage = similar_cache_media_coverage()
+    total = int(coverage.get("total") or 0)
+    photo_covered = int(coverage.get("photo_covered") or 0)
+    photo_missing = int(coverage.get("photo_missing") or 0)
+    gallery_covered = int(coverage.get("gallery_covered") or 0)
+    gallery_missing = int(coverage.get("gallery_missing") or 0)
+    unresolved = int(coverage.get("unresolved") or 0)
+    metrics = st.columns(4)
+    with metrics[0]:
+        st.metric("Similar birds", f"{total:,}")
+    with metrics[1]:
+        st.metric(
+            "Photo cache",
+            f"{photo_covered:,}/{total:,}",
+            delta=_format_coverage_pct(photo_covered, total),
+            delta_color="off",
+        )
+    with metrics[2]:
+        st.metric(
+            "Gallery cache",
+            f"{gallery_covered:,}/{total:,}",
+            delta=_format_coverage_pct(gallery_covered, total),
+            delta_color="off",
+        )
+    with metrics[3]:
+        st.metric("No eBird code", f"{unresolved:,}")
+
+    show_kind = str(st.session_state.get("similar_media_show_missing") or "")
+    photo_col, gallery_col = st.columns(2)
+    with photo_col:
+        photo_disabled = photo_missing <= 0
+        photo_label = (
+            "Photo cache up to date"
+            if photo_disabled
+            else f"Load missing photos ({photo_missing:,})"
+        )
+        if st.button(
+            photo_label,
+            key="load_similar_result_photos",
+            disabled=photo_disabled,
+            use_container_width=True,
+        ):
+            try:
+                result = warm_missing_similar_result_photo_cache()
+            except requests.RequestException as exc:
+                st.error(str(exc))
+            else:
+                attempted = int(result.get("attempted") or 0)
+                found = int(result.get("found") or 0)
+                st.success(
+                    f"Loaded {attempted:,} similar-bird photo "
+                    f"entr{'y' if attempted == 1 else 'ies'} "
+                    f"({found:,} with data)."
+                )
+                st.session_state.pop("similar_media_show_missing", None)
+                st.rerun()
+        viewing_photo = show_kind == "photo"
+        show_photo_label = (
+            "Hide missing photos"
+            if viewing_photo
+            else f"Show missing photos ({photo_missing:,})"
+        )
+        if st.button(
+            show_photo_label,
+            key="show_similar_result_photos",
+            disabled=photo_missing <= 0 and not viewing_photo,
+            use_container_width=True,
+        ):
+            if viewing_photo:
+                st.session_state.pop("similar_media_show_missing", None)
+            else:
+                st.session_state.similar_media_show_missing = "photo"
+            st.rerun()
+    with gallery_col:
+        gallery_disabled = gallery_missing <= 0
+        gallery_label = (
+            "Gallery cache up to date"
+            if gallery_disabled
+            else f"Load missing galleries ({gallery_missing:,})"
+        )
+        if st.button(
+            gallery_label,
+            key="load_similar_result_galleries",
+            disabled=gallery_disabled,
+            use_container_width=True,
+        ):
+            try:
+                result = warm_missing_similar_result_gallery_cache()
+            except requests.RequestException as exc:
+                st.error(str(exc))
+            else:
+                attempted = int(result.get("attempted") or 0)
+                found = int(result.get("found") or 0)
+                st.success(
+                    f"Loaded {attempted:,} similar-bird gallery "
+                    f"entr{'y' if attempted == 1 else 'ies'} "
+                    f"({found:,} with data)."
+                )
+                st.session_state.pop("similar_media_show_missing", None)
+                st.rerun()
+        viewing_gallery = show_kind == "gallery"
+        show_gallery_label = (
+            "Hide missing galleries"
+            if viewing_gallery
+            else f"Show missing galleries ({gallery_missing:,})"
+        )
+        if st.button(
+            show_gallery_label,
+            key="show_similar_result_galleries",
+            disabled=gallery_missing <= 0 and not viewing_gallery,
+            use_container_width=True,
+        ):
+            if viewing_gallery:
+                st.session_state.pop("similar_media_show_missing", None)
+            else:
+                st.session_state.similar_media_show_missing = "gallery"
+            st.rerun()
+
+    if show_kind in {"photo", "gallery"}:
+        label = "photo" if show_kind == "photo" else "gallery"
+        rows = missing_similar_result_display_rows(show_kind)
+        st.caption(
+            f"{len(rows):,} similar-species birds missing a current {label} cache."
+        )
+        if rows:
+            st.dataframe(rows, use_container_width=True, hide_index=True)
+        else:
+            st.info(f"Nothing missing from the {label} cache.")
+
 
 def render_checklist_download_maintenance(
     region_code: str,
@@ -3416,7 +4933,7 @@ def render_checklist_download_maintenance(
 
 def render_cache_status() -> None:
     """Show downloaded checklist cache coverage by day and hotspot."""
-    st.title("Checklist cache")
+    render_page_header("Checklist cache", screen="cache")
     st.caption(
         "Coverage of downloaded checklist detail files versus the regional "
         "daily feed cache. Days and hotspots are derived from on-disk files."
@@ -3957,7 +5474,7 @@ def _render_cache_status_body(
 
 
 def render_checklists() -> None:
-    st.title("Checklists")
+    render_page_header("Checklists", screen="checklists")
     st.caption(
         "Pick a region, choose a top hotspot, then browse recent checklists. "
         "New-bird counts use `lifeLists/ebird_world_life_list.csv` and "
@@ -4029,6 +5546,8 @@ def render_checklists() -> None:
             st.caption("Region life list")
             st.write("—")
 
+    if "life_list_scope" not in st.session_state:
+        st.session_state.life_list_scope = current_life_list_scope()
     life_scope = st.radio(
         "Filter new birds by",
         options=["all", "region", "world"],
@@ -4039,8 +5558,10 @@ def render_checklists() -> None:
         }[value],
         horizontal=True,
         key="life_list_scope",
+        on_change=_sync_life_list_scope_pref,
         help="Controls which birds count as “new” in the summary, checklists, and gallery.",
     )
+    st.session_state.life_list_scope_pref = life_scope
 
     def apply_hotspots(region: str, rows: list[dict]) -> None:
         st.session_state.checklists_region = region
@@ -4528,29 +6049,24 @@ def render_checklists() -> None:
                         st.write(f"{bird_name}{suffix}{plain_marker}")
 
 
-st.set_page_config(page_title="Birds", page_icon="🪶", layout="centered")
+st.set_page_config(page_title="Birds", page_icon="🪶", layout="wide")
+apply_ui_layout()
 get_api_key()  # ingest ?EBIRD_API_KEY=… into session when present
 if st.session_state.get("ebird_api_key_needed") and not get_api_key():
     render_api_key_form()
 render_ebird_rate_limit_notices()
-if st.session_state.get("gallery_birds"):
+maybe_open_saved_gallery_from_query()
+missing = st.session_state.pop("saved_gallery_missing", None)
+if missing:
+    st.warning(f"Saved gallery `{missing}` was not found.")
+dashboard = current_dashboard()
+if dashboard == "gallery" and st.session_state.get("gallery_birds"):
     render_gallery()
+elif dashboard == "checklists":
+    render_checklists()
+elif dashboard == "cache":
+    render_cache_status()
+elif dashboard == "maintenance":
+    render_general_cache_maintenance()
 else:
-    dashboard = st.radio(
-        "Dashboard",
-        options=["checklists", "cache", "maintenance"],
-        format_func=lambda value: {
-            "checklists": "Checklists",
-            "cache": "Checklist cache",
-            "maintenance": "Cache maintenance",
-        }[value],
-        horizontal=True,
-        key="dashboard_screen",
-        label_visibility="collapsed",
-    )
-    if dashboard == "cache":
-        render_cache_status()
-    elif dashboard == "maintenance":
-        render_general_cache_maintenance()
-    else:
-        render_checklists()
+    render_saved_galleries()

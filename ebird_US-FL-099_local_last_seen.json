@@ -603,6 +603,15 @@
       "speciesCode": "bnhcow",
       "subId": "S384135507"
     },
+    "bnhnut": {
+      "howMany": 0,
+      "locId": "L127409",
+      "locName": "J.W. Corbett Wildlife Management Area",
+      "obsDt": "2025-02-08 06:57",
+      "source": "local_checklist",
+      "speciesCode": "bnhnut",
+      "subId": "S212477740"
+    },
     "boboli": {
       "howMany": 1,
       "locId": "L6176992",
@@ -1430,6 +1439,15 @@
       "source": "local_checklist",
       "speciesCode": "easblu",
       "subId": "S354289738"
+    },
+    "easblu1": {
+      "howMany": 2,
+      "locId": "L127409",
+      "locName": "J.W. Corbett Wildlife Management Area",
+      "obsDt": "2025-01-26 06:24",
+      "source": "local_checklist",
+      "speciesCode": "easblu1",
+      "subId": "S210790896"
     },
     "easkin": {
       "howMany": 1,
@@ -2447,6 +2465,15 @@
       "source": "local_checklist",
       "speciesCode": "mutswa",
       "subId": "S306841350"
+    },
+    "myiarc": {
+      "howMany": 1,
+      "locId": "L28951107",
+      "locName": "Arthur R. Marshall Loxahatchee National Wildlife Refuge, Loxahatchee US-FL 26.67591, -80.38076",
+      "obsDt": "2025-02-04 07:45",
+      "source": "local_checklist",
+      "speciesCode": "myiarc",
+      "subId": "S211957409"
     },
     "myrwar": {
       "howMany": 1,
@@ -4122,6 +4149,15 @@
       "speciesCode": "x00428",
       "subId": "S309822136"
     },
+    "x00783": {
+      "howMany": 1,
+      "locId": "L143084",
+      "locName": "Wakodahatchee Wetlands",
+      "obsDt": "2025-01-20 08:00",
+      "source": "local_checklist",
+      "speciesCode": "x00783",
+      "subId": "S210099995"
+    },
     "y00225": {
       "howMany": 1,
       "locId": "L1293707",
@@ -4288,10 +4324,10 @@
       "howMany": 1,
       "locId": "L127408",
       "locName": "Loxahatchee NWR",
-      "obsDt": "2025-01-08 10:20",
+      "obsDt": "2025-01-16 11:03",
       "source": "local_checklist",
       "speciesCode": "yebfly",
-      "subId": "S208783987"
+      "subId": "S209507554"
     },
     "yebsap": {
       "howMany": 1,
@@ -4386,8 +4422,8 @@
   },
   "region_code": "US-FL-099",
   "signature": {
-    "file_count": 19422,
-    "newest_mtime": 1787068841.2349744
+    "file_count": 20218,
+    "newest_mtime": 1787076213.5953634
   },
-  "updated_at": "2026-08-18T12:01:30.546661-04:00"
+  "updated_at": "2026-08-18T14:06:52.069587-04:00"
 }

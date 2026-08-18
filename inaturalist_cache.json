@@ -179,6 +179,15 @@
     "taxon_id": 5034,
     "taxon_url": "https://www.inaturalist.org/taxa/5034"
   },
+  "amecoo": {
+    "attribution": "(c) arachphotobia, all rights reserved, uploaded by arachphotobia",
+    "common_name": "American Coot",
+    "image_url": "https://static.inaturalist.org/photos/113612953/medium.jpeg",
+    "license": null,
+    "scientific_name": "Fulica americana (Red-shielded)",
+    "taxon_id": 473,
+    "taxon_url": "https://www.inaturalist.org/taxa/473"
+  },
   "amecro": {
     "attribution": "(c) Joe McKenna, some rights reserved (CC BY-NC)",
     "common_name": "American Crow",
@@ -763,6 +772,15 @@
     "scientific_name": "Branta leucopsis",
     "taxon_id": 7101,
     "taxon_url": "https://www.inaturalist.org/taxa/7101"
+  },
+  "barowl8": {
+    "attribution": "(c) Andria E. Hernandez, some rights reserved (CC BY-NC), uploaded by Andria E. Hernandez",
+    "common_name": "American Barn Owl",
+    "image_url": "https://inaturalist-open-data.s3.amazonaws.com/photos/103695544/medium.jpg",
+    "license": "cc-by-nc",
+    "scientific_name": "Tyto furcata [tuidara Group]",
+    "taxon_id": 1578502,
+    "taxon_url": "https://www.inaturalist.org/taxa/1578502"
   },
   "barpet": {
     "attribution": "(c) Thibaud Aronson, some rights reserved (CC BY-SA), uploaded by Thibaud Aronson",
@@ -2447,6 +2465,7 @@
     "taxon_id": 199914,
     "taxon_url": "https://www.inaturalist.org/taxa/199914"
   },
+  "calidr": {},
   "caltow": {
     "attribution": "(c) Lucina M, some rights reserved (CC BY-NC)",
     "common_name": "California Towhee",
