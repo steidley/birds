@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Birds app — API key launcher</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      font-family: system-ui, -apple-system, sans-serif;
+      line-height: 1.5;
+    }
+    body {
+      max-width: 40rem;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    h1 { font-size: 1.35rem; margin-bottom: 0.25rem; }
+    p { color: #666; margin-top: 0; }
+    section { margin: 1.75rem 0; }
+    h2 { font-size: 1rem; margin-bottom: 0.5rem; }
+    ul { padding-left: 1.25rem; margin: 0; }
+    li { margin: 0.35rem 0; }
+    a { word-break: break-all; }
+    code { font-size: 0.9em; }
+  </style>
+</head>
+<body>
+  <h1>Birds app</h1>
+  <p>Copy to <code>launch.html</code> (gitignored) and replace the key placeholders from <code>.env</code>.</p>
+
+  <section>
+    <h2>Deployed — steidley-birds-app-bmugez.streamlit.app</h2>
+    <ul>
+      <li><a href="https://steidley-birds-app-bmugez.streamlit.app/?EBIRD_API_KEY=PRIMARY_KEY">Primary API key</a></li>
+      <li><a href="https://steidley-birds-app-bmugez.streamlit.app/?EBIRD_API_KEY=BACKUP_KEY">Backup API key</a></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>Local — localhost:8502</h2>
+    <ul>
+      <li><a href="http://localhost:8502/?EBIRD_API_KEY=PRIMARY_KEY">Primary API key</a></li>
+      <li><a href="http://localhost:8502/?EBIRD_API_KEY=BACKUP_KEY">Backup API key</a></li>
+    </ul>
+  </section>
+</body>
+</html>

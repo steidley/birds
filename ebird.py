@@ -22,9 +22,11 @@ REGION_SPECIES_CACHE_PATH = ROOT / "ebird_region_species_cache.json"
 LAST_SEEN_CACHE_PATH = ROOT / "ebird_last_seen_cache.json"
 BIRDNET_CODE_CACHE_PATH = ROOT / "birdnet_code_cache.json"
 REGION_LIST_CACHE_PATH = ROOT / "ebird_region_list_cache.json"
+TAXONOMY_CACHE_PATH = ROOT / "ebird_taxonomy_cache.json"
 CHECKLISTS_DIR = ROOT / "ebird_checklists"
 HOTSPOT_CACHE_VERSION = 1
 REGION_LIST_CACHE_VERSION = 1
+TAXONOMY_CACHE_VERSION = 1
 MAX_RATE_LIMIT_RETRIES = 8
 MIN_RATE_LIMIT_WAIT_SECONDS = 1.0
 
@@ -243,7 +245,7 @@ def load_cached_hotspots(region_code: str) -> list[dict[str, Any]]:
 
 
 def save_cached_hotspots(region_code: str, hotspots: list[dict[str, Any]]) -> Path:
-    """Persist top hotspots for a region to disk."""
+    """Persist hotspots for a region to disk."""
     code = (region_code or "").strip()
     path = hotspots_cache_path(code)
     _save_json_file(
@@ -256,6 +258,129 @@ def save_cached_hotspots(region_code: str, hotspots: list[dict[str, Any]]) -> Pa
         },
     )
     return path
+
+
+def sort_hotspots(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Order hotspots by all-time species, then checklist count."""
+    return sorted(
+        rows,
+        key=lambda row: (
+            int(row.get("numSpeciesAllTime") or 0),
+            int(row.get("numChecklistsAllTime") or 0),
+            str(row.get("locName") or ""),
+        ),
+        reverse=True,
+    )
+
+
+def merge_hotspot_lists(
+    existing: list[dict[str, Any]],
+    incoming: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Merge hotspot rows by locId. Incoming updates existing rows.
+
+    Returns ``(merged, newly_added)``.
+    """
+    by_id: dict[str, dict[str, Any]] = {}
+    for row in existing:
+        loc_id = str(row.get("locId") or "").strip()
+        if loc_id:
+            by_id[loc_id] = row
+    added: list[dict[str, Any]] = []
+    for row in incoming:
+        loc_id = str(row.get("locId") or "").strip()
+        if not loc_id:
+            continue
+        if loc_id not in by_id:
+            added.append(row)
+        by_id[loc_id] = row
+    return sort_hotspots(list(by_id.values())), added
+
+
+def _empty_taxonomy_cache() -> dict[str, Any]:
+    return {
+        "cache_version": TAXONOMY_CACHE_VERSION,
+        "complete": False,
+        "taxa": {},
+    }
+
+
+def load_taxonomy_cache() -> dict[str, Any]:
+    """Load the on-disk eBird taxonomy cache."""
+    cache = _load_json_file(TAXONOMY_CACHE_PATH)
+    if cache.get("cache_version") != TAXONOMY_CACHE_VERSION:
+        return _empty_taxonomy_cache()
+    taxa = cache.get("taxa")
+    if not isinstance(taxa, dict):
+        cache["taxa"] = {}
+    return cache
+
+
+def load_cached_taxa(species_codes: list[str]) -> dict[str, dict[str, Any]]:
+    """Return cached taxonomy rows for the requested species codes."""
+    taxa = load_taxonomy_cache().get("taxa") or {}
+    found: dict[str, dict[str, Any]] = {}
+    for code in species_codes:
+        row = taxa.get(code)
+        if isinstance(row, dict) and row:
+            found[code] = row
+    return found
+
+
+def load_complete_taxonomy_rows() -> list[dict[str, Any]]:
+    """Return every cached taxonomy row when the full dump has been stored."""
+    cache = load_taxonomy_cache()
+    if not cache.get("complete"):
+        return []
+    taxa = cache.get("taxa") or {}
+    if not isinstance(taxa, dict) or not taxa:
+        return []
+    return [row for row in taxa.values() if isinstance(row, dict)]
+
+
+def save_cached_taxa(
+    rows: dict[str, dict[str, Any]],
+    *,
+    complete: bool | None = None,
+) -> None:
+    """Merge taxonomy rows into the on-disk cache."""
+    if not rows and complete is not True:
+        return
+    cache = load_taxonomy_cache()
+    taxa = cache.get("taxa")
+    if not isinstance(taxa, dict):
+        taxa = {}
+    for code, row in rows.items():
+        if code and isinstance(row, dict):
+            taxa[str(code)] = row
+    cache["cache_version"] = TAXONOMY_CACHE_VERSION
+    cache["taxa"] = taxa
+    cache["count"] = len(taxa)
+    cache["updated_at"] = datetime.now().astimezone().isoformat()
+    if complete is True:
+        cache["complete"] = True
+    elif complete is False:
+        cache["complete"] = False
+    try:
+        TAXONOMY_CACHE_PATH.write_text(
+            json.dumps(cache, separators=(",", ":"), sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+    except OSError:
+        pass
+
+
+def _taxonomy_rows_by_code(rows: object) -> dict[str, dict[str, Any]]:
+    by_code: dict[str, dict[str, Any]] = {}
+    if not isinstance(rows, list):
+        return by_code
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        code = str(row.get("speciesCode") or "").strip()
+        if code:
+            by_code[code] = row
+    return by_code
 
 
 def _parse_checklist_day(value: object) -> date | None:
@@ -873,6 +998,7 @@ def resolve_ebird_code(
         started=started,
         status=response.status_code,
         lookup=lookup,
+        output=payload,
         ebird_code=code or None,
     )
     return code or None
@@ -1093,28 +1219,41 @@ class EBirdClient:
                     status=429,
                     attempt=attempt + 1,
                     retry_after_s=f"{wait_seconds:.0f}",
+                    output=response.text,
                 )
                 self._rate_limit_wait(wait_seconds, path=path)
                 continue
             response.raise_for_status()
+            data = response.json()
             log_api_done(
                 "ebird",
                 summary,
                 started=started,
                 status=response.status_code,
+                output=data,
                 **(params or {}),
             )
-            return response.json()
+            return data
         raise requests.HTTPError(
             f"eBird rate limit retries exhausted for {path} "
             f"after {MAX_RATE_LIMIT_RETRIES} attempts"
         )
 
-    def taxonomy(self, species: str | None = None) -> Any:
+    def taxonomy(self, species: str | None = None, *, use_cache: bool = True) -> Any:
         params: dict[str, Any] = {"fmt": "json"}
         if species:
             params["species"] = species
-        return self.get("/ref/taxonomy/ebird", params=params)
+        elif use_cache:
+            cached = load_complete_taxonomy_rows()
+            if cached:
+                return cached
+        rows = self.get("/ref/taxonomy/ebird", params=params)
+        if isinstance(rows, list):
+            save_cached_taxa(
+                _taxonomy_rows_by_code(rows),
+                complete=True if not species else None,
+            )
+        return rows
 
     def species_names(self, species_codes: list[str]) -> dict[str, str]:
         """Map species codes to common names via the taxonomy endpoint."""
@@ -1127,24 +1266,24 @@ class EBirdClient:
     def species_taxa(self, species_codes: list[str]) -> dict[str, dict[str, Any]]:
         """Map species codes to taxonomy rows (common name, sci name, category)."""
         codes = sorted({code for code in species_codes if code})
-        taxa: dict[str, dict[str, Any]] = {}
+        taxa = load_cached_taxa(codes)
+        missing = [code for code in codes if code not in taxa]
+        if not missing:
+            return taxa
         batch_size = 50
-        for start in range(0, len(codes), batch_size):
-            batch = codes[start : start + batch_size]
-            rows = self.taxonomy(species=",".join(batch))
-            if not isinstance(rows, list):
-                continue
-            for row in rows:
-                code = row.get("speciesCode")
-                if code:
-                    taxa[str(code)] = row
-        for code in codes:
-            if code in taxa:
-                continue
-            rows = self.taxonomy(species=code)
-            if isinstance(rows, list) and rows:
-                taxa[code] = rows[0]
-        return taxa
+        fetched: dict[str, dict[str, Any]] = {}
+        for start in range(0, len(missing), batch_size):
+            batch = missing[start : start + batch_size]
+            rows = self.taxonomy(species=",".join(batch), use_cache=False)
+            fetched.update(_taxonomy_rows_by_code(rows))
+        still_missing = [code for code in missing if code not in fetched]
+        for code in still_missing:
+            rows = self.taxonomy(species=code, use_cache=False)
+            fetched.update(_taxonomy_rows_by_code(rows))
+        if fetched:
+            save_cached_taxa(fetched)
+            taxa.update(fetched)
+        return {code: taxa[code] for code in codes if code in taxa}
 
     def recent_observations(
         self,
@@ -1480,20 +1619,34 @@ class EBirdClient:
         if use_cache and not refresh:
             cached = load_cached_hotspots(code)
             if cached:
-                return cached[:limit]
-        rows = self.hotspots(code, back=back)
-        rows = sorted(
-            rows,
-            key=lambda row: (
-                int(row.get("numSpeciesAllTime") or 0),
-                int(row.get("numChecklistsAllTime") or 0),
-            ),
-            reverse=True,
-        )
-        rows = rows[:limit]
+                return cached[:limit] if limit else cached
+        rows = sort_hotspots(self.hotspots(code, back=back))
+        if limit:
+            rows = rows[:limit]
         if use_cache and rows:
             save_cached_hotspots(code, rows)
         return rows
+
+    def additional_hotspots(
+        self,
+        region_code: str,
+        existing: list[dict[str, Any]] | None = None,
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        """Fetch the region's hotspots and add any that are not already cached.
+
+        Returns ``(merged_list, newly_added)``.
+        """
+        code = (region_code or "").strip()
+        current = (
+            list(existing)
+            if existing is not None
+            else load_cached_hotspots(code)
+        )
+        incoming = self.hotspots(code)
+        merged, added = merge_hotspot_lists(current, incoming)
+        if merged:
+            save_cached_hotspots(code, merged)
+        return merged, added
 
     def location_checklists(
         self,

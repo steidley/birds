@@ -791,7 +791,15 @@ def general_cache_inventory(
         entry_count: int | None = None
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
-            if isinstance(payload, (dict, list)):
+            if name == "ebird_taxonomy_cache.json" and isinstance(payload, dict):
+                taxa = payload.get("taxa")
+                entry_count = len(taxa) if isinstance(taxa, dict) else 0
+            elif name == "ebird_region_list_cache.json" and isinstance(payload, dict):
+                lists = payload.get("lists")
+                entry_count = len(lists) if isinstance(lists, dict) else 0
+            elif isinstance(payload, dict) and isinstance(payload.get("hotspots"), list):
+                entry_count = len(payload["hotspots"])
+            elif isinstance(payload, (dict, list)):
                 entry_count = len(payload)
         except (OSError, ValueError):
             pass
@@ -3958,16 +3966,44 @@ def render_checklists() -> None:
         help="Controls which birds count as “new” in the summary, checklists, and gallery.",
     )
 
-    if st.button("Load hotspots", type="primary"):
+    def apply_hotspots(region: str, rows: list[dict]) -> None:
+        st.session_state.checklists_region = region
+        st.session_state.checklists_hotspots = rows
+        hotspot_ids = [h["locId"] for h in rows if h.get("locId")]
+        if hotspot_ids and st.session_state.get("checklists_loc_id") not in hotspot_ids:
+            st.session_state.checklists_loc_id = (
+                DEFAULT_HOTSPOT_ID
+                if DEFAULT_HOTSPOT_ID in hotspot_ids
+                else hotspot_ids[0]
+            )
+
+    hotspots: list[dict] = []
+    if region_code:
+        if st.session_state.get("checklists_region") == region_code:
+            hotspots = list(st.session_state.get("checklists_hotspots") or [])
+        if not hotspots:
+            hotspots = load_cached_hotspots(region_code)
+            if hotspots:
+                apply_hotspots(region_code, hotspots)
+
+    load_label = "Load additional hotspots" if hotspots else "Load hotspots"
+    if st.button(
+        load_label,
+        key="load_hotspots_button",
+        type="primary" if not hotspots else "secondary",
+        help=(
+            "Fetch hotspots for this region that are not already in the "
+            "dropdown / on-disk cache."
+        ),
+    ):
         if not region_code:
             st.warning("Enter a region code.")
             return
-        with st.spinner(f"Loading top hotspots for {region_code}…"):
+        with st.spinner(f"Loading additional hotspots for {region_code}…"):
             try:
-                hotspots = EBirdClient().top_hotspots(
+                merged, added = EBirdClient().additional_hotspots(
                     region_code,
-                    limit=100,
-                    refresh=True,
+                    existing=hotspots,
                 )
             except requests.HTTPError as exc:
                 st.error(
@@ -3977,52 +4013,21 @@ def render_checklists() -> None:
             except Exception as exc:
                 st.error(str(exc))
                 return
-        st.session_state.checklists_region = region_code
-        st.session_state.checklists_hotspots = hotspots
-        st.session_state.pop("checklist_rows", None)
-        st.session_state.pop("checklist_summaries", None)
-        st.session_state.pop("checklist_shown", None)
-        st.session_state.pop("checklist_source", None)
-        hotspot_ids = [h["locId"] for h in hotspots if h.get("locId")]
-        st.session_state.checklists_loc_id = (
-            DEFAULT_HOTSPOT_ID if DEFAULT_HOTSPOT_ID in hotspot_ids else hotspot_ids[0]
-            if hotspot_ids
-            else None
-        )
-
-    # Prefer session hotspots; otherwise start from the on-disk hotspot cache.
-    hotspots = st.session_state.get("checklists_hotspots")
-    if not hotspots and region_code:
-        cached_hotspots = load_cached_hotspots(region_code)
-        if cached_hotspots:
-            hotspots = cached_hotspots
-            st.session_state.checklists_hotspots = cached_hotspots
-            st.session_state.checklists_region = region_code
-            hotspot_ids = [h["locId"] for h in cached_hotspots if h.get("locId")]
-            if hotspot_ids and st.session_state.get("checklists_loc_id") not in hotspot_ids:
-                st.session_state.checklists_loc_id = (
-                    DEFAULT_HOTSPOT_ID
-                    if DEFAULT_HOTSPOT_ID in hotspot_ids
-                    else hotspot_ids[0]
-                )
-            st.caption(
-                f"Loaded {len(cached_hotspots)} cached hotspots for {region_code}."
+        apply_hotspots(region_code, merged)
+        hotspots = merged
+        if added:
+            st.success(
+                f"Added {len(added):,} hotspot{'s' if len(added) != 1 else ''} "
+                f"({len(merged):,} total)."
             )
+        elif merged:
+            st.info(f"No additional hotspots. {len(merged):,} already cached.")
+        else:
+            st.warning(f"No hotspots found for {region_code}.")
+
     if not hotspots:
         st.info("Enter a region and click Load hotspots.")
         return
-
-    if st.session_state.get("checklists_region") != region_code:
-        cached_for_region = load_cached_hotspots(region_code)
-        if cached_for_region:
-            st.session_state.checklists_region = region_code
-            st.session_state.checklists_hotspots = cached_for_region
-            hotspots = cached_for_region
-            st.caption(
-                f"Switched to cached hotspots for {region_code}."
-            )
-        else:
-            st.warning("Region changed — click Load hotspots to refresh the list.")
 
     loc_ids = [h["locId"] for h in hotspots if h.get("locId")]
     labels = {h["locId"]: hotspot_label(h) for h in hotspots if h.get("locId")}
@@ -4033,10 +4038,11 @@ def render_checklists() -> None:
     index = loc_ids.index(current_loc)
 
     loc_id = st.selectbox(
-        "Hotspot (top 100 by all-time species)",
+        f"Hotspot ({len(loc_ids)})",
         options=loc_ids,
         index=index,
         format_func=lambda lid: labels.get(lid, lid),
+        help="Cached hotspots for this region, ordered by all-time species count.",
     )
     end_date = st.date_input(
         "Last observation day",

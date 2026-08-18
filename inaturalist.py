@@ -71,6 +71,7 @@ class INaturalistClient:
             started=started,
             status=response.status_code,
             ebird_code=ebird_code,
+            output=data,
             scientific_name=(
                 (data or {}).get("scientific_name") if isinstance(data, dict) else None
             ),
@@ -88,7 +89,8 @@ class INaturalistClient:
         )
         response = self.session.get(url, timeout=20)
         response.raise_for_status()
-        results = response.json().get("results", [])
+        payload = response.json()
+        results = payload.get("results", [])
         taxon_photos = len((results[0] or {}).get("taxon_photos") or []) if results else 0
         log_api_done(
             "inaturalist",
@@ -97,6 +99,7 @@ class INaturalistClient:
             status=response.status_code,
             taxon_id=taxon_id,
             taxon_photos=taxon_photos,
+            output=payload,
         )
         return results[0] if results else None
 
@@ -116,7 +119,8 @@ class INaturalistClient:
             timeout=20,
         )
         response.raise_for_status()
-        results = response.json().get("results", [])
+        payload = response.json()
+        results = payload.get("results", [])
         exact = next(
             (
                 result
@@ -135,6 +139,7 @@ class INaturalistClient:
             hits=len(results),
             matched=bool(match),
             taxon_id=(match or {}).get("id"),
+            output=payload,
         )
         return match
 
@@ -176,7 +181,8 @@ class INaturalistClient:
                 timeout=30,
             )
             response.raise_for_status()
-            results = response.json().get("results") or []
+            payload = response.json()
+            results = payload.get("results") or []
             before = len(photos)
             if not results:
                 log_api_done(
@@ -188,6 +194,7 @@ class INaturalistClient:
                     page=page,
                     obs=0,
                     added=0,
+                    output=payload,
                 )
                 break
             for obs in results:
@@ -214,6 +221,7 @@ class INaturalistClient:
                 obs=len(results),
                 added=len(photos) - before,
                 photos_so_far=len(photos),
+                output=payload,
             )
             if len(photos) >= max_photos:
                 break
@@ -252,7 +260,8 @@ class INaturalistClient:
             timeout=30,
         )
         response.raise_for_status()
-        results = response.json().get("results") or []
+        payload = response.json()
+        results = payload.get("results") or []
         similar: list[dict[str, Any]] = []
         for row in results:
             taxon = row.get("taxon") or {}
@@ -289,6 +298,7 @@ class INaturalistClient:
             taxon_id=taxon_id,
             limit=limit,
             results=len(similar),
+            output=payload,
         )
         return similar
 
