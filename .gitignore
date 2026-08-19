@@ -12,6 +12,7 @@ build/
 venv/
 __pycache__/
 *.pyc
+.ebird_api_throttle
 .streamlit/secrets.toml
 !.streamlit/secrets.toml.example
 launch.html
@@ -33,7 +34,10 @@ ebird_checklists/US-FL-099/2026-08/*
 !ebird_checklists/US-FL-099/2026/L364884/**
 !ebird_checklists/US-FL-099/2026-08/L364884/**
 !ebird_*_local_last_seen.json
+ebird_*_year_first_*.json
+ebird_recent_regions.json
 ebird_last_seen_cache.json
+ebird_own_recent_sightings.json
 ebird_*_checklist_cache_status_*.json
 ebird_*_feed_cache_progress_*.json
 ebird_*_checklist_download_progress_*.json

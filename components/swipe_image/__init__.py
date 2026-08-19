@@ -20,6 +20,7 @@ def swipe_image(
     show_hint: bool = True,
     image_only: bool = False,
     frame_color: str | None = None,
+    frame_style: str | None = None,
     key: str | None = None,
 ) -> dict[str, Any] | None:
     """Render an image that reports swipe gestures.
@@ -34,6 +35,7 @@ def swipe_image(
         show_hint=show_hint,
         image_only=image_only,
         frame_color=frame_color or "",
+        frame_style=frame_style or "solid",
         key=key,
         default=None,
     )

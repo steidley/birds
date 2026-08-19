@@ -104,6 +104,9 @@
         wrap.style.height = height + "px";
         const frameColor = args.frame_color || "";
         wrap.style.borderColor = frameColor || "transparent";
+        wrap.style.borderStyle = frameColor
+          ? args.frame_style || "solid"
+          : "solid";
         if (args.image_url && img.src !== args.image_url) {
           img.src = args.image_url;
         }

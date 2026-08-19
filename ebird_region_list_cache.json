@@ -1015,6 +1015,60 @@
         "name": "Zimbabwe"
       }
     ],
+    "subnational1:CA": [
+      {
+        "code": "CA-AB",
+        "name": "Alberta"
+      },
+      {
+        "code": "CA-BC",
+        "name": "British Columbia"
+      },
+      {
+        "code": "CA-MB",
+        "name": "Manitoba"
+      },
+      {
+        "code": "CA-NB",
+        "name": "New Brunswick"
+      },
+      {
+        "code": "CA-NL",
+        "name": "Newfoundland and Labrador"
+      },
+      {
+        "code": "CA-NT",
+        "name": "Northwest Territories"
+      },
+      {
+        "code": "CA-NS",
+        "name": "Nova Scotia"
+      },
+      {
+        "code": "CA-NU",
+        "name": "Nunavut"
+      },
+      {
+        "code": "CA-ON",
+        "name": "Ontario"
+      },
+      {
+        "code": "CA-PE",
+        "name": "Prince Edward Island"
+      },
+      {
+        "code": "CA-QC",
+        "name": "Quebec"
+      },
+      {
+        "code": "CA-SK",
+        "name": "Saskatchewan"
+      },
+      {
+        "code": "CA-YT",
+        "name": "Yukon Territory"
+      }
+    ],
     "subnational1:US": [
       {
         "code": "US-AL",
@@ -1219,6 +1273,420 @@
       {
         "code": "US-WY",
         "name": "Wyoming"
+      }
+    ],
+    "subnational2:CA-QC": [
+      {
+        "code": "CA-QC-AB",
+        "name": "Abitibi"
+      },
+      {
+        "code": "CA-QC-AO",
+        "name": "Abitibi-Ouest"
+      },
+      {
+        "code": "CA-QC-AC",
+        "name": "Acton"
+      },
+      {
+        "code": "CA-QC-AL",
+        "name": "Antoine-Labelle"
+      },
+      {
+        "code": "CA-QC-AG",
+        "name": "Argenteuil"
+      },
+      {
+        "code": "CA-QC-AT",
+        "name": "Arthabaska"
+      },
+      {
+        "code": "CA-QC-AV",
+        "name": "Avignon"
+      },
+      {
+        "code": "CA-QC-RC",
+        "name": "Beauce-Centre"
+      },
+      {
+        "code": "CA-QC-BS",
+        "name": "Beauce-Sartigan"
+      },
+      {
+        "code": "CA-QC-BH",
+        "name": "Beauharnois-Salaberry"
+      },
+      {
+        "code": "CA-QC-BL",
+        "name": "Bellechasse"
+      },
+      {
+        "code": "CA-QC-BO",
+        "name": "Bonaventure"
+      },
+      {
+        "code": "CA-QC-BM",
+        "name": "Brome-Missisquoi"
+      },
+      {
+        "code": "CA-QC-BC",
+        "name": "B\u00e9cancour"
+      },
+      {
+        "code": "CA-QC-CAN",
+        "name": "Caniapiscau"
+      },
+      {
+        "code": "CA-QC-CV",
+        "name": "Charlevoix"
+      },
+      {
+        "code": "CA-QC-CE",
+        "name": "Charlevoix-Est"
+      },
+      {
+        "code": "CA-QC-CT",
+        "name": "Coaticook"
+      },
+      {
+        "code": "CA-QC-DA",
+        "name": "D'Autray"
+      },
+      {
+        "code": "CA-QC-DM",
+        "name": "Deux-Montagnes"
+      },
+      {
+        "code": "CA-QC-DU",
+        "name": "Drummond"
+      },
+      {
+        "code": "CA-QC-OU",
+        "name": "Gatineau"
+      },
+      {
+        "code": "CA-QC-JAM",
+        "name": "Jam\u00e9sie"
+      },
+      {
+        "code": "CA-QC-JO",
+        "name": "Joliette"
+      },
+      {
+        "code": "CA-QC-KA",
+        "name": "Kamouraska"
+      },
+      {
+        "code": "CA-QC-NQ",
+        "name": "Kativik"
+      },
+      {
+        "code": "CA-QC-AN",
+        "name": "L'Assomption"
+      },
+      {
+        "code": "CA-QC-IS",
+        "name": "L'Islet"
+      },
+      {
+        "code": "CA-QC-ER",
+        "name": "L'\u00c9rable"
+      },
+      {
+        "code": "CA-QC-IO",
+        "name": "L'\u00cele-d'Orl\u00e9ans"
+      },
+      {
+        "code": "CA-QC-CB",
+        "name": "La C\u00f4te-de-Beaupr\u00e9"
+      },
+      {
+        "code": "CA-QC-CG",
+        "name": "La C\u00f4te-de-Gasp\u00e9"
+      },
+      {
+        "code": "CA-QC-HC",
+        "name": "La Haute-C\u00f4te-Nord"
+      },
+      {
+        "code": "CA-QC-DR",
+        "name": "La Haute-Gasp\u00e9sie"
+      },
+      {
+        "code": "CA-QC-HY",
+        "name": "La Haute-Yamaska"
+      },
+      {
+        "code": "CA-QC-JC",
+        "name": "La Jacques-Cartier"
+      },
+      {
+        "code": "CA-QC-MT",
+        "name": "La Matanie"
+      },
+      {
+        "code": "CA-QC-MP",
+        "name": "La Matap\u00e9dia"
+      },
+      {
+        "code": "CA-QC-MI",
+        "name": "La Mitis"
+      },
+      {
+        "code": "CA-QC-NB",
+        "name": "La Nouvelle-Beauce"
+      },
+      {
+        "code": "CA-QC-RD",
+        "name": "La Rivi\u00e8re-du-Nord"
+      },
+      {
+        "code": "CA-QC-HM",
+        "name": "La Tuque"
+      },
+      {
+        "code": "CA-QC-VO",
+        "name": "La Vall\u00e9e-de-l'Or"
+      },
+      {
+        "code": "CA-QC-VG",
+        "name": "La Vall\u00e9e-de-la-Gatineau"
+      },
+      {
+        "code": "CA-QC-VR",
+        "name": "La Vall\u00e9e-du-Richelieu"
+      },
+      {
+        "code": "CA-QC-LS",
+        "name": "Lac-Saint-Jean-Est"
+      },
+      {
+        "code": "CA-QC-LV",
+        "name": "Laval"
+      },
+      {
+        "code": "CA-QC-DD",
+        "name": "Le Domaine-du-Roy"
+      },
+      {
+        "code": "CA-QC-FS",
+        "name": "Le Fjord-du-Saguenay"
+      },
+      {
+        "code": "CA-QC-GSL",
+        "name": "Le Golfe-du-Saint-Laurent"
+      },
+      {
+        "code": "CA-QC-GR",
+        "name": "Le Granit"
+      },
+      {
+        "code": "CA-QC-HR",
+        "name": "Le Haut-Richelieu"
+      },
+      {
+        "code": "CA-QC-HF",
+        "name": "Le Haut-Saint-Fran\u00e7ois"
+      },
+      {
+        "code": "CA-QC-HL",
+        "name": "Le Haut-Saint-Laurent"
+      },
+      {
+        "code": "CA-QC-PB",
+        "name": "Le Rocher-Perc\u00e9"
+      },
+      {
+        "code": "CA-QC-VF",
+        "name": "Le Val-Saint-Fran\u00e7ois"
+      },
+      {
+        "code": "CA-QC-APP",
+        "name": "Les Appalaches"
+      },
+      {
+        "code": "CA-QC-BA",
+        "name": "Les Basques"
+      },
+      {
+        "code": "CA-QC-LCH",
+        "name": "Les Chenaux"
+      },
+      {
+        "code": "CA-QC-CO",
+        "name": "Les Collines-de-l'Outaouais"
+      },
+      {
+        "code": "CA-QC-ET",
+        "name": "Les Etchemins"
+      },
+      {
+        "code": "CA-QC-JN",
+        "name": "Les Jardins-de-Napierville"
+      },
+      {
+        "code": "CA-QC-LL",
+        "name": "Les Laurentides"
+      },
+      {
+        "code": "CA-QC-MK",
+        "name": "Les Maskoutains"
+      },
+      {
+        "code": "CA-QC-MU",
+        "name": "Les Moulins"
+      },
+      {
+        "code": "CA-QC-PH",
+        "name": "Les Pays-d'en-Haut"
+      },
+      {
+        "code": "CA-QC-AS",
+        "name": "Les Sources"
+      },
+      {
+        "code": "CA-QC-IM",
+        "name": "Les \u00celes-de-la-Madeleine"
+      },
+      {
+        "code": "CA-QC-CP",
+        "name": "Longueuil"
+      },
+      {
+        "code": "CA-QC-LO",
+        "name": "Lotbini\u00e8re"
+      },
+      {
+        "code": "CA-QC-DE",
+        "name": "L\u00e9vis"
+      },
+      {
+        "code": "CA-QC-MN",
+        "name": "Manicouagan"
+      },
+      {
+        "code": "CA-QC-LJ",
+        "name": "Marguerite-D'Youville"
+      },
+      {
+        "code": "CA-QC-MC",
+        "name": "Maria-Chapdelaine"
+      },
+      {
+        "code": "CA-QC-MS",
+        "name": "Maskinong\u00e9"
+      },
+      {
+        "code": "CA-QC-MW",
+        "name": "Matawinie"
+      },
+      {
+        "code": "CA-QC-MG",
+        "name": "Memphr\u00e9magog"
+      },
+      {
+        "code": "CA-QC-MB",
+        "name": "Minganie"
+      },
+      {
+        "code": "CA-QC-ML",
+        "name": "Mirabel"
+      },
+      {
+        "code": "CA-QC-MO",
+        "name": "Montcalm"
+      },
+      {
+        "code": "CA-QC-MM",
+        "name": "Montmagny"
+      },
+      {
+        "code": "CA-QC-MR",
+        "name": "Montr\u00e9al"
+      },
+      {
+        "code": "CA-QC-ME",
+        "name": "M\u00e9kinac"
+      },
+      {
+        "code": "CA-QC-NY",
+        "name": "Nicolet-Yamaska"
+      },
+      {
+        "code": "CA-QC-PP",
+        "name": "Papineau"
+      },
+      {
+        "code": "CA-QC-BR",
+        "name": "Pierre-De Saurel"
+      },
+      {
+        "code": "CA-QC-PN",
+        "name": "Pontiac"
+      },
+      {
+        "code": "CA-QC-PR",
+        "name": "Portneuf"
+      },
+      {
+        "code": "CA-QC-QU",
+        "name": "Qu\u00e9bec"
+      },
+      {
+        "code": "CA-QC-RM",
+        "name": "Rimouski-Neigette"
+      },
+      {
+        "code": "CA-QC-RL",
+        "name": "Rivi\u00e8re-du-Loup"
+      },
+      {
+        "code": "CA-QC-RS",
+        "name": "Roussillon"
+      },
+      {
+        "code": "CA-QC-RV",
+        "name": "Rouville"
+      },
+      {
+        "code": "CA-QC-RN",
+        "name": "Rouyn-Noranda"
+      },
+      {
+        "code": "CA-QC-SAG",
+        "name": "Saguenay"
+      },
+      {
+        "code": "CA-QC-SR",
+        "name": "Sept-Rivi\u00e8res"
+      },
+      {
+        "code": "CA-QC-CM",
+        "name": "Shawinigan"
+      },
+      {
+        "code": "CA-QC-SH",
+        "name": "Sherbrooke"
+      },
+      {
+        "code": "CA-QC-TB",
+        "name": "Th\u00e9r\u00e8se-De Blainville"
+      },
+      {
+        "code": "CA-QC-FR",
+        "name": "Trois-Rivi\u00e8res"
+      },
+      {
+        "code": "CA-QC-TM",
+        "name": "T\u00e9miscamingue"
+      },
+      {
+        "code": "CA-QC-TT",
+        "name": "T\u00e9miscouata"
+      },
+      {
+        "code": "CA-QC-VS",
+        "name": "Vaudreuil-Soulanges"
       }
     ],
     "subnational2:US-FL": [
@@ -1492,5 +1960,5 @@
       }
     ]
   },
-  "updated_at": "2026-08-17T09:32:58.082904-04:00"
+  "updated_at": "2026-08-19T09:32:43.725092-04:00"
 }

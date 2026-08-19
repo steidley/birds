@@ -1,0 +1,738 @@
+{
+  "id": "2026-08-18_210521",
+  "saved_at": "2026-08-18T21:05:21",
+  "title": "2026-08-18 16:08:13",
+  "source_title": "Species summary gallery",
+  "view_mode": "standard",
+  "sort": "taxonomic",
+  "birds": [
+    {
+      "code": "ameavo",
+      "name": "American Avocet",
+      "sciName": "Recurvirostra americana",
+      "is_new_region": true,
+      "is_new": true,
+      "is_new_world": false
+    },
+    {
+      "code": "anhing",
+      "name": "Anhinga",
+      "sciName": "Anhinga anhinga",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "banswa",
+      "name": "Bank Swallow",
+      "sciName": "Riparia riparia",
+      "is_new_region": true,
+      "is_new": true,
+      "is_new_world": true
+    },
+    {
+      "code": "barswa5",
+      "name": "Barn Swallow",
+      "sciName": "Hirundo rustica erythrogaster",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "blkter",
+      "name": "Black Tern",
+      "sciName": "Chlidonias niger",
+      "is_new_region": true,
+      "is_new": true,
+      "is_new_world": true
+    },
+    {
+      "code": "blkvul",
+      "name": "Black Vulture",
+      "sciName": "Coragyps atratus",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "bkbplo",
+      "name": "Black-bellied Plover",
+      "sciName": "Pluvialis squatarola",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "bkbwhd1",
+      "name": "Black-bellied Whistling-Duck",
+      "sciName": "Dendrocygna autumnalis fulgens",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "bkcnih2",
+      "name": "Black-crowned Night Heron",
+      "sciName": "Nycticorax nycticorax hoactli",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "bknsti1",
+      "name": "Black-necked Stilt",
+      "sciName": "Himantopus mexicanus mexicanus",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "blujay",
+      "name": "Blue Jay",
+      "sciName": "Cyanocitta cristata",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "botgra3",
+      "name": "Boat-tailed Grackle",
+      "sciName": "Quiscalus major westoni",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "caster1",
+      "name": "Caspian Tern",
+      "sciName": "Hydroprogne caspia",
+      "is_new_region": true,
+      "is_new": true,
+      "is_new_world": true
+    },
+    {
+      "code": "cliswa2",
+      "name": "Cliff Swallow",
+      "sciName": "Petrochelidon pyrrhonota [pyrrhonota Group]",
+      "is_new_region": true,
+      "is_new": true,
+      "is_new_world": true
+    },
+    {
+      "code": "commoo2",
+      "name": "Common Gallinule",
+      "sciName": "Gallinula galeata [galeata Group]",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "comgra1",
+      "name": "Common Grackle",
+      "sciName": "Quiscalus quiscula quiscula/stonei",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "cogdov",
+      "name": "Common Ground Dove",
+      "sciName": "Columbina passerina",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "comnig",
+      "name": "Common Nighthawk",
+      "sciName": "Chordeiles minor",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "comyel3",
+      "name": "Common Yellowthroat",
+      "sciName": "Geothlypis trichas [trichas Group]",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "doccor",
+      "name": "Double-crested Cormorant",
+      "sciName": "Nannopterum auritum",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "eucdov",
+      "name": "Eurasian Collared-Dove",
+      "sciName": "Streptopelia decaocto",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "gloibi",
+      "name": "Glossy Ibis",
+      "sciName": "Plegadis falcinellus",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "grbher",
+      "name": "Great Blue Heron",
+      "sciName": "Ardea herodias [herodias Group]",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "greegr2",
+      "name": "Great Egret",
+      "sciName": "Ardea alba egretta",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "greyel",
+      "name": "Greater Yellowlegs",
+      "sciName": "Tringa melanoleuca",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "grnher1",
+      "name": "Green Heron",
+      "sciName": "Butorides virescens virescens/bahamensis",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "gubter2",
+      "name": "Gull-billed Tern",
+      "sciName": "Gelochelidon nilotica",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "houspa",
+      "name": "House Sparrow",
+      "sciName": "Passer domesticus",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "killde",
+      "name": "Killdeer",
+      "sciName": "Charadrius vociferus",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "laugul",
+      "name": "Laughing Gull",
+      "sciName": "Leucophaeus atricilla",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "leasan",
+      "name": "Least Sandpiper",
+      "sciName": "Calidris minutilla",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "leater1",
+      "name": "Least Tern",
+      "sciName": "Sternula antillarum",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "lesyel",
+      "name": "Lesser Yellowlegs",
+      "sciName": "Tringa flavipes",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "libher",
+      "name": "Little Blue Heron",
+      "sciName": "Egretta caerulea",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "logshr",
+      "name": "Loggerhead Shrike",
+      "sciName": "Lanius ludovicianus",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "lobdow",
+      "name": "Long-billed Dowitcher",
+      "sciName": "Limnodromus scolopaceus",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "motduc1",
+      "name": "Mottled Duck",
+      "sciName": "Anas fulvigula fulvigula",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "moudov",
+      "name": "Mourning Dove",
+      "sciName": "Zenaida macroura",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "normoc",
+      "name": "Northern Mockingbird",
+      "sciName": "Mimus polyglottos",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "osprey1",
+      "name": "Osprey",
+      "sciName": "Pandion haliaetus carolinensis",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "pecsan",
+      "name": "Pectoral Sandpiper",
+      "sciName": "Calidris melanotos",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "purmar",
+      "name": "Purple Martin",
+      "sciName": "Progne subis",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "reshaw",
+      "name": "Red-shouldered Hawk",
+      "sciName": "Buteo lineatus",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "rosspo1",
+      "name": "Roseate Spoonbill",
+      "sciName": "Platalea ajaja",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "rudtur",
+      "name": "Ruddy Turnstone",
+      "sciName": "Arenaria interpres",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "ruff",
+      "name": "Ruff",
+      "sciName": "Calidris pugnax",
+      "is_new_region": true,
+      "is_new": true,
+      "is_new_world": true
+    },
+    {
+      "code": "semplo",
+      "name": "Semipalmated Plover",
+      "sciName": "Charadrius semipalmatus",
+      "is_new_region": true,
+      "is_new": true,
+      "is_new_world": true
+    },
+    {
+      "code": "semsan",
+      "name": "Semipalmated Sandpiper",
+      "sciName": "Calidris pusilla",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "shbdow",
+      "name": "Short-billed Dowitcher",
+      "sciName": "Limnodromus griseus",
+      "is_new_region": true,
+      "is_new": true,
+      "is_new_world": true
+    },
+    {
+      "code": "snoegr",
+      "name": "Snowy Egret",
+      "sciName": "Egretta thula",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "sposan",
+      "name": "Spotted Sandpiper",
+      "sciName": "Actitis macularius",
+      "is_new_region": true,
+      "is_new": true,
+      "is_new_world": false
+    },
+    {
+      "code": "stisan",
+      "name": "Stilt Sandpiper",
+      "sciName": "Calidris himantopus",
+      "is_new_region": true,
+      "is_new": true,
+      "is_new_world": false
+    },
+    {
+      "code": "triher",
+      "name": "Tricolored Heron",
+      "sciName": "Egretta tricolor",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "turvul2",
+      "name": "Turkey Vulture",
+      "sciName": "Cathartes aura [aura Group]",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "categr1",
+      "name": "Western Cattle-Egret",
+      "sciName": "Ardea ibis",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "wessan",
+      "name": "Western Sandpiper",
+      "sciName": "Calidris mauri",
+      "is_new_region": true,
+      "is_new": true,
+      "is_new_world": true
+    },
+    {
+      "code": "whiibi",
+      "name": "White Ibis",
+      "sciName": "Eudocimus albus",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "wilpha",
+      "name": "Wilson's Phalarope",
+      "sciName": "Phalaropus tricolor",
+      "is_new_region": true,
+      "is_new": true,
+      "is_new_world": true
+    },
+    {
+      "code": "woosto",
+      "name": "Wood Stork",
+      "sciName": "Mycteria americana",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "buggna1",
+      "name": "Blue-gray Gnatcatcher",
+      "sciName": "Polioptila caerulea caerulea",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "rocpig1",
+      "name": "Rock Pigeon",
+      "sciName": "Columba livia (Feral Pigeon)",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "solsan",
+      "name": "Solitary Sandpiper",
+      "sciName": "Tringa solitaria",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    },
+    {
+      "code": "yelwar1",
+      "name": "Northern Yellow Warbler",
+      "sciName": "Setophaga aestiva",
+      "is_new_region": true,
+      "is_new": true,
+      "is_new_world": true
+    },
+    {
+      "code": "easkin",
+      "name": "Eastern Kingbird",
+      "sciName": "Tyrannus tyrannus",
+      "is_new_region": true,
+      "is_new": true,
+      "is_new_world": true
+    },
+    {
+      "code": "ycnher",
+      "name": "Yellow-crowned Night Heron",
+      "sciName": "Nyctanassa violacea",
+      "is_new_region": false,
+      "is_new": false,
+      "is_new_world": false
+    }
+  ],
+  "compare_by_bird": {
+    "code:grnher1": [
+      {
+        "code": "grbher3",
+        "name": "Great Blue Heron",
+        "sciName": "Ardea herodias",
+        "is_new_region": false,
+        "is_new": false,
+        "is_new_world": false
+      },
+      {
+        "code": "anhing",
+        "name": "Anhinga",
+        "sciName": "Anhinga anhinga",
+        "is_new_region": false,
+        "is_new": false,
+        "is_new_world": false
+      },
+      {
+        "code": "libher",
+        "name": "Little Blue Heron",
+        "sciName": "Egretta caerulea",
+        "is_new_region": false,
+        "is_new": false,
+        "is_new_world": false
+      },
+      {
+        "code": "triher",
+        "name": "Tricolored Heron",
+        "sciName": "Egretta tricolor",
+        "is_new_region": false,
+        "is_new": false,
+        "is_new_world": false
+      },
+      {
+        "code": "doccor",
+        "name": "Double-crested Cormorant",
+        "sciName": "Nannopterum auritum",
+        "is_new_region": false,
+        "is_new": false,
+        "is_new_world": false
+      },
+      {
+        "code": "ycnher",
+        "name": "Yellow-crowned Night Heron",
+        "sciName": "Nyctanassa violacea",
+        "is_new_region": false,
+        "is_new": false,
+        "is_new_world": false
+      },
+      {
+        "code": "bcnher",
+        "name": "Black-crowned Night Heron",
+        "sciName": "Nycticorax nycticorax",
+        "is_new_region": false,
+        "is_new": false,
+        "is_new_world": false
+      },
+      {
+        "code": "leabit",
+        "name": "Least Bittern",
+        "sciName": "Botaurus exilis",
+        "is_new_region": false,
+        "is_new": false,
+        "is_new_world": false
+      },
+      {
+        "code": "amebit",
+        "name": "American Bittern",
+        "sciName": "Botaurus lentiginosus",
+        "is_new_region": true,
+        "is_new": true,
+        "is_new_world": true
+      }
+    ],
+    "code:triher": [
+      {
+        "code": "grbher3",
+        "name": "Great Blue Heron",
+        "sciName": "Ardea herodias",
+        "is_new_region": false,
+        "is_new": false,
+        "is_new_world": false
+      },
+      {
+        "code": "anhing",
+        "name": "Anhinga",
+        "sciName": "Anhinga anhinga",
+        "is_new_region": false,
+        "is_new": false,
+        "is_new_world": false
+      },
+      {
+        "code": "whiibi",
+        "name": "White Ibis",
+        "sciName": "Eudocimus albus",
+        "is_new_region": false,
+        "is_new": false,
+        "is_new_world": false
+      },
+      {
+        "code": "libher",
+        "name": "Little Blue Heron",
+        "sciName": "Egretta caerulea",
+        "is_new_region": false,
+        "is_new": false,
+        "is_new_world": false
+      },
+      {
+        "code": "greegr",
+        "name": "Great Egret",
+        "sciName": "Ardea alba",
+        "is_new_region": false,
+        "is_new": false,
+        "is_new_world": false
+      },
+      {
+        "code": "grnher",
+        "name": "Green Heron",
+        "sciName": "Butorides virescens",
+        "is_new_region": false,
+        "is_new": false,
+        "is_new_world": false
+      },
+      {
+        "code": "ycnher",
+        "name": "Yellow-crowned Night Heron",
+        "sciName": "Nyctanassa violacea",
+        "is_new_region": false,
+        "is_new": false,
+        "is_new_world": false
+      },
+      {
+        "code": "bcnher",
+        "name": "Black-crowned Night Heron",
+        "sciName": "Nycticorax nycticorax",
+        "is_new_region": false,
+        "is_new": false,
+        "is_new_world": false
+      },
+      {
+        "code": "redegr",
+        "name": "Reddish Egret",
+        "sciName": "Egretta rufescens",
+        "is_new_region": true,
+        "is_new": true,
+        "is_new_world": true
+      }
+    ],
+    "code:ycnher": [
+      {
+        "code": "grbher3",
+        "name": "Great Blue Heron",
+        "sciName": "Ardea herodias",
+        "is_new_region": false,
+        "is_new": false,
+        "is_new_world": false
+      },
+      {
+        "code": "libher",
+        "name": "Little Blue Heron",
+        "sciName": "Egretta caerulea",
+        "is_new_region": false,
+        "is_new": false,
+        "is_new_world": false
+      },
+      {
+        "code": "triher",
+        "name": "Tricolored Heron",
+        "sciName": "Egretta tricolor",
+        "is_new_region": false,
+        "is_new": false,
+        "is_new_world": false
+      },
+      {
+        "code": "limpki",
+        "name": "Limpkin",
+        "sciName": "Aramus guarauna",
+        "is_new_region": false,
+        "is_new": false,
+        "is_new_world": false
+      },
+      {
+        "code": "grnher",
+        "name": "Green Heron",
+        "sciName": "Butorides virescens",
+        "is_new_region": false,
+        "is_new": false,
+        "is_new_world": false
+      },
+      {
+        "code": "bcnher",
+        "name": "Black-crowned Night Heron",
+        "sciName": "Nycticorax nycticorax",
+        "is_new_region": false,
+        "is_new": false,
+        "is_new_world": false
+      },
+      {
+        "code": "willet1",
+        "name": "Willet",
+        "sciName": "Tringa semipalmata",
+        "is_new_region": true,
+        "is_new": true,
+        "is_new_world": false
+      }
+    ]
+  }
+}

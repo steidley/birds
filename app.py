@@ -20,25 +20,37 @@ from ebird import (
     MissingEbirdApiKey,
     build_checklist_cache_status,
     build_local_last_seen_index,
+    configured_observer_names,
     filter_regions_by_query,
     get_api_key,
     list_local_checklist_regions,
+    filter_hotspots_for_region,
     load_cached_hotspots,
+    load_cached_region_list,
+    load_cached_taxa,
     load_disk_region_species_codes,
     load_taxonomy_cache,
     load_local_checklists_for_hotspot,
+    load_own_local_checklists,
+    local_own_recent_sightings_for_species,
+    local_recent_sightings_for_species,
     rebuild_local_last_seen_indexes,
     region_historical_species_cache_coverage,
+    parse_ebird_obs_day,
     resolve_ebird_code,
+    sort_hotspots,
 )
 from download_checklists import (
     dedupe_downloaded_checklists,
     download_progress_path,
+    download_window_slices,
+    format_download_windows,
     load_download_progress,
     load_feed_cache_progress,
     missing_checklists_by_species_count,
     request_download_stop,
     request_feed_cache_stop,
+    save_checklist_detail,
 )
 from inaturalist import (
     CACHE_PATH as INAT_PHOTO_CACHE_PATH,
@@ -56,7 +68,11 @@ load_dotenv(Path(__file__).parent / ".env")
 LIFE_LISTS_DIR = Path(__file__).parent / "lifeLists"
 SAVED_GALLERIES_DIR = Path(__file__).parent / "saved_galleries"
 SAVED_GALLERY_QUERY = "saved_gallery"
+CHECKLIST_GALLERY_QUERY = "checklist_gallery"
+SUMMARY_GALLERY_QUERY = "summary_gallery"
 SAVED_GALLERY_ID_RE = re.compile(r"^\d{4}-\d{2}-\d{2}_\d{6}(?:_\d+)?$")
+CHECKLIST_SUB_ID_RE = re.compile(r"^S\d+$")
+DOWNLOAD_MY_DATA_URL = "https://ebird.org/downloadMyData"
 DEFAULT_HOTSPOT_ID = os.environ.get("EBIRD_DEFAULT_HOTSPOT", "L364884")
 WORLD_LIFE_LIST_CODE = "world"
 BUSY_CURSOR_CSS = """
@@ -104,6 +120,17 @@ UI_HEADING_CSS = """
 .stApp .block-container {
   padding-top: 1.1rem !important;
 }
+.stApp [data-testid="stPopoverButton"] {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding-left: 0.45rem !important;
+  padding-right: 0.45rem !important;
+}
+.stApp [data-testid="stPopoverButton"] > div {
+  margin-right: 0 !important;
+  justify-content: center !important;
+}
 #MainMenu, footer,
 .stApp [data-testid="stHeader"],
 .stApp [data-testid="stToolbar"],
@@ -127,6 +154,15 @@ UI_LAYOUT_DESKTOP_CSS = """
   padding-left: 2rem;
   padding-right: 2rem;
 }
+section[data-testid="stSidebar"] {
+  min-width: 16rem;
+  max-width: 18rem;
+}
+[data-testid="stSidebarCollapseButton"],
+[data-testid="collapsedControl"],
+[data-testid="stSidebarCollapsedControl"] {
+  display: none !important;
+}
 </style>
 """
 UI_LAYOUT_MOBILE_CSS = """
@@ -139,6 +175,36 @@ UI_LAYOUT_MOBILE_CSS = """
   margin-right: auto;
   padding-left: 1rem;
   padding-right: 1rem;
+}
+</style>
+"""
+OPEN_GALLERY_ICON_BUTTON_CSS = """
+<style>
+div[class*="st-key-open_gallery_icon_"] {
+  width: 2.4rem !important;
+  min-width: 2.4rem !important;
+  max-width: 2.4rem !important;
+}
+div[class*="st-key-open_gallery_icon_"] button p {
+  display: none !important;
+}
+div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-open_gallery_icon_"]) {
+  align-items: center !important;
+  gap: 0.35rem !important;
+}
+div[class*="st-key-header_region_"] {
+  display: flex !important;
+  justify-content: flex-end !important;
+}
+div[class*="st-key-header_region_"] button {
+  justify-content: flex-end !important;
+}
+div[class*="st-key-header_region_"] button p {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 22rem !important;
+  text-align: right !important;
 }
 </style>
 """
@@ -179,14 +245,56 @@ def set_busy_cursor(enabled: bool = True) -> None:
         st.markdown(BUSY_CURSOR_CSS, unsafe_allow_html=True)
 
 
+def request_user_agent() -> str:
+    """Browser User-Agent for the current Streamlit session, if available."""
+    try:
+        headers = getattr(st.context, "headers", None)
+        if headers is not None:
+            ua = headers.get("User-Agent") or headers.get("user-agent")
+            if ua:
+                return str(ua)
+    except Exception:
+        pass
+    return ""
+
+
+def is_iphone_user_agent() -> bool:
+    return "iphone" in request_user_agent().lower()
+
+
+def apply_iphone_mobile_layout() -> None:
+    """Use mobile layout on iPhone unless the user picked a display width."""
+    if st.session_state.get("ui_layout_user_set"):
+        return
+    radio = st.session_state.get("ui_layout_mode_radio")
+    if radio == "desktop":
+        st.session_state.ui_layout_pref = "desktop"
+        st.session_state.ui_layout_user_set = True
+        return
+    if radio == "mobile":
+        st.session_state.ui_layout_pref = "mobile"
+        return
+    if not is_iphone_user_agent():
+        return
+    st.session_state.ui_layout_pref = "mobile"
+    st.session_state.ui_layout_mode_radio = "mobile"
+
+
+def current_ui_layout() -> str:
+    """Return ``desktop`` or ``mobile`` from the cache-maintenance layout control."""
+    radio = st.session_state.get("ui_layout_mode_radio")
+    if radio in {"desktop", "mobile"}:
+        return radio
+    mode = str(st.session_state.get("ui_layout_pref") or "desktop")
+    return mode if mode in {"desktop", "mobile"} else "desktop"
+
+
 def apply_ui_layout() -> None:
     """Apply desktop (full width) or mobile (narrow) layout CSS."""
-    mode = str(st.session_state.get("ui_layout_pref") or "desktop")
-    if mode not in {"desktop", "mobile"}:
-        mode = "desktop"
+    mode = current_ui_layout()
     st.session_state.ui_layout_pref = mode
     css = UI_LAYOUT_MOBILE_CSS if mode == "mobile" else UI_LAYOUT_DESKTOP_CSS
-    st.markdown(UI_HEADING_CSS + css, unsafe_allow_html=True)
+    st.markdown(UI_HEADING_CSS + OPEN_GALLERY_ICON_BUTTON_CSS + css, unsafe_allow_html=True)
 
 
 def _sync_ui_layout_pref() -> None:
@@ -194,6 +302,7 @@ def _sync_ui_layout_pref() -> None:
     chosen = st.session_state.get("ui_layout_mode_radio")
     if chosen in {"desktop", "mobile"}:
         st.session_state.ui_layout_pref = chosen
+        st.session_state.ui_layout_user_set = True
 
 
 def render_ebird_rate_limit_notices() -> None:
@@ -318,6 +427,21 @@ def render_species_thumbnail_table(
         code = item.get("code")
         sci = item.get("sciName") or None
         name = str(item.get("Species") or item.get("name") or code or "")
+        frame_bird = {
+                "is_new_region": bool(
+                    item.get("is_new_region") or item.get("New_region")
+                ),
+                "is_new_world": bool(
+                    item.get("is_new_world") or item.get("New_world")
+                ),
+                "is_foy_region": bool(
+                    item.get("is_foy_region") or item.get("FoY_region")
+                ),
+                "is_foy_world": bool(
+                    item.get("is_foy_world") or item.get("FoY_world")
+                ),
+            }
+        border = gallery_frame_outline_css(frame_bird)
         photo = inaturalist_photo_for_code(str(code), sci) if code else None
         if photo and photo.get("image_url"):
             src = html.escape(str(photo["image_url"]), quote=True)
@@ -325,14 +449,14 @@ def render_species_thumbnail_table(
             inner = (
                 f'<img src="{src}" alt="{alt}" '
                 f'style="width:{width}px;height:{width}px;object-fit:cover;'
-                f'display:block;margin:0;padding:0;border:0"/>'
+                f'display:block;margin:0;padding:0;border:0;{border}"/>'
             )
         else:
             label = html.escape((name[:10] or "—"), quote=False)
             inner = (
                 f'<div style="width:{width}px;height:{width}px;display:flex;'
                 f'align-items:center;justify-content:center;font-size:11px;'
-                f'color:#64748b;background:#f1f5f9;margin:0;padding:0">'
+                f'color:#64748b;background:#f1f5f9;margin:0;padding:0;{border}">'
                 f"{label}</div>"
             )
         href = None
@@ -357,6 +481,107 @@ def render_species_thumbnail_table(
         f'line-height:0">{grid}</div>',
         unsafe_allow_html=True,
     )
+
+
+def render_checklist_species_summary_grid(items: list[dict], *, width: int = 144) -> None:
+    """Clickable species-summary thumbnails that open the gallery in-session."""
+    if not items:
+        return
+    st.markdown(
+        f"""
+<style>
+div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-checklist_summary_open_"]) {{
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, {width}px) !important;
+  gap: 1px !important;
+  justify-content: start !important;
+  align-items: start !important;
+  flex-wrap: unset !important;
+}}
+div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-checklist_summary_open_"]) > div {{
+  width: {width}px !important;
+  min-width: {width}px !important;
+  max-width: {width}px !important;
+  flex: none !important;
+  padding: 0 !important;
+  position: relative !important;
+  height: {width}px !important;
+  overflow: hidden !important;
+}}
+div[data-testid="column"]:has(div[class*="st-key-checklist_summary_open_"]) [data-testid="stVerticalBlock"],
+div[data-testid="stColumn"]:has(div[class*="st-key-checklist_summary_open_"]) [data-testid="stVerticalBlock"] {{
+  gap: 0 !important;
+  height: {width}px !important;
+  position: relative !important;
+}}
+div[class*="st-key-checklist_summary_open_"] {{
+  position: absolute !important;
+  inset: 0 !important;
+  margin: 0 !important;
+  height: {width}px !important;
+  z-index: 2;
+}}
+div[class*="st-key-checklist_summary_open_"] button {{
+  width: {width}px !important;
+  height: {width}px !important;
+  min-height: {width}px !important;
+  opacity: 0 !important;
+  cursor: pointer !important;
+  border: 0 !important;
+  padding: 0 !important;
+}}
+</style>
+        """,
+        unsafe_allow_html=True,
+    )
+    cols = st.columns(max(len(items), 1), gap="small")
+    for index, (col, item) in enumerate(zip(cols, items)):
+        with col:
+            code = item.get("code")
+            sci = item.get("sciName") or None
+            name = str(item.get("Species") or item.get("name") or code or "Open")
+            frame_bird = {
+                "is_new_region": bool(
+                    item.get("is_new_region") or item.get("New_region")
+                ),
+                "is_new_world": bool(
+                    item.get("is_new_world") or item.get("New_world")
+                ),
+                "is_foy_region": bool(
+                    item.get("is_foy_region") or item.get("FoY_region")
+                ),
+                "is_foy_world": bool(
+                    item.get("is_foy_world") or item.get("FoY_world")
+                ),
+            }
+            border = gallery_frame_outline_css(frame_bird)
+            photo = inaturalist_photo_for_code(str(code), sci) if code else None
+            alt = html.escape(name or "species", quote=True)
+            if photo and photo.get("image_url"):
+                src = html.escape(str(photo["image_url"]), quote=True)
+                inner = (
+                    f'<img src="{src}" alt="{alt}" '
+                    f'style="width:{width}px;height:{width}px;object-fit:cover;'
+                    f'display:block;margin:0;padding:0;border:0;{border}"/>'
+                )
+            else:
+                label = html.escape((name[:10] or "—"), quote=False)
+                inner = (
+                    f'<div style="width:{width}px;height:{width}px;display:flex;'
+                    f'align-items:center;justify-content:center;font-size:11px;'
+                    f'color:#64748b;background:#f1f5f9;margin:0;padding:0;{border}">'
+                    f"{label}</div>"
+                )
+            st.markdown(inner, unsafe_allow_html=True)
+            st.button(
+                " ",
+                key=f"checklist_summary_open_{index}",
+                help=name,
+                type="tertiary",
+                use_container_width=True,
+                on_click=queue_open_summary_gallery_at,
+                args=(index,),
+            )
 
 def _format_eta(seconds: float) -> str:
     """Format a remaining-time estimate as hours, minutes, and seconds."""
@@ -420,8 +645,11 @@ def _start_checklist_download(
     year: int,
     *,
     day: str | None = None,
+    start_day: str | None = None,
+    end_day: str | None = None,
     loc_id: str | None = None,
     min_species: int = 0,
+    prior_years: int = 0,
 ) -> str | None:
     """Launch the checklist detail worker. Returns an error message, or None."""
     script = Path(__file__).parent / "download_checklists.py"
@@ -435,11 +663,18 @@ def _start_checklist_download(
     ]
     if day:
         command.extend(["--day", day])
+    if start_day:
+        command.extend(["--start-day", start_day])
+    if end_day:
+        command.extend(["--end-day", end_day])
     if loc_id:
         command.extend(["--loc-id", loc_id])
     species_floor = max(0, int(min_species or 0))
     if species_floor > 0:
         command.extend(["--min-species", str(species_floor)])
+    prior = max(0, int(prior_years or 0))
+    if prior > 0:
+        command.extend(["--prior-years", str(prior)])
     try:
         subprocess.Popen(
             command,
@@ -449,6 +684,24 @@ def _start_checklist_download(
     except OSError as exc:
         return str(exc)
     return None
+
+
+def parse_streamlit_date_range(value: object) -> tuple[date, date] | None:
+    """Normalize a Streamlit date_input value into an inclusive start/end."""
+    if isinstance(value, date):
+        return value, value
+    if isinstance(value, (list, tuple)) and len(value) == 2:
+        start, end = value
+        if isinstance(start, date) and isinstance(end, date):
+            if start > end:
+                start, end = end, start
+            return start, end
+    return None
+
+
+def prior_year_download_caption(start: date, end: date, prior_years: int) -> str:
+    slices = download_window_slices(start, end, prior_years=max(0, prior_years))
+    return f"Will download {format_download_windows(slices)}."
 
 
 def _feed_cache_active(region_code: str, year: int) -> bool:
@@ -973,6 +1226,32 @@ def general_cache_inventory(
                 "missing": missing_count,
             }
         )
+    from my_ebird_data import my_ebird_data_path
+
+    export_path = my_ebird_data_path()
+    if export_path is not None:
+        try:
+            export_stat = export_path.stat()
+            with export_path.open(newline="", encoding="utf-8") as handle:
+                export_rows = max(sum(1 for _ in handle) - 1, 0)
+            rows.append(
+                {
+                    "Cache": export_path.name,
+                    "Size": _format_bytes(export_stat.st_size),
+                    "Bytes": export_stat.st_size,
+                    "Entries": export_rows,
+                    "Region birds": "—",
+                    "Region %": "—",
+                    "Modified": datetime.fromtimestamp(export_stat.st_mtime)
+                    .astimezone()
+                    .strftime("%Y-%m-%d %H:%M"),
+                    "loader": None,
+                    "missing_kind": None,
+                    "missing": None,
+                }
+            )
+        except OSError:
+            pass
     if region and all(row["Cache"] != "ebird_region_species_cache.json" for row in rows):
         rows.append(
             {
@@ -1527,13 +1806,63 @@ def warm_missing_region_species_list(region_code: str) -> dict[str, int]:
     region = (region_code or "").strip()
     if not region:
         return {"missing": 0, "attempted": 0, "found": 0}
-    from ebird import REGION_SPECIES_CACHE_PATH, _load_json_file, _save_json_file
+    birds = EBirdClient().region_species_birds(region)
+    return {"missing": 1, "attempted": 1, "found": len(birds)}
 
-    codes = EBirdClient().region_species_codes(region)
-    cache = _load_json_file(REGION_SPECIES_CACHE_PATH)
-    cache[region] = codes
-    _save_json_file(REGION_SPECIES_CACHE_PATH, cache)
-    return {"missing": 1, "attempted": 1, "found": len(codes)}
+
+def normalize_gallery_bird(bird: dict) -> dict | None:
+    """Stable gallery/compare bird record, or None if it has no identity."""
+    if not isinstance(bird, dict):
+        return None
+    code = str(bird.get("code") or "").strip()
+    name = str(bird.get("name") or bird.get("Species") or code).strip()
+    if not code and not name:
+        return None
+    cleaned = {
+        "code": code,
+        "name": name.split(" (", 1)[0].strip() or name,
+        "sciName": str(bird.get("sciName") or "").strip(),
+    }
+    if any(
+        field in bird
+        for field in ("is_new_region", "New_region", "is_new", "New")
+    ):
+        cleaned["is_new_region"] = bool(
+            bird.get("is_new_region")
+            if "is_new_region" in bird
+            else bird.get("New_region")
+            if "New_region" in bird
+            else bird.get("is_new") or bird.get("New")
+        )
+        cleaned["is_new"] = cleaned["is_new_region"]
+    if "is_new_world" in bird or "New_world" in bird:
+        cleaned["is_new_world"] = bool(
+            bird.get("is_new_world")
+            if "is_new_world" in bird
+            else bird.get("New_world")
+        )
+    if "is_foy_region" in bird or "FoY_region" in bird:
+        cleaned["is_foy_region"] = bool(
+            bird.get("is_foy_region")
+            if "is_foy_region" in bird
+            else bird.get("FoY_region")
+        )
+    if "is_foy_world" in bird or "FoY_world" in bird:
+        cleaned["is_foy_world"] = bool(
+            bird.get("is_foy_world")
+            if "is_foy_world" in bird
+            else bird.get("FoY_world")
+        )
+    if "is_recorded_region" in bird or "Recorded" in bird:
+        cleaned["is_recorded_region"] = bool(
+            bird.get("is_recorded_region")
+            if "is_recorded_region" in bird
+            else bird.get("Recorded")
+        )
+    obs_day = bird.get("obs_day") or bird.get("obsDt")
+    if obs_day:
+        cleaned["obs_day"] = str(obs_day)
+    return cleaned
 
 
 def open_gallery(
@@ -1544,54 +1873,44 @@ def open_gallery(
     view_mode: str | None = None,
     source_title: str | None = None,
     sort: str | None = None,
+    compare_by_bird: dict | None = None,
+    checklist_id: str | None = None,
+    start_index: int | None = None,
+    notes: str | None = None,
 ) -> None:
     """Store a bird list in session state and open the gallery view."""
     cleaned: list[dict] = []
     seen: set[str] = set()
     for bird in birds:
-        code = str(bird.get("code") or "").strip()
-        name = str(bird.get("name") or bird.get("Species") or code).strip()
-        if not code and not name:
+        cleaned_bird = normalize_gallery_bird(bird) if isinstance(bird, dict) else None
+        if not cleaned_bird:
             continue
-        key = code or normalize_common_name(name)
+        key = cleaned_bird["code"] or normalize_common_name(cleaned_bird["name"])
         if key in seen:
             continue
         seen.add(key)
-        cleaned_bird = {
-            "code": code,
-            "name": name.split(" (", 1)[0].strip() or name,
-            "sciName": bird.get("sciName") or "",
-        }
-        if any(
-            key in bird
-            for key in ("is_new_region", "New_region", "is_new", "New")
-        ):
-            cleaned_bird["is_new_region"] = bool(
-                bird.get("is_new_region")
-                if "is_new_region" in bird
-                else bird.get("New_region")
-                if "New_region" in bird
-                else bird.get("is_new") or bird.get("New")
-            )
-            cleaned_bird["is_new"] = cleaned_bird["is_new_region"]
-        if "is_new_world" in bird or "New_world" in bird:
-            cleaned_bird["is_new_world"] = bool(
-                bird.get("is_new_world")
-                if "is_new_world" in bird
-                else bird.get("New_world")
-            )
         cleaned.append(cleaned_bird)
     if not cleaned:
         st.warning("No birds available for the gallery.")
         return
     st.session_state.gallery_birds = cleaned
+    focus = 0
+    if start_index is not None and 0 <= int(start_index) < len(birds):
+        source = birds[int(start_index)]
+        wanted = normalize_gallery_bird(source) if isinstance(source, dict) else None
+        if wanted:
+            want_key = wanted["code"] or normalize_common_name(wanted["name"])
+            for idx, item in enumerate(cleaned):
+                if (item["code"] or normalize_common_name(item["name"])) == want_key:
+                    focus = idx
+                    break
     st.session_state.gallery_title = title
-    st.session_state.gallery_bird_index = 0
+    st.session_state.gallery_bird_index = focus
     st.session_state.gallery_image_index = 0
-    st.session_state.gallery_show_info = False
+    st.session_state.gallery_show_info = gallery_info_visible_default()
     st.session_state.gallery_show_similar = True
     st.session_state.setdefault("gallery_hide_similar_never_seen", True)
-    if view_mode in {"summary", "list", "standard"}:
+    if view_mode in {"summary", "standard"}:
         st.session_state.gallery_view_mode = view_mode
         st.session_state.gallery_view_mode_pending = view_mode
     else:
@@ -1600,9 +1919,17 @@ def open_gallery(
         st.session_state.gallery_sort = sort
         st.session_state.gallery_sort_pref = sort
         st.session_state.gallery_sort_pending = sort
+    st.session_state.gallery_compare_by_bird = normalize_compare_by_bird(
+        compare_by_bird
+    )
+    st.session_state.pop("gallery_compare_birds", None)
+    st.session_state.pop("gallery_compare_owner_key", None)
+    st.session_state.pop("gallery_compare_bird_index", None)
+    st.session_state.pop("gallery_compare_image_index", None)
     st.session_state.gallery_list_image_indices = {}
     st.session_state.pop("gallery_image_cache_warmed", None)
     st.session_state.pop("gallery_summary_page", None)
+    st.session_state.dashboard_pref = "gallery"
     origin = source_title or title
     if saved_id:
         st.session_state.gallery_saved_id = saved_id
@@ -1611,15 +1938,132 @@ def open_gallery(
         st.session_state.gallery_name = title
         st.session_state.gallery_title = title
         _set_saved_gallery_query(saved_id)
+        st.session_state.pop("gallery_checklist_id", None)
+        _clear_checklist_gallery_query()
+    elif checklist_id:
+        st.session_state.pop("gallery_saved_id", None)
+        st.session_state.gallery_saved_dirty = False
+        st.session_state.gallery_source_title = origin
+        st.session_state.gallery_name = title
+        st.session_state.gallery_title = title
+        st.session_state.gallery_checklist_id = str(checklist_id)
+        _clear_saved_gallery_query()
+        _set_checklist_gallery_query(str(checklist_id))
     else:
         st.session_state.pop("gallery_saved_id", None)
         st.session_state.gallery_saved_dirty = False
         st.session_state.gallery_source_title = origin
-        st.session_state.gallery_name = default_gallery_name()
-        st.session_state.gallery_title = st.session_state.gallery_name
+        display_title = title if title and title != "Gallery" else default_gallery_name()
+        st.session_state.gallery_name = display_title
+        st.session_state.gallery_title = display_title
+        st.session_state.pop("gallery_checklist_id", None)
         _clear_saved_gallery_query()
-    st.session_state.dashboard_pref = "gallery"
+        _clear_checklist_gallery_query()
+    if notes is None:
+        notes = default_gallery_notes(
+            title=str(st.session_state.get("gallery_title") or title),
+            source_title=origin,
+            species_count=len(cleaned),
+            region_code=selected_region_code(),
+            checklist_id=str(checklist_id or ""),
+        )
+    st.session_state.gallery_notes = str(notes)
+    _clear_summary_gallery_query()
     st.rerun()
+
+
+def default_gallery_notes(
+    *,
+    title: str,
+    source_title: str = "",
+    species_count: int = 0,
+    region_code: str = "",
+    checklist_id: str = "",
+    extra_lines: list[str] | None = None,
+    built_at: datetime | None = None,
+) -> str:
+    """Origin text stored with a gallery when it is first opened."""
+    when = (built_at or datetime.now()).strftime("%Y-%m-%d %H:%M")
+    lines = [f"Built {when}."]
+    opened = str(title or "").strip()
+    if opened:
+        lines.append(f"Opened as: {opened}.")
+    source = str(source_title or "").strip()
+    if source and source != opened:
+        lines.append(f"Source: {source}.")
+    if species_count:
+        lines.append(f"Species: {species_count}.")
+    region = str(region_code or "").strip()
+    if region:
+        short, full = region_display_names(region, allow_api=False)
+        label = full or short or region
+        if label != region:
+            lines.append(f"Region: {label} ({region}).")
+        else:
+            lines.append(f"Region: {region}.")
+    sub_id = str(checklist_id or "").strip()
+    if sub_id:
+        lines.append(f"Checklist: {sub_id} (https://ebird.org/checklist/{sub_id}).")
+    for line in extra_lines or []:
+        text = str(line or "").strip()
+        if text:
+            lines.append(text)
+    return "\n".join(lines)
+
+
+def notes_from_saved_gallery(payload: dict) -> str:
+    """Stored notes, or origin text for older saved galleries."""
+    saved_notes = payload.get("notes")
+    if isinstance(saved_notes, str) and saved_notes.strip():
+        return saved_notes
+    gallery_id = str(payload.get("id") or "")
+    extra = [f"Opened from saved gallery `{gallery_id}`."]
+    saved_at = payload.get("saved_at")
+    if saved_at:
+        extra.append(f"Originally saved {saved_at}.")
+    return default_gallery_notes(
+        title=str(payload.get("title") or gallery_id),
+        source_title=str(payload.get("source_title") or ""),
+        species_count=len(payload.get("birds") or []),
+        extra_lines=extra,
+    )
+
+
+def checklist_window_note_lines() -> list[str]:
+    """How the Checklists screen was configured when a gallery was opened."""
+    lines: list[str] = []
+    loc_id = str(st.session_state.get("checklists_loc_id") or "").strip()
+    loc_name = ""
+    for row in st.session_state.get("checklists_hotspots") or []:
+        if not isinstance(row, dict):
+            continue
+        if str(row.get("locId") or row.get("locID") or "").strip() == loc_id:
+            loc_name = str(row.get("locName") or "").strip()
+            break
+    if loc_id:
+        if loc_name and loc_name != loc_id:
+            lines.append(f"Hotspot: {loc_name} ({loc_id}).")
+        else:
+            lines.append(f"Hotspot: {loc_id}.")
+    start = st.session_state.get("checklist_start_date") or st.session_state.get(
+        "checklist_start_date_input"
+    )
+    end = st.session_state.get("checklist_end_date") or st.session_state.get(
+        "checklist_end_date_input"
+    )
+    if start and end:
+        lines.append(f"Date window: {start} to {end}.")
+    prior = st.session_state.get("checklists_prior_years")
+    try:
+        prior_n = int(prior)
+    except (TypeError, ValueError):
+        prior_n = 0
+    if prior_n:
+        lines.append(f"Prior years: {prior_n}.")
+    rows = st.session_state.get("checklist_rows") or []
+    if isinstance(rows, list) and rows:
+        lines.append(f"Loaded checklists: {len(rows)}.")
+    return lines
 
 
 def default_gallery_name(when: datetime | None = None) -> str:
@@ -1629,6 +2073,76 @@ def default_gallery_name(when: datetime | None = None) -> str:
 
 def _saved_gallery_path(gallery_id: str) -> Path:
     return SAVED_GALLERIES_DIR / f"{gallery_id}.json"
+
+
+def _saved_gallery_git_relpath(gallery_id: str) -> str:
+    return f"saved_galleries/{gallery_id}.json"
+
+
+def _run_git(args: list[str]) -> str | None:
+    """Run a git command in the app repo. Returns an error message, or None."""
+    try:
+        completed = subprocess.run(
+            ["git", *args],
+            cwd=str(Path(__file__).parent),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError as exc:
+        return str(exc)
+    if completed.returncode != 0:
+        detail = (completed.stderr or completed.stdout or "git command failed").strip()
+        return detail or "git command failed"
+    return None
+
+
+def git_repo_available() -> bool:
+    error = _run_git(["rev-parse", "--is-inside-work-tree"])
+    return error is None
+
+
+def tracked_saved_gallery_ids() -> set[str]:
+    """Gallery ids currently tracked in git (staged or committed)."""
+    try:
+        completed = subprocess.run(
+            ["git", "ls-files", "-z", "--", "saved_galleries"],
+            cwd=str(Path(__file__).parent),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return set()
+    if completed.returncode != 0:
+        return set()
+    ids: set[str] = set()
+    for raw in completed.stdout.split("\0"):
+        line = raw.strip()
+        if not line:
+            continue
+        stem = Path(line).stem
+        if _valid_saved_gallery_id(stem):
+            ids.add(stem)
+    return ids
+
+
+def add_saved_gallery_to_git_deploy(gallery_id: str) -> str | None:
+    """Force-add a gitignored gallery so it is included in the next commit."""
+    if not _valid_saved_gallery_id(gallery_id):
+        return "Invalid gallery id."
+    if not _saved_gallery_path(gallery_id).is_file():
+        return "Gallery file not found."
+    return _run_git(["add", "-f", "--", _saved_gallery_git_relpath(gallery_id)])
+
+
+def remove_saved_gallery_from_git_deploy(gallery_id: str) -> str | None:
+    """Untrack a gallery without deleting the local file."""
+    if not _valid_saved_gallery_id(gallery_id):
+        return "Invalid gallery id."
+    return _run_git(
+        ["rm", "--cached", "-f", "--", _saved_gallery_git_relpath(gallery_id)]
+    )
 
 
 def _valid_saved_gallery_id(gallery_id: str) -> bool:
@@ -1661,6 +2175,30 @@ def _query_param_raw(name: str) -> str | None:
         raw = raw[0] if raw else None
     value = str(raw or "").strip()
     return value or None
+
+
+def _clear_checklist_gallery_query() -> None:
+    params = getattr(st, "query_params", None)
+    if params is None:
+        return
+    try:
+        if CHECKLIST_GALLERY_QUERY in params:
+            del params[CHECKLIST_GALLERY_QUERY]
+    except Exception:
+        try:
+            params.pop(CHECKLIST_GALLERY_QUERY, None)
+        except Exception:
+            pass
+
+
+def _set_checklist_gallery_query(sub_id: str) -> None:
+    params = getattr(st, "query_params", None)
+    if params is None:
+        return
+    try:
+        params[CHECKLIST_GALLERY_QUERY] = sub_id
+    except Exception:
+        pass
 
 
 def _clear_saved_gallery_query() -> None:
@@ -1700,11 +2238,53 @@ def app_base_url() -> str:
     return urlunparse((parts.scheme, parts.netloc, parts.path, "", "", ""))
 
 
-def saved_gallery_url(gallery_id: str) -> str:
-    base = app_base_url()
-    if not base:
-        return f"?{SAVED_GALLERY_QUERY}={gallery_id}"
-    return f"{base}?{SAVED_GALLERY_QUERY}={gallery_id}"
+def saved_gallery_url(gallery_id: str, *, bird_index: int | None = None) -> str:
+    query = f"{SAVED_GALLERY_QUERY}={gallery_id}"
+    if bird_index is not None:
+        query = f"{query}&gallery_open={int(bird_index)}"
+    return f"?{query}"
+
+
+def checklist_gallery_url(sub_id: str, *, bird_index: int | None = None) -> str:
+    query = f"{CHECKLIST_GALLERY_QUERY}={sub_id}"
+    if bird_index is not None:
+        query = f"{query}&gallery_open={int(bird_index)}"
+    return f"?{query}"
+
+
+def summary_gallery_url(*, bird_index: int | None = None) -> str:
+    query = f"{SUMMARY_GALLERY_QUERY}=1"
+    if bird_index is not None:
+        query = f"{query}&gallery_open={int(bird_index)}"
+    # Relative so Streamlit keeps the current session instead of a full reload.
+    return f"?{query}"
+
+
+def _clear_summary_gallery_query() -> None:
+    params = getattr(st, "query_params", None)
+    if params is None:
+        return
+    try:
+        if SUMMARY_GALLERY_QUERY in params:
+            del params[SUMMARY_GALLERY_QUERY]
+    except Exception:
+        try:
+            params.pop(SUMMARY_GALLERY_QUERY, None)
+        except Exception:
+            pass
+
+
+def expander_gallery_label(header: str, href: str | None) -> str:
+    """Expander title; when ``href`` is set the title is a gallery link."""
+    if not href:
+        return header
+    safe = (
+        str(header)
+        .replace("\\", "\\\\")
+        .replace("[", "\\[")
+        .replace("]", "\\]")
+    )
+    return f"[{safe}]({href})"
 
 
 def load_saved_gallery(gallery_id: str) -> dict | None:
@@ -1744,10 +2324,20 @@ def delete_saved_gallery(gallery_id: str) -> None:
     if not _valid_saved_gallery_id(gallery_id):
         return
     path = _saved_gallery_path(gallery_id)
-    try:
-        path.unlink(missing_ok=True)
-    except OSError:
-        pass
+    rel = _saved_gallery_git_relpath(gallery_id)
+    if gallery_id in tracked_saved_gallery_ids():
+        error = _run_git(["rm", "-f", "--", rel])
+        if error:
+            st.warning(f"Removed locally, but git deploy was not updated: {error}")
+            try:
+                path.unlink(missing_ok=True)
+            except OSError:
+                pass
+    else:
+        try:
+            path.unlink(missing_ok=True)
+        except OSError:
+            pass
     if st.session_state.get("gallery_saved_id") == gallery_id:
         st.session_state.pop("gallery_saved_id", None)
         st.session_state.pop("gallery_saved_dirty", None)
@@ -1769,10 +2359,17 @@ def rename_saved_gallery(gallery_id: str, name: str) -> str | None:
     except OSError as exc:
         st.error(f"Could not rename gallery: {exc}")
         return None
+    if gallery_id in tracked_saved_gallery_ids():
+        add_saved_gallery_to_git_deploy(gallery_id)
     if st.session_state.get("gallery_saved_id") == gallery_id:
         st.session_state.gallery_name = cleaned
         st.session_state.gallery_title = cleaned
     return cleaned
+
+
+def _on_gallery_notes_change() -> None:
+    if st.session_state.get("gallery_saved_id"):
+        st.session_state.gallery_saved_dirty = True
 
 
 def _on_gallery_name_change() -> None:
@@ -1794,16 +2391,18 @@ def save_current_gallery() -> str | None:
         str(st.session_state.get("gallery_source_title") or "").strip() or "Gallery"
     )
     view_mode = st.session_state.get("gallery_view_mode")
-    if view_mode not in {"summary", "list", "standard"}:
+    if view_mode not in {"summary", "standard"}:
         view_mode = "summary"
     payload = {
         "id": new_id,
         "saved_at": now.isoformat(timespec="seconds"),
         "title": title,
         "source_title": source_title,
+        "notes": str(st.session_state.get("gallery_notes") or ""),
         "view_mode": view_mode,
         "sort": current_gallery_sort(),
         "birds": birds,
+        "compare_by_bird": persistable_compare_by_bird(),
     }
     try:
         SAVED_GALLERIES_DIR.mkdir(parents=True, exist_ok=True)
@@ -1815,12 +2414,18 @@ def save_current_gallery() -> str | None:
         st.error(f"Could not save gallery: {exc}")
         return None
     if old_id and old_id != new_id:
+        was_deployed = old_id in tracked_saved_gallery_ids()
         old_path = _saved_gallery_path(old_id)
-        try:
-            if old_path.is_file():
-                old_path.unlink()
-        except OSError:
-            pass
+        if was_deployed:
+            _run_git(["rm", "-f", "--", _saved_gallery_git_relpath(old_id)])
+        else:
+            try:
+                if old_path.is_file():
+                    old_path.unlink()
+            except OSError:
+                pass
+        if was_deployed:
+            add_saved_gallery_to_git_deploy(new_id)
     st.session_state.gallery_saved_id = new_id
     st.session_state.gallery_name = title
     st.session_state.gallery_title = title
@@ -1852,7 +2457,181 @@ def maybe_open_saved_gallery_from_query() -> None:
         view_mode=payload.get("view_mode") if isinstance(payload.get("view_mode"), str) else None,
         source_title=payload.get("source_title") if isinstance(payload.get("source_title"), str) else None,
         sort=payload.get("sort") if isinstance(payload.get("sort"), str) else None,
+        compare_by_bird=payload.get("compare_by_bird")
+        if isinstance(payload.get("compare_by_bird"), dict)
+        else None,
+        notes=notes_from_saved_gallery(payload),
     )
+
+
+def checklist_row_for_gallery(sub_id: str) -> dict | None:
+    """Find a cached/session checklist row that can open a gallery."""
+    if not CHECKLIST_SUB_ID_RE.fullmatch(sub_id):
+        return None
+    for key in ("checklist_rows", "own_checklists_enriched"):
+        rows = st.session_state.get(key)
+        if not isinstance(rows, list):
+            continue
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            if str(row.get("subId") or row.get("subID") or "") == sub_id:
+                return row
+    names = configured_observer_names()
+    for row in load_own_local_checklists(list(names)):
+        if str(row.get("subId") or row.get("subID") or "") == sub_id:
+            return row
+    return None
+
+
+def maybe_open_checklist_gallery_from_query() -> None:
+    """Open a checklist gallery when the URL contains ``?checklist_gallery=``."""
+    sub_id = _query_param_raw(CHECKLIST_GALLERY_QUERY)
+    if not sub_id or not CHECKLIST_SUB_ID_RE.fullmatch(sub_id):
+        return
+    if (
+        st.session_state.get("gallery_checklist_id") == sub_id
+        and st.session_state.get("gallery_birds")
+    ):
+        return
+    row = checklist_row_for_gallery(sub_id)
+    if row is None:
+        st.session_state.checklist_gallery_missing = sub_id
+        _clear_checklist_gallery_query()
+        return
+    if not (row.get("species_rows") or row.get("_detail")):
+        enriched = enrich_own_checklist_page([row], 0, 1)
+        if enriched:
+            row = enriched[0]
+    open_checklist_gallery(row, "all")
+
+
+def species_summary_gallery_birds(items: list[dict]) -> list[dict]:
+    """Gallery bird dicts from a species-summary table."""
+    birds: list[dict] = []
+    for item in items:
+        name = str(item.get("Species") or item.get("name") or "").strip()
+        code = str(item.get("code") or "").strip()
+        if not name and not code:
+            continue
+        birds.append(
+            {
+                "code": code,
+                "name": name or code,
+                "sciName": item.get("sciName") or "",
+                "is_new_region": bool(item.get("New_region") or item.get("is_new_region")),
+                "is_new_world": bool(item.get("New_world") or item.get("is_new_world")),
+                "is_foy_region": bool(item.get("FoY_region") or item.get("is_foy_region")),
+                "is_foy_world": bool(item.get("FoY_world") or item.get("is_foy_world")),
+                "is_recorded_region": bool(
+                    item.get("Recorded") or item.get("is_recorded_region")
+                ),
+                "is_new": bool(item.get("New_region") or item.get("is_new_region")),
+            }
+        )
+    return birds
+
+
+def resolve_summary_gallery_birds(*, scope: str | None = None) -> list[dict]:
+    """Birds for the checklists species-summary gallery, rebuilt from loaded rows if needed."""
+    stored = st.session_state.get("summary_gallery_birds")
+    if isinstance(stored, list) and stored:
+        return stored
+    rows = st.session_state.get("checklist_rows")
+    if not isinstance(rows, list) or not rows:
+        return []
+    summary = build_species_summary(rows)
+    life_scope = scope or current_life_list_scope()
+    if life_scope == "all":
+        filtered = summary
+    else:
+        filtered = [
+            row for row in summary if summary_is_new_for_scope(row, life_scope)
+        ]
+    return species_summary_gallery_birds(filtered)
+
+
+def open_species_summary_gallery(
+    birds: list[dict] | None = None,
+    *,
+    bird_index: int | None = None,
+) -> None:
+    payload = birds if birds is not None else resolve_summary_gallery_birds()
+    if not isinstance(payload, list) or not payload:
+        st.warning("No birds available for the gallery.")
+        return
+    st.session_state.summary_gallery_birds = payload
+    start = None
+    view = "summary"
+    if bird_index is not None and 0 <= int(bird_index) < len(payload):
+        start = int(bird_index)
+        view = "standard"
+    extra = [
+        "Opened from the Checklists species summary.",
+        *checklist_window_note_lines(),
+    ]
+    open_gallery(
+        payload,
+        title="Species summary gallery",
+        source_title="Species summary gallery",
+        view_mode=view,
+        sort=current_gallery_sort(),
+        start_index=start,
+        notes=default_gallery_notes(
+            title="Species summary gallery",
+            source_title="Checklists screen",
+            species_count=len(payload),
+            region_code=selected_region_code(),
+            extra_lines=extra,
+        ),
+    )
+
+
+def queue_open_summary_gallery() -> None:
+    """Mark the checklists species-summary gallery to open on this run."""
+    st.session_state["_open_summary_gallery"] = True
+    st.session_state.pop("_open_summary_gallery_index", None)
+
+
+def queue_open_summary_gallery_at(bird_index: int) -> None:
+    """Open the species-summary gallery on a specific bird."""
+    st.session_state["_open_summary_gallery"] = True
+    st.session_state["_open_summary_gallery_index"] = int(bird_index)
+
+
+def consume_open_summary_gallery() -> None:
+    """Open the queued species-summary gallery before screen routing."""
+    if not st.session_state.pop("_open_summary_gallery", False):
+        return
+    bird_index = st.session_state.pop("_open_summary_gallery_index", None)
+    try:
+        bird_index = int(bird_index) if bird_index is not None else None
+    except (TypeError, ValueError):
+        bird_index = None
+    open_species_summary_gallery(bird_index=bird_index)
+
+
+def maybe_open_summary_gallery_from_query() -> None:
+    """Open the checklists species-summary gallery when ``?summary_gallery=1``.
+
+    The query is handled before the Checklists screen renders, so birds are
+    rebuilt from loaded checklist rows when ``summary_gallery_birds`` is empty.
+    If rows are not in session yet, the query is left in place for
+    ``render_checklists`` to open the gallery after the summary is built.
+    """
+    if not _query_param_raw(SUMMARY_GALLERY_QUERY):
+        return
+    if (
+        st.session_state.get("dashboard_pref") == "gallery"
+        and st.session_state.get("gallery_birds")
+        and st.session_state.get("gallery_source_title") == "Species summary gallery"
+    ):
+        _clear_summary_gallery_query()
+        return
+    birds = resolve_summary_gallery_birds()
+    if not birds:
+        return
+    open_species_summary_gallery(birds)
 
 
 GALLERY_SESSION_KEYS = (
@@ -1860,8 +2639,10 @@ GALLERY_SESSION_KEYS = (
     "gallery_title",
     "gallery_name",
     "gallery_source_title",
+    "gallery_notes",
     "gallery_saved_id",
     "gallery_saved_dirty",
+    "gallery_checklist_id",
     "gallery_bird_index",
     "gallery_image_index",
     "gallery_show_info",
@@ -1869,6 +2650,8 @@ GALLERY_SESSION_KEYS = (
     "gallery_hide_similar_never_seen",
     "gallery_last_swipe_t",
     "gallery_compare_birds",
+    "gallery_compare_by_bird",
+    "gallery_compare_owner_key",
     "gallery_compare_bird_index",
     "gallery_compare_image_index",
     "gallery_compare_last_swipe_t",
@@ -1886,7 +2669,9 @@ GALLERY_SESSION_KEYS = (
     "gallery_show_filter",
     "gallery_show_view_picker",
     "gallery_show_legends",
+    "gallery_show_remove",
     "gallery_show_nav_buttons",
+    "gallery_chrome_layout",
     "gallery_view_mode_radio",
     "gallery_filter_radio",
 )
@@ -1895,10 +2680,16 @@ GALLERY_SESSION_KEYS = (
 HOME_SCREEN = "saved"
 DASHBOARD_SCREENS = {
     "saved": "Saved galleries",
+    "mine": "My checklists",
     "checklists": "Checklists",
+    "region": "Region",
     "cache": "Checklist cache",
     "maintenance": "Cache maintenance",
 }
+REGION_CHIP_SCREENS = frozenset(
+    {"checklists", "cache", "maintenance", "gallery"}
+)
+OWN_CHECKLISTS_PAGE_SIZE = 8
 
 
 def close_gallery() -> None:
@@ -1906,6 +2697,7 @@ def close_gallery() -> None:
     for key in GALLERY_SESSION_KEYS:
         st.session_state.pop(key, None)
     _clear_saved_gallery_query()
+    _clear_checklist_gallery_query()
     st.session_state.dashboard_pref = HOME_SCREEN
     st.rerun()
 
@@ -1954,24 +2746,260 @@ def render_app_nav_buttons(*, current: str, key_prefix: str) -> None:
             disabled=key == current,
             key=f"{key_prefix}_{key}",
         ):
+            if key == "region" and current != "region":
+                st.session_state.dashboard_before_region = current
             go_dashboard(key)
 
 
-def render_page_header(title: str, *, screen: str) -> None:
-    """Title row with a hamburger menu for Checklists / cache / maintenance."""
-    menu_col, title_col = st.columns([1, 16], vertical_alignment="center")
-    with menu_col:
-        with st.popover(
-            " ",
-            icon=":material/menu:",
-            help="Open saved galleries, Gallery, Checklists, downloads, or cache maintenance",
+def desktop_nav_panel_open() -> bool:
+    """Whether the desktop left nav panel should be shown."""
+    if current_ui_layout() != "desktop":
+        return False
+    return bool(st.session_state.get("nav_panel_open", True))
+
+
+def render_nav_show_button(*, help: str) -> None:
+    """Restore the hidden desktop nav panel."""
+    if st.button(
+        ":material/menu:",
+        help=help,
+        type="tertiary",
+        key="nav_panel_show",
+    ):
+        st.session_state.nav_panel_open = True
+        st.rerun()
+
+
+def render_desktop_nav_panel(
+    *,
+    screen: str,
+    saved_id: str = "",
+    region_code: str = "",
+    birds: list[dict] | None = None,
+) -> None:
+    """Left sidebar with screen links (and gallery controls on that screen)."""
+    if not desktop_nav_panel_open():
+        return
+    key_prefix = "gallery_nav" if screen == "gallery" else f"dashboard_nav_{screen}"
+    with st.sidebar:
+        if st.button(
+            "Hide menu",
+            icon=":material/chevron_left:",
+            help="Hide this panel",
+            use_container_width=True,
+            key="nav_panel_hide",
         ):
-            render_app_nav_buttons(current=screen, key_prefix=f"dashboard_nav_{screen}")
-            if screen == "saved":
-                st.divider()
-                render_gallery_sort_controls()
-    with title_col:
+            st.session_state.nav_panel_open = False
+            st.rerun()
+        render_app_nav_buttons(current=screen, key_prefix=key_prefix)
+        if screen == "gallery":
+            st.divider()
+            render_gallery_menu_controls(
+                saved_id=saved_id,
+                region_code=region_code,
+                birds=birds,
+            )
+        elif screen in {"saved", "mine"}:
+            st.divider()
+            render_gallery_sort_controls()
+
+
+def _cached_region_list_name(code: str) -> str | None:
+    """Return a region’s common name from the on-disk region-list cache."""
+    region = str(code or "").strip()
+    if not region:
+        return None
+    parts = region.split("-")
+    if len(parts) == 1:
+        rows = load_cached_region_list("country", "world")
+    elif len(parts) == 2:
+        rows = load_cached_region_list("subnational1", parts[0])
+    else:
+        rows = load_cached_region_list("subnational2", f"{parts[0]}-{parts[1]}")
+    for row in rows:
+        if str(row.get("code") or "").strip() == region:
+            name = str(row.get("name") or "").strip()
+            if name and name != region:
+                return name
+            return None
+    return None
+
+
+def region_display_names(code: str, *, allow_api: bool = False) -> tuple[str, str]:
+    """Return ``(short_name, long_name)`` for an eBird region code."""
+    region = str(code or "").strip()
+    if not region:
+        return ("Select region", "Select region")
+    cache = st.session_state.setdefault("_region_display_names", {})
+    cached = cache.get(region)
+    if isinstance(cached, (list, tuple)) and len(cached) == 2:
+        return str(cached[0]), str(cached[1])
+
+    leaf = _cached_region_list_name(region)
+    if leaf:
+        names = [leaf]
+        parts = region.split("-")
+        if len(parts) >= 2:
+            parent = _cached_region_list_name("-".join(parts[:2]))
+            if parent and parent not in names:
+                names.append(parent)
+        country = _cached_region_list_name(parts[0])
+        if country and country not in names:
+            names.append(country)
+        result = (leaf, ", ".join(names))
+        cache[region] = result
+        return result
+
+    if allow_api and get_api_key():
+        try:
+            info = EBirdClient().region_info(region)
+        except (MissingEbirdApiKey, requests.RequestException, OSError, ValueError):
+            info = {}
+        detailed = ""
+        if isinstance(info, dict):
+            detailed = str(info.get("result") or info.get("name") or "").strip()
+        if detailed:
+            short = detailed.split(",")[0].strip() or detailed
+            result = (short, detailed)
+            cache[region] = result
+            return result
+    return (region, region)
+
+
+def render_region_chip(*, screen: str) -> None:
+    """Upper-right control showing the selected region name."""
+    code = selected_region_code()
+    short, long_name = region_display_names(code, allow_api=True)
+    if code and long_name and long_name != code:
+        help_text = f"{long_name} · {code}. Open the region screen to change it."
+    elif code:
+        help_text = f"{code}. Open the region screen to change it."
+    else:
+        help_text = "Open the region screen to choose an eBird region."
+    if st.button(
+        long_name or short or "Select region",
+        type="tertiary",
+        key=f"header_region_{screen}",
+        help=help_text,
+        use_container_width=True,
+    ):
+        st.session_state.dashboard_before_region = screen
+        go_dashboard("region")
+
+
+def render_page_header(title: str, *, screen: str) -> None:
+    """Title row; desktop uses a hideable left panel, mobile uses a hamburger."""
+    nav_help = (
+        "Open saved galleries, my checklists, Gallery, Checklists, region, "
+        "downloads, or cache maintenance"
+    )
+    show_chip = screen in REGION_CHIP_SCREENS
+    show_menu = current_ui_layout() != "desktop" or not desktop_nav_panel_open()
+    if current_ui_layout() == "desktop":
+        render_desktop_nav_panel(screen=screen)
+
+    if show_menu and show_chip:
+        menu_col, title_col, region_col = st.columns(
+            [1, 10, 4], vertical_alignment="center"
+        )
+    elif show_menu:
+        menu_col, title_col = st.columns([1, 16], vertical_alignment="center")
+        region_col = None
+    elif show_chip:
+        title_col, region_col = st.columns([4, 1.4], vertical_alignment="center")
+        menu_col = None
+    else:
+        menu_col = None
+        region_col = None
+        title_col = None
+
+    if menu_col is not None:
+        with menu_col:
+            if current_ui_layout() == "desktop":
+                render_nav_show_button(help=nav_help)
+            else:
+                with st.popover(":material/menu:", help=nav_help):
+                    render_app_nav_buttons(
+                        current=screen, key_prefix=f"dashboard_nav_{screen}"
+                    )
+                    if screen in {"saved", "mine"}:
+                        st.divider()
+                        render_gallery_sort_controls()
+    if title_col is not None:
+        with title_col:
+            st.title(title)
+    else:
         st.title(title)
+    if region_col is not None:
+        with region_col:
+            render_region_chip(screen=screen)
+
+
+def list_cards_expand_all() -> bool:
+    """Whether saved-gallery / my-checklist cards should start expanded."""
+    return bool(st.session_state.get("gallery_list_expand_all"))
+
+
+def apply_list_expander_state(widget_key: str, *, index: int) -> bool:
+    """Set an expander's open state before the widget is instantiated."""
+    force = st.session_state.get("gallery_list_expand_force")
+    if force is True:
+        st.session_state[widget_key] = True
+    elif force is False:
+        st.session_state[widget_key] = False
+    elif widget_key not in st.session_state:
+        st.session_state[widget_key] = list_cards_expand_all() or index == 0
+    return bool(st.session_state.get(widget_key))
+
+
+def clear_list_expander_force() -> None:
+    st.session_state.pop("gallery_list_expand_force", None)
+
+
+def render_expand_all_button(*, key: str) -> None:
+    """Toggle every saved-gallery / my-checklist card open or closed."""
+    expanded = list_cards_expand_all()
+    label = "Collapse all" if expanded else "Expand all"
+    if st.button(label, key=key, use_container_width=True):
+        st.session_state.gallery_list_expand_all = not expanded
+        st.session_state.gallery_list_expand_force = not expanded
+        st.rerun()
+
+
+def render_open_gallery_icon_button(
+    *,
+    key: str,
+    disabled: bool = False,
+    on_click=None,
+) -> bool:
+    """Compact photo-library control for opening a gallery beside a card title."""
+    return st.button(
+        "Open",
+        icon=":material/photo_library:",
+        type="tertiary",
+        key=key,
+        help="Open gallery",
+        disabled=disabled,
+        use_container_width=True,
+        on_click=on_click,
+    )
+
+
+def render_list_card_expander(
+    header: str,
+    *,
+    expander_key: str,
+    index: int,
+    href: str | None = None,
+):
+    """Expander whose title is a gallery URL when ``href`` is set."""
+    expanded = apply_list_expander_state(expander_key, index=index)
+    return st.expander(
+        expander_gallery_label(header, href),
+        expanded=expanded,
+        key=expander_key,
+        on_change="rerun",
+    )
 
 
 def render_saved_galleries() -> None:
@@ -1986,8 +3014,15 @@ def render_saved_galleries() -> None:
         return
     st.caption(
         f"{len(galleries)} saved · defaults to the date and time; you can give each gallery a name. "
-        "Open, rename, or delete from each gallery below."
+        "Open a gallery with the photo-library icon or a photo. Rename and delete inside the card. "
+        "Add a gallery to git deploy to include it in the next commit and Streamlit Cloud push; "
+        "other galleries stay local."
     )
+    expand_col, _ = st.columns([1, 4])
+    with expand_col:
+        render_expand_all_button(key="saved_galleries_expand_all")
+    deploy_ok = git_repo_available()
+    deploy_ids = tracked_saved_gallery_ids() if deploy_ok else set()
     for index, item in enumerate(galleries):
         gallery_id = str(item.get("id") or "")
         title = str(item.get("title") or gallery_id)
@@ -1998,85 +3033,560 @@ def render_saved_galleries() -> None:
         header = f"{title} · {count} species"
         if source and source != title:
             header = f"{title} · {source} · {count} species"
-        with st.expander(header, expanded=index == 0):
-            name_key = f"saved_gallery_name_{gallery_id}"
-            if name_key not in st.session_state:
-                st.session_state[name_key] = title
-            name_col, rename_col, delete_col = st.columns(
-                [4, 1, 1], vertical_alignment="bottom"
-            )
-            with name_col:
-                st.text_input("Name", key=name_key)
-            with rename_col:
-                if st.button(
-                    "Rename",
-                    key=f"rename_saved_gallery_{gallery_id}",
-                    use_container_width=True,
+        if gallery_id in deploy_ids:
+            header = f"{header} · git deploy"
+        expander_key = f"saved_gallery_exp_{gallery_id}"
+        with st.container(border=True):
+            open_col, name_col = st.columns([1, 16], vertical_alignment="center")
+            with open_col:
+                if birds and render_open_gallery_icon_button(
+                    key=f"open_gallery_icon_saved_{gallery_id}"
                 ):
-                    renamed = rename_saved_gallery(
-                        gallery_id, str(st.session_state.get(name_key) or "")
+                    open_gallery(
+                        birds,
+                        title=title,
+                        saved_id=gallery_id,
+                        view_mode=(
+                            item.get("view_mode")
+                            if isinstance(item.get("view_mode"), str)
+                            else None
+                        ),
+                        source_title=(
+                            item.get("source_title")
+                            if isinstance(item.get("source_title"), str)
+                            else None
+                        ),
+                        sort=item.get("sort") if isinstance(item.get("sort"), str) else None,
+                        compare_by_bird=(
+                            item.get("compare_by_bird")
+                            if isinstance(item.get("compare_by_bird"), dict)
+                            else None
+                        ),
+                        notes=notes_from_saved_gallery(item),
                     )
-                    if renamed:
-                        st.rerun()
-            with delete_col:
-                confirm_key = f"confirm_delete_saved_{gallery_id}"
-                if st.session_state.get(confirm_key):
-                    if st.button(
-                        "Confirm delete",
-                        key=f"confirm_delete_saved_gallery_{gallery_id}",
-                        use_container_width=True,
-                        type="primary",
-                    ):
-                        st.session_state.pop(confirm_key, None)
-                        delete_saved_gallery(gallery_id)
-                        st.rerun()
-                elif st.button(
-                    "Delete",
-                    key=f"delete_saved_gallery_{gallery_id}",
-                    use_container_width=True,
-                ):
-                    st.session_state[confirm_key] = True
-                    st.rerun()
-            render_species_thumbnail_table(
-                sorted_gallery_birds(birds), columns=6, width=144
-            )
-            st.markdown(f"[Direct link]({url})")
-            if st.button(
-                "Open gallery",
-                key=f"open_saved_gallery_{gallery_id}",
-                use_container_width=True,
-                type="primary",
-            ):
-                open_gallery(
-                    birds,
-                    title=title,
-                    saved_id=gallery_id,
-                    view_mode=item.get("view_mode")
-                    if isinstance(item.get("view_mode"), str)
-                    else None,
-                    source_title=source or None,
-                    sort=current_gallery_sort(),
+            with name_col:
+                expander = render_list_card_expander(
+                    header,
+                    expander_key=expander_key,
+                    index=index,
                 )
+            with expander:
+                name_key = f"saved_gallery_name_{gallery_id}"
+                if name_key not in st.session_state:
+                    st.session_state[name_key] = title
+                name_col, rename_col, delete_col = st.columns(
+                    [4, 1, 1], vertical_alignment="bottom"
+                )
+                with name_col:
+                    st.text_input("Name", key=name_key)
+                with rename_col:
+                    if st.button(
+                        "Rename",
+                        key=f"rename_saved_gallery_{gallery_id}",
+                        use_container_width=True,
+                    ):
+                        renamed = rename_saved_gallery(
+                            gallery_id, str(st.session_state.get(name_key) or "")
+                        )
+                        if renamed:
+                            st.rerun()
+                with delete_col:
+                    confirm_key = f"confirm_delete_saved_{gallery_id}"
+                    if st.session_state.get(confirm_key):
+                        if st.button(
+                            "Confirm delete",
+                            key=f"confirm_delete_saved_gallery_{gallery_id}",
+                            use_container_width=True,
+                            type="primary",
+                        ):
+                            st.session_state.pop(confirm_key, None)
+                            delete_saved_gallery(gallery_id)
+                            st.rerun()
+                    elif st.button(
+                        "Delete",
+                        key=f"delete_saved_gallery_{gallery_id}",
+                        use_container_width=True,
+                    ):
+                        st.session_state[confirm_key] = True
+                        st.rerun()
+                if deploy_ok:
+                    in_deploy = gallery_id in deploy_ids
+                    if in_deploy:
+                        st.caption(
+                            "This gallery is staged or committed for git deploy."
+                        )
+                        if st.button(
+                            "Remove from git deploy",
+                            key=f"undeploy_saved_gallery_{gallery_id}",
+                            use_container_width=True,
+                        ):
+                            error = remove_saved_gallery_from_git_deploy(gallery_id)
+                            if error:
+                                st.error(error)
+                            else:
+                                st.rerun()
+                    elif st.button(
+                        "Add to git deploy",
+                        key=f"deploy_saved_gallery_{gallery_id}",
+                        use_container_width=True,
+                    ):
+                        error = add_saved_gallery_to_git_deploy(gallery_id)
+                        if error:
+                            st.error(error)
+                        else:
+                            st.rerun()
+                thumbs = sorted_gallery_birds(birds)
+                render_species_thumbnail_table(
+                    thumbs,
+                    columns=6,
+                    width=144,
+                    click_hrefs=[url] * len(thumbs) if thumbs else None,
+                )
+                notes = str(item.get("notes") or "").strip()
+                if notes:
+                    preview = notes.splitlines()[0]
+                    if len(preview) > 140:
+                        preview = preview[:137] + "…"
+                    st.caption(preview)
+    clear_list_expander_force()
+
+
+def checklist_date_label(row: dict) -> str:
+    """Human-readable checklist date/time from a feed or detail row."""
+    return " ".join(
+        part for part in [row.get("obsDt"), row.get("obsTime")] if part
+    ).strip()
+
+
+def checklist_gallery_birds(row: dict, life_scope: str) -> list[dict]:
+    """Gallery bird dicts from an enriched checklist, honoring the life-list filter."""
+    species_rows = row.get("species_rows") or []
+    if life_scope != "all":
+        species_rows = [
+            obs for obs in species_rows if obs_is_new_for_scope(obs, life_scope)
+        ]
+    birds: list[dict] = []
+    obs_day = parse_ebird_obs_day(
+        str(row.get("isoObsDate") or row.get("obsDt") or "")
+    )
+    obs_day_text = obs_day.isoformat() if obs_day else ""
+    for obs in species_rows:
+        is_new_region = bool(
+            obs.get("is_new_region") if "is_new_region" in obs else obs.get("is_new")
+        )
+        birds.append(
+            {
+                "code": obs.get("code"),
+                "name": obs.get("name"),
+                "sciName": obs.get("sciName"),
+                "is_new_region": is_new_region,
+                "is_new_world": bool(obs.get("is_new_world")),
+                "is_foy_region": bool(obs.get("is_foy_region")),
+                "is_foy_world": bool(obs.get("is_foy_world")),
+                "is_recorded_region": bool(obs.get("is_recorded_region")),
+                "is_new": is_new_region,
+                "obs_day": obs_day_text,
+            }
+        )
+    return birds
+
+
+def open_checklist_gallery(row: dict, life_scope: str) -> None:
+    """Open a gallery for one checklist's (optionally filtered) species."""
+    birds = checklist_gallery_birds(row, life_scope)
+    if not birds:
+        st.warning("No birds available for the gallery.")
+        return
+    date_label = checklist_date_label(row) or str(row.get("subId") or "checklist")
+    location = str(row.get("locName") or row.get("locId") or "").strip()
+    title = f"Checklist gallery · {date_label}"
+    if location:
+        title = f"{title} · {location}"
+    sub_id = str(row.get("subId") or row.get("subID") or "")
+    extra = [
+        "Opened from a single eBird checklist.",
+    ]
+    observer = str(row.get("userDisplayName") or "").strip()
+    if observer:
+        extra.append(f"Observer: {observer}.")
+    loc_id = str(row.get("locId") or row.get("locID") or "").strip()
+    if loc_id:
+        extra.append(f"Location ID: {loc_id}.")
+    species = row.get("numSpecies")
+    if species not in (None, ""):
+        extra.append(f"Checklist species count: {species}.")
+    extra.extend(checklist_window_note_lines())
+    open_gallery(
+        birds,
+        title=title,
+        source_title=location or None,
+        sort=current_gallery_sort(),
+        checklist_id=sub_id if CHECKLIST_SUB_ID_RE.fullmatch(sub_id) else None,
+        notes=default_gallery_notes(
+            title=title,
+            source_title=location or "Checklist",
+            species_count=len(birds),
+            region_code=str(row.get("regionCode") or selected_region_code()),
+            checklist_id=sub_id if CHECKLIST_SUB_ID_RE.fullmatch(sub_id) else "",
+            extra_lines=extra,
+        ),
+    )
+
+
+def own_checklists_from_session() -> list[dict]:
+    """Own checklists from downloaded JSON and the My eBird data export."""
+    names = tuple(configured_observer_names())
+    from my_ebird_data import my_ebird_source_signature
+
+    signature = my_ebird_source_signature()
+    if (
+        st.session_state.get("own_checklists_names") == names
+        and st.session_state.get("own_checklists_export_sig") == signature
+    ):
+        rows = st.session_state.get("own_checklists_rows")
+        if isinstance(rows, list):
+            return rows
+    rows = load_own_local_checklists(list(names))
+    st.session_state.own_checklists_rows = rows
+    st.session_state.own_checklists_names = names
+    st.session_state.own_checklists_export_sig = signature
+    st.session_state.pop("own_checklists_enriched", None)
+    st.session_state.pop("own_checklists_shown", None)
+    return rows
+
+
+def enrich_own_checklist_page(summaries: list[dict], start: int, end: int) -> list[dict]:
+    """Attach species rows to a slice of own-checklist summaries."""
+    page = summaries[start:end]
+    if not page:
+        return []
+    by_region: dict[str, list[dict]] = {}
+    for row in page:
+        region = str(row.get("regionCode") or row.get("_region") or "").strip()
+        by_region.setdefault(region, []).append(row)
+    world_life = load_life_list(WORLD_LIFE_LIST_CODE)
+    client = EBirdClient() if get_api_key() else None
+    enriched: list[dict] = []
+    for region, group in by_region.items():
+        region_life = load_life_list(region) if region else None
+        enriched.extend(
+            enrich_checklists(
+                client,
+                group,
+                region_life,
+                world_life,
+                allow_api=bool(client),
+                region_code=region,
+            )
+        )
+    enriched.sort(
+        key=lambda row: str(row.get("isoObsDate") or row.get("obsDt") or ""),
+        reverse=True,
+    )
+    return enriched
+
+
+def own_checklists_latest_local_labels(summaries: list[dict]) -> tuple[str, str]:
+    """Newest observation date and latest on-disk file time from local own checklists."""
+    if not summaries:
+        return "", ""
+    newest = summaries[0]
+    latest = checklist_date_label(newest)
+    if not latest:
+        day = parse_ebird_obs_day(
+            str(newest.get("isoObsDate") or newest.get("obsDt") or "")
+        )
+        latest = day.strftime("%d %b %Y") if day else ""
+    newest_mtime: float | None = None
+    for row in summaries:
+        path_raw = str(row.get("_path") or "").strip()
+        if not path_raw:
+            continue
+        try:
+            mtime = Path(path_raw).stat().st_mtime
+        except OSError:
+            continue
+        if newest_mtime is None or mtime > newest_mtime:
+            newest_mtime = mtime
+    saved = ""
+    if newest_mtime is not None:
+        saved = (
+            datetime.fromtimestamp(newest_mtime)
+            .astimezone()
+            .strftime("%Y-%m-%d %H:%M")
+        )
+    return latest, saved
+
+
+def render_own_checklists_latest_caption(summaries: list[dict]) -> None:
+    """Show how current the local own-checklist files are."""
+    latest, saved = own_checklists_latest_local_labels(summaries)
+    if latest and saved:
+        st.caption(f"Latest local checklist: {latest} · file {saved}")
+    elif latest:
+        st.caption(f"Latest local checklist: {latest}")
+    elif saved:
+        st.caption(f"Latest local file: {saved}")
+
+
+def render_own_checklists() -> None:
+    """Browse the user's eBird checklists from downloads and My eBird data."""
+    render_page_header("My checklists", screen="mine")
+    render_life_list_gallery_links()
+    st.markdown(f"[Download my data]({DOWNLOAD_MY_DATA_URL}) on eBird")
+    from my_ebird_data import my_ebird_data_path
+
+    export_path = my_ebird_data_path()
+    if export_path is not None:
+        st.caption(
+            f"Using `{export_path.name}` for life lists, last seen, and your checklists. "
+            "Replace this file after downloading a newer export from eBird."
+        )
+    names = configured_observer_names()
+    summaries: list[dict] = []
+    cached = (
+        st.session_state.get("own_checklists_names") == tuple(names)
+        and isinstance(st.session_state.get("own_checklists_rows"), list)
+    )
+    if cached:
+        summaries = own_checklists_from_session()
+    else:
+        with st.spinner("Loading your checklists…"):
+            summaries = own_checklists_from_session()
+    render_own_checklists_latest_caption(summaries)
+
+    if not names and export_path is None:
+        st.warning(
+            "Add a `MyEBirdData.csv` export from eBird, or set "
+            "`EBIRD_USER_DISPLAY_NAME` in `.env` to the public name on your checklists."
+        )
+        return
+
+    refresh_col, expand_col, _ = st.columns([1, 1, 3])
+    with refresh_col:
+        if st.button("Refresh", use_container_width=True, key="own_checklists_refresh"):
+            st.session_state.pop("own_checklists_rows", None)
+            st.session_state.pop("own_checklists_names", None)
+            st.session_state.pop("own_checklists_export_sig", None)
+            st.session_state.pop("own_checklists_enriched", None)
+            st.session_state.pop("own_checklists_shown", None)
+            st.rerun()
+    with expand_col:
+        render_expand_all_button(key="own_checklists_expand_all")
+
+    if not summaries:
+        missing = []
+        if export_path is None:
+            missing.append("a My eBird data CSV in the project folder")
+        if names:
+            missing.append(
+                "downloaded checklists matching "
+                + ", ".join(f"`{name}`" for name in names)
+            )
+        st.info("No checklists found. Add " + " or ".join(missing) + ".")
+        return
+
+    shown = int(st.session_state.get("own_checklists_shown") or 0)
+    if shown <= 0:
+        shown = min(OWN_CHECKLISTS_PAGE_SIZE, len(summaries))
+        st.session_state.own_checklists_shown = shown
+    shown = min(shown, len(summaries))
+    enriched = st.session_state.get("own_checklists_enriched")
+    if not isinstance(enriched, list):
+        enriched = []
+    if len(enriched) < shown:
+        with st.spinner("Loading species photos…"):
+            enriched = list(enriched) + enrich_own_checklist_page(
+                summaries, len(enriched), shown
+            )
+        st.session_state.own_checklists_enriched = enriched
+
+    source_bits: list[str] = []
+    if names:
+        source_bits.append(
+            "matching " + ", ".join(f"**{name}**" for name in names)
+        )
+    if export_path is not None:
+        source_bits.append(f"from `{export_path.name}`")
+    source_text = (" · ".join(source_bits) + " · ") if source_bits else ""
+    st.caption(
+        f"{len(summaries)} checklist"
+        f"{'' if len(summaries) == 1 else 's'} {source_text}"
+        f"showing {len(enriched)} · newest first. Open a gallery with the photo-library icon or a photo."
+    )
+
+    for index, row in enumerate(enriched):
+        sub_id = str(row.get("subId") or row.get("subID") or index)
+        date_label = checklist_date_label(row) or sub_id
+        location = str(row.get("locName") or row.get("locId") or "").strip()
+        species = row.get("numSpecies", len(row.get("species_rows") or []))
+        region_new = row.get("new_count_region", row.get("new_count"))
+        world_new = row.get("new_count_world")
+        new_bits: list[str] = []
+        if region_new:
+            new_bits.append(f"{region_new} new to region")
+        if world_new:
+            new_bits.append(f"{world_new} new to world")
+        header = f"{date_label} · {species} species"
+        if location:
+            header = f"{date_label} · {location} · {species} species"
+        if new_bits:
+            header = f"{header} · {' · '.join(new_bits)}"
+        gallery_birds = checklist_gallery_birds(row, "all")
+        expander_key = f"own_checklist_exp_{sub_id}"
+        href = (
+            checklist_gallery_url(sub_id)
+            if gallery_birds and CHECKLIST_SUB_ID_RE.fullmatch(sub_id)
+            else None
+        )
+        with st.container(border=True):
+            open_col, name_col = st.columns([1, 16], vertical_alignment="center")
+            with open_col:
+                if gallery_birds and render_open_gallery_icon_button(
+                    key=f"open_gallery_icon_own_{sub_id}"
+                ):
+                    open_checklist_gallery(row, "all")
+            with name_col:
+                expander = render_list_card_expander(
+                    header,
+                    expander_key=expander_key,
+                    index=index,
+                )
+            with expander:
+                if gallery_birds:
+                    thumbs = sorted_gallery_birds(gallery_birds)
+                    render_species_thumbnail_table(
+                        thumbs,
+                        columns=6,
+                        width=144,
+                        click_hrefs=[href] * len(thumbs) if href else None,
+                    )
+                else:
+                    st.caption("No species on this downloaded checklist.")
+                checklist_url = f"https://ebird.org/checklist/{sub_id}"
+                st.markdown(f"[eBird checklist]({checklist_url})")
+
+    clear_list_expander_force()
+
+    if shown < len(summaries):
+        more = min(OWN_CHECKLISTS_PAGE_SIZE, len(summaries) - shown)
+        if st.button(f"Show more ({more} more)", key="own_checklists_more"):
+            st.session_state.own_checklists_shown = shown + more
+            st.rerun()
+
+
+LIFE_LIST_SCOPES = frozenset(
+    {"region", "world", "foy_world", "foy_region", "recorded"}
+)
+
+
+def _scopes_from_stored(value: object) -> list[str]:
+    if isinstance(value, list):
+        return [str(item) for item in value]
+    if isinstance(value, str) and value and value != "all":
+        return [value]
+    return []
 
 
 def _sync_life_list_scope_pref() -> None:
-    value = st.session_state.get("life_list_scope")
-    if value in {"all", "region", "world"}:
-        st.session_state.life_list_scope_pref = value
+    value = st.session_state.get("life_list_scopes")
+    if isinstance(value, list):
+        st.session_state.life_list_scope_pref = [
+            item for item in value if item in LIFE_LIST_SCOPES
+        ]
+
+
+def current_life_list_scopes(*, region_code: str | None = None) -> list[str]:
+    """Selected gallery novelty filters; empty means show every bird."""
+    options = set(life_list_filter_options(region_code=region_code))
+    for key in ("life_list_scopes", "life_list_scope_pref", "life_list_scope"):
+        cleaned = [
+            item
+            for item in _scopes_from_stored(st.session_state.get(key))
+            if item in options
+        ]
+        if key == "life_list_scope" and not cleaned:
+            continue
+        if cleaned or key != "life_list_scope":
+            return cleaned
+    return []
 
 
 def current_life_list_scope() -> str:
-    """Life-list filter that survives gallery toolbar panels closing."""
-    for key in ("life_list_scope", "life_list_scope_pref"):
-        value = st.session_state.get(key)
-        if value in {"all", "region", "world"}:
-            return value
+    """Single-scope fallback used by checklist summary gallery opens."""
+    scopes = current_life_list_scopes()
+    if len(scopes) == 1:
+        return scopes[0]
     return "all"
+
+
+def selected_region_code() -> str:
+    return str(
+        st.session_state.get("checklists_region")
+        or os.environ.get("EBIRD_HOME_REGION", "US-FL-099")
+        or ""
+    ).strip()
+
+
+def region_life_list_present(region_code: str | None = None) -> bool:
+    code = (region_code or selected_region_code()).strip()
+    return bool(code) and load_life_list(code) is not None
+
+
+def life_list_filter_options(
+    *,
+    region_code: str | None = None,
+    birds: list[dict] | None = None,
+) -> list[str]:
+    options: list[str] = []
+    if region_life_list_present(region_code):
+        options.append("region")
+    if (region_code or selected_region_code()).strip():
+        options.append("recorded")
+    options.append("world")
+    options.append("foy_world")
+    if region_life_list_present(region_code):
+        options.append("foy_region")
+    if birds is None:
+        return options
+    present = set()
+    for bird in birds:
+        present.update(gallery_bird_filter_tags(bird))
+    return [item for item in options if item in present]
+
+
+def life_list_scope_label(value: str, *, region_code: str = "") -> str:
+    return {
+        "region": f"New to region ({region_code or 'region'})",
+        "recorded": "Recorded (region this year)",
+        "world": "New to world",
+        "foy_world": "Missing FoY world",
+        "foy_region": "Missing FoY region",
+    }.get(value, value)
+
+
+def coerce_life_list_scope_widget(
+    *,
+    region_code: str | None = None,
+    birds: list[dict] | None = None,
+) -> None:
+    """Keep the multiselect in sync with options present in this gallery."""
+    options = life_list_filter_options(region_code=region_code, birds=birds)
+    current = _scopes_from_stored(st.session_state.get("life_list_scopes"))
+    if not current:
+        current = _scopes_from_stored(st.session_state.get("life_list_scope_pref"))
+    if not current:
+        current = _scopes_from_stored(st.session_state.get("life_list_scope"))
+    cleaned = [item for item in current if item in options]
+    st.session_state.life_list_scopes = cleaned
+    st.session_state.life_list_scope_pref = cleaned
 
 
 def current_gallery_view_mode() -> str:
     value = st.session_state.get("gallery_view_mode")
-    if value in {"summary", "list", "standard"}:
+    if value == "list":
+        return "summary"
+    if value in {"summary", "standard"}:
         return value
     return "summary"
 
@@ -2127,6 +3637,114 @@ def render_gallery_sort_controls() -> None:
     )
     st.session_state.gallery_sort = st.session_state.gallery_sort_radio
     st.session_state.gallery_sort_pref = st.session_state.gallery_sort_radio
+
+
+def render_gallery_menu_controls(
+    *,
+    saved_id: str,
+    region_code: str,
+    birds: list[dict] | None = None,
+) -> None:
+    """Save, filter, view, sort, and legend controls for the gallery menu."""
+    if st.button(
+        "Save gallery",
+        icon=":material/save:",
+        help="Save this gallery and get a link",
+        type="primary" if st.session_state.get("gallery_saved_dirty") else "secondary",
+        use_container_width=True,
+        key="gallery_save",
+    ):
+        if save_current_gallery():
+            st.rerun()
+    if saved_id:
+        confirm_key = "confirm_delete_open_gallery"
+        if st.session_state.get(confirm_key) == saved_id:
+            if st.button(
+                "Confirm delete",
+                icon=":material/delete:",
+                help="Tap to permanently delete this saved gallery",
+                type="primary",
+                use_container_width=True,
+                key="gallery_delete_confirm",
+            ):
+                st.session_state.pop(confirm_key, None)
+                delete_saved_gallery(saved_id)
+                close_gallery()
+        elif st.button(
+            "Delete saved gallery",
+            icon=":material/delete:",
+            help="Delete this saved gallery",
+            use_container_width=True,
+            key="gallery_delete",
+        ):
+            st.session_state[confirm_key] = saved_id
+            st.rerun()
+    st.divider()
+    coerce_life_list_scope_widget(region_code=region_code, birds=birds)
+    filter_options = life_list_filter_options(region_code=region_code, birds=birds)
+    if filter_options:
+        st.multiselect(
+            "Filter",
+            options=filter_options,
+            format_func=lambda value: life_list_scope_label(
+                value, region_code=region_code
+            ),
+            key="life_list_scopes",
+            on_change=_sync_life_list_scope_pref,
+            help="Leave empty to show every bird. Select one or more labels to keep birds that match any of them. Recorded means seen in this region this calendar year.",
+        )
+        st.session_state.life_list_scope_pref = list(
+            st.session_state.get("life_list_scopes") or []
+        )
+    else:
+        st.caption("No filter labels in this gallery.")
+    st.divider()
+    gallery_mode = current_gallery_view_mode()
+    pending_mode = st.session_state.pop("gallery_view_mode_pending", None)
+    if pending_mode == "list":
+        pending_mode = "summary"
+    if pending_mode in {"summary", "standard"}:
+        st.session_state.gallery_view_mode_radio = pending_mode
+        gallery_mode = pending_mode
+    elif st.session_state.get("gallery_view_mode_radio") == "list":
+        st.session_state.gallery_view_mode_radio = gallery_mode
+    elif "gallery_view_mode_radio" not in st.session_state:
+        st.session_state.gallery_view_mode_radio = gallery_mode
+    st.radio(
+        "Gallery view",
+        options=["summary", "standard"],
+        format_func=lambda value: {
+            "summary": "Summary",
+            "standard": "Standard",
+        }[value],
+        key="gallery_view_mode_radio",
+        help="Summary is the thumbnail grid. Standard is one bird at a time. Tap a summary photo for Standard view.",
+    )
+    st.session_state.gallery_view_mode = st.session_state.gallery_view_mode_radio
+    st.divider()
+    render_gallery_sort_controls()
+    st.divider()
+    st.checkbox(
+        "Show legends",
+        key="gallery_show_legends",
+        help="Also shows the Image 1/200 counter.",
+    )
+    st.checkbox(
+        "Show remove from gallery",
+        key="gallery_show_remove",
+        help="Shows the × buttons that remove a bird from this gallery.",
+    )
+    st.checkbox(
+        "Show bird and photo buttons",
+        key="gallery_show_nav_buttons",
+        help="◀ ▶ change birds and ← → change photos. When off, swipe the image instead.",
+    )
+    st.checkbox(
+        "Show bird info",
+        key="gallery_show_info_default",
+        on_change=_sync_gallery_info_default,
+        help="When on, Standard view opens the About this bird panel. Tap the bird name to hide or show it.",
+    )
 
 
 def ebird_taxon_order_maps() -> tuple[dict[str, float], dict[str, float]]:
@@ -2188,8 +3806,14 @@ def gallery_sort_key(bird: dict, index: int, mode: str) -> tuple:
             rank = 0
         elif gallery_bird_is_new_region(bird):
             rank = 1
-        else:
+        elif gallery_bird_is_foy_world(bird):
             rank = 2
+        elif gallery_bird_is_foy_region(bird):
+            rank = 3
+        elif gallery_bird_is_recorded(bird):
+            rank = 4
+        else:
+            rank = 5
         return (rank, name, index)
     return (index,)
 
@@ -2213,10 +3837,63 @@ def sorted_gallery_birds(birds: list[dict]) -> list[dict]:
     return [annotated[i] for i in indices]
 
 
+def gallery_chrome_visible_default() -> bool:
+    """Legends and motion buttons default on for desktop, off for mobile."""
+    return current_ui_layout() != "mobile"
+
+
+def apply_gallery_chrome_defaults() -> None:
+    """Apply layout-based defaults for legends, remove, and bird/photo buttons.
+
+    Must run before those checkboxes are instantiated. Switching desktop/mobile
+    reapplies that layout's defaults; a user toggle is kept until the layout
+    changes or the gallery is closed.
+    """
+    st.session_state.setdefault("gallery_show_info_default", False)
+    show = gallery_chrome_visible_default()
+    layout = current_ui_layout()
+    if st.session_state.get("gallery_chrome_layout") != layout:
+        st.session_state.gallery_show_legends = show
+        st.session_state.gallery_show_remove = show
+        st.session_state.gallery_show_nav_buttons = show
+        st.session_state.gallery_chrome_layout = layout
+        return
+    st.session_state.setdefault("gallery_show_legends", show)
+    st.session_state.setdefault("gallery_show_remove", show)
+    st.session_state.setdefault("gallery_show_nav_buttons", show)
+
+
+def gallery_info_visible_default() -> bool:
+    """Whether Standard view should show About this bird until the name is tapped."""
+    return bool(st.session_state.get("gallery_show_info_default", False))
+
+
+def _sync_gallery_info_default() -> None:
+    st.session_state.gallery_show_info = gallery_info_visible_default()
+
+
+def reset_gallery_info_to_default() -> None:
+    st.session_state.gallery_show_info = gallery_info_visible_default()
+
+
+def gallery_legends_visible() -> bool:
+    """Whether photo counters and other legends are shown."""
+    if "gallery_show_legends" not in st.session_state:
+        return gallery_chrome_visible_default()
+    return bool(st.session_state.gallery_show_legends)
+
+
+def gallery_remove_visible() -> bool:
+    """Whether × buttons that remove a bird from this gallery are shown."""
+    if "gallery_show_remove" not in st.session_state:
+        return gallery_chrome_visible_default()
+    return bool(st.session_state.gallery_show_remove)
+
+
 def gallery_nav_buttons_visible() -> bool:
     """Whether ◀▶ / ←→ bird and photo buttons are shown."""
     if "gallery_show_nav_buttons" not in st.session_state:
-        return True
+        return gallery_chrome_visible_default()
     return bool(st.session_state.gallery_show_nav_buttons)
 
 
@@ -2234,13 +3911,10 @@ def open_gallery_standard_for_bird(bird_index: int) -> None:
     """Switch into standard view for a specific bird."""
     st.session_state.gallery_bird_index = bird_index
     st.session_state.gallery_image_index = gallery_list_image_index(bird_index)
-    # Widget keys can't be written after instantiation; apply on the next run.
     st.session_state.gallery_view_mode = "standard"
     st.session_state.gallery_view_mode_pending = "standard"
-    st.session_state.gallery_show_info = False
+    st.session_state.gallery_show_info = gallery_info_visible_default()
     st.session_state.gallery_show_view_picker = False
-    if "gallery_view_mode_radio" in st.session_state:
-        st.session_state.gallery_view_mode_radio = "standard"
     st.rerun()
 
 
@@ -2296,7 +3970,7 @@ def apply_gallery_swipe(action: str, *, bird_count: int, image_count: int) -> bo
         else:
             st.session_state.gallery_bird_index = bird_index + 1
         st.session_state.gallery_image_index = 0
-        st.session_state.gallery_show_info = False
+        st.session_state.gallery_show_info = gallery_info_visible_default()
         return True
     if action == "bird_prev":
         if visible:
@@ -2312,7 +3986,7 @@ def apply_gallery_swipe(action: str, *, bird_count: int, image_count: int) -> bo
         else:
             st.session_state.gallery_bird_index = bird_index - 1
         st.session_state.gallery_image_index = 0
-        st.session_state.gallery_show_info = False
+        st.session_state.gallery_show_info = gallery_info_visible_default()
         return True
     return False
 
@@ -2360,30 +4034,158 @@ def gallery_bird_is_new_world(bird: dict) -> bool:
     return bool(bird.get("New_world"))
 
 
+def gallery_bird_is_foy_region(bird: dict) -> bool:
+    return bool(bird.get("is_foy_region") or bird.get("FoY_region"))
+
+
+def gallery_bird_is_foy_world(bird: dict) -> bool:
+    return bool(bird.get("is_foy_world") or bird.get("FoY_world"))
+
+
+def gallery_bird_is_recorded(bird: dict) -> bool:
+    return bool(bird.get("is_recorded_region") or bird.get("Recorded"))
+
+
+def gallery_bird_filter_tags(bird: dict) -> set[str]:
+    """Novelty filter tags that apply to this bird."""
+    tags: set[str] = set()
+    if gallery_bird_is_new_world(bird):
+        tags.add("world")
+    if gallery_bird_is_new_region(bird):
+        tags.add("region")
+    if gallery_bird_is_recorded(bird):
+        tags.add("recorded")
+    if gallery_bird_is_foy_world(bird):
+        tags.add("foy_world")
+    if gallery_bird_is_foy_region(bird):
+        tags.add("foy_region")
+    return tags
+
+
 def gallery_bird_matches_scope(bird: dict, scope: str) -> bool:
     if scope == "world":
         return gallery_bird_is_new_world(bird)
     if scope == "region":
         return gallery_bird_is_new_region(bird)
+    if scope == "foy_world":
+        return gallery_bird_is_foy_world(bird)
+    if scope == "foy_region":
+        return gallery_bird_is_foy_region(bird)
+    if scope == "recorded":
+        return gallery_bird_is_recorded(bird)
     return True
+
+
+def gallery_bird_matches_scopes(bird: dict, scopes: list[str]) -> bool:
+    if not scopes:
+        return True
+    tags = gallery_bird_filter_tags(bird)
+    return any(scope in tags for scope in scopes)
+
+
+def gallery_filter_count_lines(
+    birds: list[dict],
+    *,
+    region_code: str = "",
+) -> list[str]:
+    """Per-option counts and pairwise overlaps for the gallery."""
+    options = life_list_filter_options(region_code=region_code, birds=birds)
+    if not options:
+        return []
+    counts = {option: 0 for option in options}
+    pair_counts: dict[tuple[str, str], int] = {}
+    multi = 0
+    for bird in birds:
+        tags = [option for option in options if option in gallery_bird_filter_tags(bird)]
+        for option in tags:
+            counts[option] += 1
+        if len(tags) >= 2:
+            multi += 1
+            for left_idx, left in enumerate(tags):
+                for right in tags[left_idx + 1 :]:
+                    key = (left, right)
+                    pair_counts[key] = pair_counts.get(key, 0) + 1
+    lines = [
+        f"{life_list_scope_label(option, region_code=region_code)}: **{counts[option]}**"
+        for option in options
+        if counts[option]
+    ]
+    for (left, right), total in pair_counts.items():
+        if total:
+            lines.append(
+                "Overlap "
+                f"{life_list_scope_label(left, region_code=region_code)} ∩ "
+                f"{life_list_scope_label(right, region_code=region_code)}: **{total}**"
+            )
+    if multi:
+        lines.append(f"**{multi}** bird{'s' if multi != 1 else ''} match more than one")
+    return lines
+
+
+def gallery_legend_frame(bird: dict) -> tuple[str, str]:
+    """Legend color and line style for a bird.
+
+    Priority: new world (teal solid), new region (amber solid), missing FoY
+    world (teal dashed), missing FoY region (amber dashed). When both FoY
+    flags are set, world wins.
+    """
+    if gallery_bird_is_new_world(bird):
+        return FRAME_COLOR_WORLD, "solid"
+    if gallery_bird_is_new_region(bird):
+        return FRAME_COLOR_REGION, "solid"
+    if gallery_bird_is_foy_world(bird):
+        return FRAME_COLOR_WORLD, "dashed"
+    if gallery_bird_is_foy_region(bird):
+        return FRAME_COLOR_REGION, "dashed"
+    return FRAME_COLOR_SEEN, "solid"
 
 
 def gallery_frame_color(bird: dict) -> str:
     """Border color for the gallery image based on life-list novelty."""
-    if gallery_bird_is_new_world(bird):
-        return FRAME_COLOR_WORLD
-    if gallery_bird_is_new_region(bird):
-        return FRAME_COLOR_REGION
-    return FRAME_COLOR_SEEN
+    return gallery_legend_frame(bird)[0]
+
+
+def gallery_frame_style(bird: dict) -> str:
+    """Solid border for new birds; dashed for missing-FoY-only."""
+    return gallery_legend_frame(bird)[1]
+
+
+def gallery_frame_outline_css(bird: dict, *, width: int = 3) -> str:
+    color = gallery_frame_color(bird)
+    if color == FRAME_COLOR_SEEN:
+        return ""
+    return (
+        f"outline:{width}px {gallery_frame_style(bird)} {color};"
+        f"outline-offset:-{width}px;"
+    )
+
+
+def _legend_swatch(color: str, style: str) -> str:
+    return (
+        "<span style='display:inline-block;width:0.72em;height:0.72em;"
+        f"box-sizing:border-box;border:2px {style} {color};"
+        "vertical-align:-0.1em;margin:0 0.12em 0 0.05em'></span>"
+    )
+
+
+def novelty_legend_html() -> str:
+    return (
+        f"{_legend_swatch(FRAME_COLOR_WORLD, 'solid')} new to world · "
+        f"{_legend_swatch(FRAME_COLOR_REGION, 'solid')} new to region · "
+        f"{_legend_swatch(FRAME_COLOR_WORLD, 'dashed')} missing FoY world · "
+        f"{_legend_swatch(FRAME_COLOR_REGION, 'dashed')} missing FoY region · "
+        f"{_legend_swatch(FRAME_COLOR_SEEN, 'solid')} already counted"
+    )
 
 
 def annotate_gallery_birds_with_life_lists(birds: list[dict]) -> list[dict]:
-    """Fill missing region/world-new flags from the current life lists."""
+    """Fill region/world-new and missing-FoY flags from the current life lists."""
     region_code = st.session_state.get("checklists_region") or os.environ.get(
         "EBIRD_HOME_REGION", "US-FL-099"
     )
     region_life = load_life_list(region_code) if region_code else None
     world_life = load_life_list(WORLD_LIFE_LIST_CODE)
+    this_year = date.today().year
     annotated: list[dict] = []
     for bird in birds:
         item = dict(bird)
@@ -2392,13 +4194,33 @@ def annotate_gallery_birds_with_life_lists(birds: list[dict]) -> list[dict]:
             "sciName": item.get("sciName") or "",
             "category": "species",
         }
-        if "is_new_region" not in item:
-            flag = is_new_to_life_list(taxon, region_life)
-            item["is_new_region"] = bool(flag) if flag is not None else False
-        if "is_new_world" not in item:
-            flag = is_new_to_life_list(taxon, world_life)
-            item["is_new_world"] = bool(flag) if flag is not None else False
+        region_flag = is_new_to_region_life_list(taxon, region_life, world_life)
+        world_flag = is_new_to_life_list(taxon, world_life)
+        item["is_new_region"] = bool(region_flag) if region_flag is not None else False
+        item["is_new_world"] = bool(world_flag) if world_flag is not None else False
         item["is_new"] = bool(item.get("is_new_region"))
+        obs_day = parse_ebird_obs_day(
+            str(item.get("obs_day") or item.get("obsDt") or "")
+        )
+        item["is_foy_region"] = is_missing_first_of_year(
+            taxon,
+            year=this_year,
+            life=region_life,
+            obs_day=obs_day,
+        )
+        item["is_foy_world"] = is_missing_first_of_year(
+            taxon,
+            year=this_year,
+            life=world_life,
+            obs_day=obs_day,
+        )
+        item["is_recorded_region"] = is_recorded_in_region_this_year(
+            taxon,
+            year=this_year,
+            region_life=region_life,
+            obs_day=obs_day,
+            obs_is_in_region=bool(region_code),
+        )
         annotated.append(item)
     return annotated
 
@@ -2415,12 +4237,112 @@ def gallery_bird_key(bird: dict) -> str:
 
 
 def is_in_compare_list(bird: dict) -> bool:
-    """Whether a bird is already on the compare list."""
+    """Whether a bird is already on the current gallery bird's compare list."""
     key = gallery_bird_key(bird)
-    return any(
-        gallery_bird_key(item) == key
-        for item in st.session_state.get("gallery_compare_birds") or []
-    )
+    return any(gallery_bird_key(item) == key for item in current_compare_birds())
+
+
+def current_gallery_bird() -> dict | None:
+    birds = st.session_state.get("gallery_birds") or []
+    try:
+        index = int(st.session_state.get("gallery_bird_index", 0))
+    except (TypeError, ValueError):
+        index = 0
+    if 0 <= index < len(birds) and isinstance(birds[index], dict):
+        return birds[index]
+    return None
+
+
+def compare_by_bird_map() -> dict[str, list[dict]]:
+    raw = st.session_state.get("gallery_compare_by_bird")
+    if not isinstance(raw, dict):
+        raw = {}
+        st.session_state.gallery_compare_by_bird = raw
+    return raw
+
+
+def normalize_compare_by_bird(raw: object) -> dict[str, list[dict]]:
+    """Clean a persisted per-bird compare map."""
+    if not isinstance(raw, dict):
+        return {}
+    cleaned: dict[str, list[dict]] = {}
+    for owner_key, birds in raw.items():
+        owner = str(owner_key or "").strip()
+        if not owner or not isinstance(birds, list):
+            continue
+        seen: set[str] = set()
+        items: list[dict] = []
+        for bird in birds:
+            item = normalize_gallery_bird(bird) if isinstance(bird, dict) else None
+            if not item:
+                continue
+            identity = gallery_bird_key(item)
+            if identity in seen:
+                continue
+            seen.add(identity)
+            items.append(item)
+        if items:
+            cleaned[owner] = items
+    return cleaned
+
+
+def persistable_compare_by_bird() -> dict[str, list[dict]]:
+    """Compare lists keyed by gallery bird, omitting empty and orphaned entries."""
+    mapping = normalize_compare_by_bird(compare_by_bird_map())
+    birds = st.session_state.get("gallery_birds") or []
+    allowed = {
+        gallery_bird_key(bird) for bird in birds if isinstance(bird, dict)
+    }
+    return {key: items for key, items in mapping.items() if key in allowed}
+
+
+def current_compare_birds() -> list[dict]:
+    bird = current_gallery_bird()
+    if not bird:
+        return []
+    return list(compare_by_bird_map().get(gallery_bird_key(bird)) or [])
+
+
+def set_current_compare_birds(birds: list[dict], *, dirty: bool = True) -> None:
+    owner = current_gallery_bird()
+    if not owner:
+        st.session_state.gallery_compare_birds = list(birds)
+        return
+    mapping = compare_by_bird_map()
+    owner_key = gallery_bird_key(owner)
+    cleaned: list[dict] = []
+    seen: set[str] = set()
+    for bird in birds:
+        item = normalize_gallery_bird(bird) if isinstance(bird, dict) else None
+        if not item:
+            continue
+        identity = gallery_bird_key(item)
+        if identity in seen:
+            continue
+        seen.add(identity)
+        cleaned.append(item)
+    if cleaned:
+        mapping[owner_key] = cleaned
+    else:
+        mapping.pop(owner_key, None)
+    st.session_state.gallery_compare_by_bird = mapping
+    st.session_state.gallery_compare_birds = cleaned
+    st.session_state.gallery_compare_owner_key = owner_key
+    if dirty and st.session_state.get("gallery_saved_id"):
+        st.session_state.gallery_saved_dirty = True
+
+
+def sync_compare_list_for_current_bird() -> None:
+    """Load the compare list that belongs to the bird currently on screen."""
+    owner = current_gallery_bird()
+    owner_key = gallery_bird_key(owner) if owner else ""
+    stored = current_compare_birds()
+    last_owner = str(st.session_state.get("gallery_compare_owner_key") or "")
+    st.session_state.gallery_compare_birds = stored
+    if owner_key != last_owner:
+        st.session_state.gallery_compare_owner_key = owner_key
+        st.session_state.gallery_compare_bird_index = 0
+        st.session_state.gallery_compare_image_index = 0
 
 
 def similar_item_to_bird(item: dict) -> dict:
@@ -2437,6 +4359,12 @@ def similar_item_to_bird(item: dict) -> dict:
         bird["is_new"] = bird["is_new_region"]
     if "is_new_world" in item:
         bird["is_new_world"] = bool(item.get("is_new_world"))
+    if "is_foy_region" in item:
+        bird["is_foy_region"] = bool(item.get("is_foy_region"))
+    if "is_foy_world" in item:
+        bird["is_foy_world"] = bool(item.get("is_foy_world"))
+    if "is_recorded_region" in item:
+        bird["is_recorded_region"] = bool(item.get("is_recorded_region"))
     return bird
 
 
@@ -2457,14 +4385,14 @@ def summarize_similar_species_counts(similar: list[dict]) -> dict[str, int]:
             counts["in_checklists"] += 1
         if history.get("ever_seen"):
             counts["in_region"] += 1
-        if item.get("is_new_region"):
-            counts["new_region"] += 1
-        else:
-            counts["on_region_life"] += 1
         if item.get("is_new_world"):
             counts["new_world"] += 1
         else:
             counts["on_world_life"] += 1
+        if item.get("is_new_region"):
+            counts["new_region"] += 1
+        elif not item.get("is_new_world"):
+            counts["on_region_life"] += 1
     return counts
 
 
@@ -2491,6 +4419,44 @@ def format_region_last_seen_summary(info: dict, region_code: str) -> str:
     if source == "local_checklist":
         bits.append("(local cache)")
     return " ".join(bits)
+
+
+def cached_sighting_day_location(row: dict) -> tuple[str, str]:
+    """Date and location labels from a cached checklist sighting row."""
+    day = str(row.get("obsDay") or "")[:10]
+    if not day:
+        parsed = parse_ebird_obs_day(row.get("obsDt") or "")
+        day = parsed.isoformat() if parsed else str(row.get("obsDt") or "").strip()
+    loc = str(row.get("locName") or row.get("locId") or "Unknown location").strip()
+    return day, loc
+
+
+def render_cached_sighting_lines(
+    rows: list[dict],
+    *,
+    highlight_region: str | None = None,
+) -> None:
+    """Render cached sighting rows; highlight those in ``highlight_region``."""
+    wanted = str(highlight_region or "").strip()
+    blocks: list[str] = []
+    for row in rows:
+        day, loc = cached_sighting_day_location(row)
+        label = f"{day} · {loc}" if day else loc
+        same_region = bool(
+            wanted and str(row.get("regionCode") or "").strip() == wanted
+        )
+        if same_region:
+            blocks.append(
+                "<div style='background:#ccfbf1;border-radius:0.35rem;"
+                "padding:0.2rem 0.45rem;margin:0.15rem 0;'>"
+                f"{html.escape(label)}</div>"
+            )
+        else:
+            blocks.append(
+                "<div style='padding:0.2rem 0.45rem;margin:0.15rem 0;'>"
+                f"{html.escape(label)}</div>"
+            )
+    st.markdown("".join(blocks), unsafe_allow_html=True)
 
 
 def enrich_similar_with_region_history(
@@ -2562,22 +4528,41 @@ def enrich_similar_with_region_history(
             "sciName": sci_name,
             "category": "species",
         }
-        region_flag = is_new_to_life_list(taxon, region_life)
+        region_flag = is_new_to_region_life_list(taxon, region_life, world_life)
         world_flag = is_new_to_life_list(taxon, world_life)
         row["is_new_region"] = bool(region_flag) if region_flag is not None else False
         row["is_new_world"] = bool(world_flag) if world_flag is not None else False
         row["is_new"] = row["is_new_region"]
-        if row["is_new_world"]:
-            novelty_label = "new to world"
-            frame_color = FRAME_COLOR_WORLD
-        elif row["is_new_region"]:
-            novelty_label = "new to region"
-            frame_color = FRAME_COLOR_REGION
-        else:
-            novelty_label = "already counted"
-            frame_color = FRAME_COLOR_SEEN
+        obs_day = parse_ebird_obs_day(str((observation or {}).get("obsDt") or ""))
+        row["is_foy_region"] = is_missing_first_of_year(
+            taxon,
+            year=date.today().year,
+            life=region_life,
+            obs_day=obs_day,
+        )
+        row["is_foy_world"] = is_missing_first_of_year(
+            taxon,
+            year=date.today().year,
+            life=world_life,
+            obs_day=obs_day,
+        )
+        row["is_recorded_region"] = is_recorded_in_region_this_year(
+            taxon,
+            year=date.today().year,
+            region_life=region_life,
+            obs_day=obs_day,
+            obs_is_in_region=True,
+        )
+        labels = novelty_labels(
+            is_new_world=row["is_new_world"],
+            is_new_region=row["is_new_region"],
+            is_foy_world=row["is_foy_world"],
+            is_foy_region=row["is_foy_region"],
+        )
+        novelty_label = ", ".join(labels) if labels else "already counted"
         row["novelty_label"] = novelty_label
-        row["frame_color"] = frame_color
+        row["frame_color"] = gallery_frame_color(row)
+        row["frame_style"] = gallery_frame_style(row)
 
         row["region_history"] = {
             "ever_seen": ever_seen,
@@ -2632,25 +4617,25 @@ def enrich_similar_with_region_history(
 
 
 def add_compare_bird(bird: dict) -> bool:
-    """Add a gallery bird to the session-scoped comparison list.
+    """Add a bird to the current gallery bird's comparison list.
 
     Returns True when the bird was newly added.
     """
-    compare_birds = list(st.session_state.get("gallery_compare_birds") or [])
+    compare_birds = current_compare_birds()
     key = gallery_bird_key(bird)
     if any(gallery_bird_key(item) == key for item in compare_birds):
         return False
-    compare_birds.append(
-        {
-            "code": str(bird.get("code") or "").strip(),
-            "name": str(bird.get("name") or "").strip(),
-            "sciName": str(bird.get("sciName") or "").strip(),
-            "is_new_region": gallery_bird_is_new_region(bird),
-            "is_new_world": gallery_bird_is_new_world(bird),
-            "is_new": gallery_bird_is_new_region(bird),
-        }
-    )
-    st.session_state.gallery_compare_birds = compare_birds
+    item = normalize_gallery_bird(bird)
+    if not item:
+        return False
+    item["is_new_region"] = gallery_bird_is_new_region(bird)
+    item["is_new_world"] = gallery_bird_is_new_world(bird)
+    item["is_foy_region"] = gallery_bird_is_foy_region(bird)
+    item["is_foy_world"] = gallery_bird_is_foy_world(bird)
+    item["is_recorded_region"] = gallery_bird_is_recorded(bird)
+    item["is_new"] = item["is_new_region"]
+    compare_birds.append(item)
+    set_current_compare_birds(compare_birds)
     st.session_state.gallery_compare_bird_index = len(compare_birds) - 1
     st.session_state.gallery_compare_image_index = 0
     return True
@@ -2666,14 +4651,14 @@ def add_compare_birds(birds: list[dict]) -> int:
 
 
 def remove_compare_bird(bird: dict) -> None:
-    """Remove a bird from the session-scoped comparison list."""
+    """Remove a bird from the current gallery bird's comparison list."""
     key = gallery_bird_key(bird)
     compare_birds = [
         item
-        for item in st.session_state.get("gallery_compare_birds") or []
+        for item in current_compare_birds()
         if gallery_bird_key(item) != key
     ]
-    st.session_state.gallery_compare_birds = compare_birds
+    set_current_compare_birds(compare_birds)
     if compare_birds:
         current = int(st.session_state.get("gallery_compare_bird_index", 0))
         st.session_state.gallery_compare_bird_index = min(
@@ -2690,7 +4675,16 @@ def remove_gallery_bird(bird_index: int) -> None:
     if not (0 <= bird_index < len(birds)):
         return
     removed = birds.pop(bird_index)
-    remove_compare_bird(removed)
+    removed_key = gallery_bird_key(removed)
+    mapping = compare_by_bird_map()
+    mapping.pop(removed_key, None)
+    for owner, items in list(mapping.items()):
+        kept = [item for item in items if gallery_bird_key(item) != removed_key]
+        if kept:
+            mapping[owner] = kept
+        else:
+            mapping.pop(owner, None)
+    st.session_state.gallery_compare_by_bird = mapping
     if not birds:
         close_gallery()
         return
@@ -2699,7 +4693,7 @@ def remove_gallery_bird(bird_index: int) -> None:
     if current == bird_index:
         st.session_state.gallery_bird_index = min(bird_index, len(birds) - 1)
         st.session_state.gallery_image_index = 0
-        st.session_state.gallery_show_info = False
+        st.session_state.gallery_show_info = gallery_info_visible_default()
     elif current > bird_index:
         st.session_state.gallery_bird_index = current - 1
     indices = st.session_state.get("gallery_list_image_indices") or {}
@@ -2719,20 +4713,21 @@ def remove_gallery_bird(bird_index: int) -> None:
 
 
 def clear_compare_list() -> None:
-    """Remove every bird from the compare list."""
-    st.session_state.gallery_compare_birds = []
+    """Remove every compare bird for the current gallery bird."""
+    set_current_compare_birds([])
     st.session_state.pop("gallery_compare_bird_index", None)
     st.session_state.pop("gallery_compare_image_index", None)
 
 
 def render_compare_gallery() -> None:
     """Render comparison birds beneath the main gallery bird."""
-    compare_birds = st.session_state.get("gallery_compare_birds") or []
+    sync_compare_list_for_current_bird()
+    compare_birds = current_compare_birds()
     if not compare_birds:
         return
 
     compare_birds = annotate_gallery_birds_with_life_lists(compare_birds)
-    st.session_state.gallery_compare_birds = compare_birds
+    set_current_compare_birds(compare_birds, dirty=False)
 
     compare_index = int(st.session_state.get("gallery_compare_bird_index", 0))
     compare_index = max(0, min(compare_index, len(compare_birds) - 1))
@@ -2792,11 +4787,13 @@ def render_compare_gallery() -> None:
         image_index = int(st.session_state.get("gallery_compare_image_index", 0))
         image_index = max(0, min(image_index, len(photos) - 1))
         photo = photos[image_index]
+        compare_bird = compare_birds[compare_index]
         compare_frame = gallery_frame_color(compare_bird)
         swipe = swipe_image(
             photo["image_url"],
             height=420,
             frame_color=compare_frame,
+            frame_style=gallery_frame_style(compare_bird),
             key=f"compare_swipe_{compare_index}_{image_index}_{gallery_bird_key(compare_bird)}",
         )
         if isinstance(swipe, dict):
@@ -2812,7 +4809,7 @@ def render_compare_gallery() -> None:
                     st.rerun()
 
         show_nav = gallery_nav_buttons_visible()
-        show_image_pos = bool(st.session_state.get("gallery_show_legends", True))
+        show_image_pos = gallery_legends_visible()
         image_pos_html = (
             f"<div style='text-align:center'>Image {image_index + 1}/{len(photos)}</div>"
         )
@@ -2882,12 +4879,18 @@ def render_gallery() -> None:
     region_code = st.session_state.get("checklists_region") or os.environ.get(
         "EBIRD_HOME_REGION", "US-FL-099"
     )
+    coerce_life_list_scope_widget(
+        region_code=str(region_code or ""),
+        birds=birds,
+    )
 
-    pending_mode = st.session_state.pop("gallery_view_mode_pending", None)
-    if pending_mode in {"summary", "list", "standard"}:
+    if st.session_state.get("gallery_view_mode") == "list":
+        st.session_state.gallery_view_mode = "summary"
+    pending_mode = st.session_state.get("gallery_view_mode_pending")
+    if pending_mode == "list":
+        pending_mode = "summary"
+    if pending_mode in {"summary", "standard"}:
         st.session_state.gallery_view_mode = pending_mode
-        if "gallery_view_mode_radio" in st.session_state:
-            st.session_state.gallery_view_mode_radio = pending_mode
     if "gallery_view_mode" not in st.session_state:
         st.session_state.gallery_view_mode = "summary"
 
@@ -2895,101 +4898,12 @@ def render_gallery() -> None:
     if open_idx is not None and 0 <= open_idx < len(birds):
         open_gallery_standard_for_bird(open_idx)
 
-    if "gallery_show_legends" not in st.session_state:
-        st.session_state.gallery_show_legends = True
-    if "gallery_show_nav_buttons" not in st.session_state:
-        st.session_state.gallery_show_nav_buttons = True
+    apply_gallery_chrome_defaults()
 
     saved_id = str(st.session_state.get("gallery_saved_id") or "").strip()
-    menu_col, title_col = st.columns([1, 16], vertical_alignment="center")
-    with menu_col:
-        with st.popover(
-            " ",
-            icon=":material/menu:",
-            help="Navigation, save, filter, view, and legends",
-        ):
-            render_app_nav_buttons(current="gallery", key_prefix="gallery_nav")
-            st.divider()
-            if st.button(
-                "Save gallery",
-                icon=":material/save:",
-                help="Save this gallery and get a link",
-                type="primary" if st.session_state.get("gallery_saved_dirty") else "secondary",
-                use_container_width=True,
-                key="gallery_save",
-            ):
-                if save_current_gallery():
-                    st.rerun()
-            if saved_id:
-                confirm_key = "confirm_delete_open_gallery"
-                if st.session_state.get(confirm_key) == saved_id:
-                    if st.button(
-                        "Confirm delete",
-                        icon=":material/delete:",
-                        help="Tap to permanently delete this saved gallery",
-                        type="primary",
-                        use_container_width=True,
-                        key="gallery_delete_confirm",
-                    ):
-                        st.session_state.pop(confirm_key, None)
-                        delete_saved_gallery(saved_id)
-                        close_gallery()
-                elif st.button(
-                    "Delete saved gallery",
-                    icon=":material/delete:",
-                    help="Delete this saved gallery",
-                    use_container_width=True,
-                    key="gallery_delete",
-                ):
-                    st.session_state[confirm_key] = saved_id
-                    st.rerun()
-            st.divider()
-            gallery_scope = current_life_list_scope()
-            if "life_list_scope" not in st.session_state:
-                st.session_state.life_list_scope = gallery_scope
-            st.radio(
-                "Filter new birds by",
-                options=["all", "region", "world"],
-                format_func=lambda value: {
-                    "all": "All birds",
-                    "region": f"New to region ({region_code or 'region'})",
-                    "world": "New to world",
-                }[value],
-                key="life_list_scope",
-                on_change=_sync_life_list_scope_pref,
-                help="Same filter as the checklists screen. Highlights: teal = new to world, amber = new to region, gray = already on both lists.",
-            )
-            st.session_state.life_list_scope_pref = current_life_list_scope()
-            st.divider()
-            gallery_mode = current_gallery_view_mode()
-            if "gallery_view_mode_radio" not in st.session_state:
-                st.session_state.gallery_view_mode_radio = gallery_mode
-            st.radio(
-                "Gallery view",
-                options=["summary", "list", "standard"],
-                format_func=lambda value: {
-                    "summary": "Summary",
-                    "list": "List",
-                    "standard": "Standard",
-                }[value],
-                key="gallery_view_mode_radio",
-                help="Summary matches the checklist thumbnail grid. List shows swipeable photos. Standard is one bird at a time. Tap a summary photo for Standard view.",
-            )
-            st.session_state.gallery_view_mode = st.session_state.gallery_view_mode_radio
-            st.divider()
-            render_gallery_sort_controls()
-            st.divider()
-            st.checkbox(
-                "Show legends",
-                key="gallery_show_legends",
-                help="Also shows the Image 1/200 counter and the × buttons that remove a bird from this gallery.",
-            )
-            st.checkbox(
-                "Show bird and photo buttons",
-                key="gallery_show_nav_buttons",
-                help="◀ ▶ change birds and ← → change photos. When off, swipe the image instead.",
-            )
-    with title_col:
+    gallery_menu_help = "Navigation, save, filter, view, and legends"
+
+    def _gallery_name_input() -> None:
         if "gallery_name" not in st.session_state:
             st.session_state.gallery_name = str(
                 st.session_state.get("gallery_title") or default_gallery_name()
@@ -3002,21 +4916,77 @@ def render_gallery() -> None:
             help="Defaults to the date and time. Edit to give this gallery a specific name.",
             on_change=_on_gallery_name_change,
         )
+
+    if current_ui_layout() == "desktop":
+        render_desktop_nav_panel(
+            screen="gallery",
+            saved_id=saved_id,
+            region_code=str(region_code or ""),
+            birds=birds,
+        )
+        show_menu = not desktop_nav_panel_open()
+        if show_menu:
+            menu_col, title_col, region_col = st.columns(
+                [1, 10, 4], vertical_alignment="center"
+            )
+            with menu_col:
+                render_nav_show_button(help=gallery_menu_help)
+            with title_col:
+                _gallery_name_input()
+            with region_col:
+                render_region_chip(screen="gallery")
+        else:
+            title_col, region_col = st.columns([4, 1.4], vertical_alignment="center")
+            with title_col:
+                _gallery_name_input()
+            with region_col:
+                render_region_chip(screen="gallery")
+    else:
+        menu_col, title_col, region_col = st.columns(
+            [1, 10, 4], vertical_alignment="center"
+        )
+        with menu_col:
+            with st.popover(":material/menu:", help=gallery_menu_help):
+                render_app_nav_buttons(current="gallery", key_prefix="gallery_nav")
+                st.divider()
+                render_gallery_menu_controls(
+                    saved_id=saved_id,
+                    region_code=str(region_code or ""),
+                    birds=birds,
+                )
+        with title_col:
+            _gallery_name_input()
+        with region_col:
+            render_region_chip(screen="gallery")
     st.session_state.gallery_title = (
         str(st.session_state.get("gallery_name") or "").strip()
         or default_gallery_name()
     )
+    if "gallery_notes" not in st.session_state:
+        st.session_state.gallery_notes = default_gallery_notes(
+            title=str(st.session_state.gallery_title),
+            source_title=str(st.session_state.get("gallery_source_title") or ""),
+            species_count=len(birds),
+            region_code=str(region_code or ""),
+            checklist_id=str(st.session_state.get("gallery_checklist_id") or ""),
+        )
+    with st.expander("Notes", expanded=False):
+        st.text_area(
+            "Notes",
+            key="gallery_notes",
+            height=140,
+            label_visibility="collapsed",
+            help="Defaults to how this gallery was built. Saved with the gallery.",
+            on_change=_on_gallery_notes_change,
+        )
 
-    gallery_scope = current_life_list_scope()
+    gallery_scopes = current_life_list_scopes(region_code=str(region_code or ""))
     gallery_mode = current_gallery_view_mode()
-    show_legends = bool(st.session_state.get("gallery_show_legends", True))
+    show_legends = gallery_legends_visible()
 
     if show_legends and gallery_mode != "summary":
         st.markdown(
-            f"Frame colors · "
-            f"<span style='color:{FRAME_COLOR_WORLD}'>■</span> new to world · "
-            f"<span style='color:{FRAME_COLOR_REGION}'>■</span> new to region · "
-            f"<span style='color:{FRAME_COLOR_SEEN}'>■</span> already counted",
+            f"Frame colors · {novelty_legend_html()}",
             unsafe_allow_html=True,
         )
 
@@ -3025,29 +4995,35 @@ def render_gallery() -> None:
         [
             idx
             for idx, item in enumerate(birds)
-            if gallery_bird_matches_scope(item, gallery_scope)
+            if gallery_bird_matches_scopes(item, gallery_scopes)
         ],
     )
     st.session_state.gallery_visible_indices = visible_indices
     if not visible_indices:
         st.info(
             "No birds match this filter in the current gallery."
-            if gallery_scope != "all"
+            if gallery_scopes
             else "No birds available for the gallery."
         )
         return
 
     if gallery_mode == "summary":
-        render_gallery_summary(birds, visible_indices)
+        render_gallery_summary(
+            birds,
+            visible_indices,
+            region_code=str(region_code or ""),
+        )
         return
-    if gallery_mode == "list":
-        render_gallery_list(birds, visible_indices, gallery_scope)
-        return
 
-    render_gallery_standard(birds, visible_indices, gallery_scope)
+    render_gallery_standard(birds, visible_indices, gallery_scopes)
 
 
-def render_gallery_summary(birds: list[dict], visible_indices: list[int]) -> None:
+def render_gallery_summary(
+    birds: list[dict],
+    visible_indices: list[int],
+    *,
+    region_code: str = "",
+) -> None:
     """Thumbnail grid; tap a photo to open Standard view without leaving the session."""
     width = 144
     st.markdown(
@@ -3125,12 +5101,13 @@ div[class*="st-key-gallery_summary_remove_"] button {{
             name = str(bird.get("name") or code or "Open")
             photo = inaturalist_photo_for_code(str(code), sci) if code else None
             alt = html.escape(name or "species", quote=True)
+            outline = gallery_frame_outline_css(bird)
             if photo and photo.get("image_url"):
                 src = html.escape(str(photo["image_url"]), quote=True)
                 inner = (
                     f'<img src="{src}" alt="{alt}" '
                     f'style="width:{width}px;height:{width}px;'
-                    f'object-fit:cover;display:block;margin:0;padding:0;border:0"/>'
+                    f'object-fit:cover;display:block;margin:0;padding:0;border:0;{outline}"/>'
                 )
             else:
                 label = html.escape((name[:10] or "—"), quote=False)
@@ -3138,7 +5115,7 @@ div[class*="st-key-gallery_summary_remove_"] button {{
                     f'<div style="width:{width}px;height:{width}px;'
                     f'display:flex;align-items:center;justify-content:center;'
                     f'font-size:11px;color:#64748b;background:#f1f5f9;'
-                    f'margin:0;padding:0">{label}</div>'
+                    f'margin:0;padding:0;{outline}">{label}</div>'
                 )
             st.markdown(inner, unsafe_allow_html=True)
             if st.button(
@@ -3149,122 +5126,35 @@ div[class*="st-key-gallery_summary_remove_"] button {{
                 use_container_width=True,
             ):
                 open_gallery_standard_for_bird(bird_index)
-            if st.session_state.get("gallery_show_legends", True) and st.button(
+            if gallery_remove_visible() and st.button(
                 "×",
                 key=f"gallery_summary_remove_{bird_index}",
                 help=f"Remove {name} from this gallery",
                 type="tertiary",
             ):
                 remove_gallery_bird(bird_index)
-    if st.session_state.get("gallery_show_legends", True):
-        st.caption(f"{len(visible_indices)} species · tap a photo for Standard view · × removes")
-    else:
-        st.caption(f"{len(visible_indices)} species")
-
-
-def render_gallery_list(
-    birds: list[dict],
-    visible_indices: list[int],
-    gallery_scope: str,
-) -> None:
-    """Browse all matching birds with swipeable main photos."""
-    if st.session_state.get("gallery_show_legends", True):
-        st.caption(f"{len(visible_indices)} birds · tap a name for Standard view · × removes")
-    visible_birds = [birds[idx] for idx in visible_indices]
-    ensure_gallery_image_cache(visible_birds, max_photos=24)
-    last_swipe = st.session_state.setdefault("gallery_list_last_swipe_t", {})
-
-    for start in range(0, len(visible_indices), 2):
-        cols = st.columns(2)
-        for col, bird_index in zip(cols, visible_indices[start : start + 2]):
-            with col:
-                bird = birds[bird_index]
-                frame_color = gallery_frame_color(bird)
-                payload = gallery_payload_for_code(
-                    bird.get("code") or "",
-                    bird.get("sciName") or None,
-                    max_photos=24,
-                )
-                photos = (payload or {}).get("photos") or []
-                common = (
-                    (payload or {}).get("common_name")
-                    or bird.get("name")
-                    or "Unknown"
-                )
-                label = common
-                if gallery_bird_is_new_world(bird):
-                    label = f"{label} · new to world"
-                elif gallery_bird_is_new_region(bird):
-                    label = f"{label} · new to region"
-
-                show_remove = st.session_state.get("gallery_show_legends", True)
-                if show_remove:
-                    open_col, remove_col = st.columns(
-                        [6, 1], vertical_alignment="center"
-                    )
-                else:
-                    open_col = st.container()
-                    remove_col = None
-                with open_col:
-                    if st.button(
-                        label,
-                        use_container_width=True,
-                        key=f"gallery_list_open_{bird_index}",
-                        help="Open Standard view for this bird",
-                    ):
-                        open_gallery_standard_for_bird(bird_index)
-                if remove_col is not None:
-                    with remove_col:
-                        if st.button(
-                            "×",
-                            use_container_width=True,
-                            key=f"gallery_list_remove_{bird_index}",
-                            help=f"Remove {common} from this gallery",
-                            type="tertiary",
-                        ):
-                            remove_gallery_bird(bird_index)
-
-                if not photos:
-                    st.info("No photos found.")
-                    continue
-
-                image_index = gallery_list_image_index(bird_index)
-                image_index = max(0, min(image_index, len(photos) - 1))
-                if image_index != gallery_list_image_index(bird_index):
-                    set_gallery_list_image_index(bird_index, image_index)
-                photo = photos[image_index]
-
-                swipe = swipe_image(
-                    photo["image_url"],
-                    height=220,
-                    image_only=True,
-                    frame_color=frame_color,
-                    key=f"gallery_list_swipe_{bird_index}_{image_index}_{gallery_scope}",
-                )
-                if isinstance(swipe, dict):
-                    action = str(swipe.get("action") or "")
-                    swipe_t = swipe.get("t")
-                    swipe_key = str(bird_index)
-                    if (
-                        action in {"image_next", "image_prev"}
-                        and swipe_t != last_swipe.get(swipe_key)
-                    ):
-                        last_swipe[swipe_key] = swipe_t
-                        if action == "image_next" and image_index < len(photos) - 1:
-                            set_gallery_list_image_index(bird_index, image_index + 1)
-                            st.rerun()
-                        elif action == "image_prev" and image_index > 0:
-                            set_gallery_list_image_index(bird_index, image_index - 1)
-                            st.rerun()
-
-                if st.session_state.get("gallery_show_legends", True):
-                    st.caption(f"Photo {image_index + 1} of {len(photos)}")
+    shown = len(visible_indices)
+    total = len(birds)
+    shown_label = (
+        f"{shown} of {total} species"
+        if shown != total
+        else f"{shown} species"
+    )
+    caption_bits = [shown_label]
+    if gallery_legends_visible():
+        caption_bits.append("tap a photo for Standard view")
+    if gallery_remove_visible():
+        caption_bits.append("× removes")
+    st.caption(" · ".join(caption_bits))
+    count_lines = gallery_filter_count_lines(birds, region_code=region_code)
+    if count_lines:
+        st.markdown("  \n".join(count_lines))
 
 
 def render_gallery_standard(
     birds: list[dict],
     visible_indices: list[int],
-    gallery_scope: str,
+    gallery_scopes: list[str],
 ) -> None:
     """One-bird-at-a-time gallery with compare and similar species."""
     region_code = st.session_state.get("checklists_region") or os.environ.get(
@@ -3302,7 +5192,7 @@ def render_gallery_standard(
             ):
                 st.session_state.gallery_bird_index = visible_indices[visible_pos - 1]
                 st.session_state.gallery_image_index = 0
-                st.session_state.gallery_show_info = False
+                st.session_state.gallery_show_info = gallery_info_visible_default()
                 st.rerun()
         with nav_next:
             if st.button(
@@ -3315,18 +5205,22 @@ def render_gallery_standard(
             ):
                 st.session_state.gallery_bird_index = visible_indices[visible_pos + 1]
                 st.session_state.gallery_image_index = 0
-                st.session_state.gallery_show_info = False
+                st.session_state.gallery_show_info = gallery_info_visible_default()
                 st.rerun()
     else:
         nav_name = st.container()
     with nav_name:
         label = common
-        if gallery_bird_is_new_world(bird):
-            label = f"{label} · new to world"
-        elif gallery_bird_is_new_region(bird):
-            label = f"{label} · new to region"
+        extra = novelty_labels(
+            is_new_world=gallery_bird_is_new_world(bird),
+            is_new_region=gallery_bird_is_new_region(bird),
+            is_foy_world=gallery_bird_is_foy_world(bird),
+            is_foy_region=gallery_bird_is_foy_region(bird),
+        )
+        if extra:
+            label = f"{label} · {', '.join(extra)}"
         label = f"{label} · {visible_pos + 1}/{len(visible_indices)}"
-        show_remove = st.session_state.get("gallery_show_legends", True)
+        show_remove = gallery_remove_visible()
         if show_remove:
             name_col, remove_col = st.columns(
                 [6, 1], vertical_alignment="center"
@@ -3339,6 +5233,7 @@ def render_gallery_standard(
                 label,
                 use_container_width=True,
                 key="gallery_open_info",
+                help="Show or hide bird info",
             ):
                 st.session_state.gallery_show_info = not st.session_state.get(
                     "gallery_show_info", False
@@ -3366,7 +5261,8 @@ def render_gallery_standard(
             photo["image_url"],
             height=420,
             frame_color=frame_color,
-            key=f"gallery_swipe_{bird_index}_{image_index}_{gallery_scope}",
+            frame_style=gallery_frame_style(bird),
+            key=f"gallery_swipe_{bird_index}_{image_index}_{','.join(gallery_scopes)}",
         )
         if isinstance(swipe, dict):
             action = str(swipe.get("action") or "")
@@ -3381,7 +5277,7 @@ def render_gallery_standard(
                     st.rerun()
 
         show_nav = gallery_nav_buttons_visible()
-        show_image_pos = bool(st.session_state.get("gallery_show_legends", True))
+        show_image_pos = gallery_legends_visible()
         image_pos_html = (
             f"<div style='text-align:center'>Image {image_index + 1}/{len(photos)}</div>"
         )
@@ -3440,6 +5336,51 @@ def render_gallery_standard(
         if links:
             st.markdown(" · ".join(links))
 
+        species_code = str(bird.get("code") or "").strip()
+        region_label = region_display_names(str(region_code or ""), allow_api=False)[0]
+        mine_col, region_col = st.columns(2, vertical_alignment="top")
+        with mine_col:
+            st.markdown("**My recent sightings**")
+            from my_ebird_data import my_ebird_data_path
+
+            if not configured_observer_names() and my_ebird_data_path() is None:
+                st.write(
+                    "Add a My eBird data CSV, or set `EBIRD_USER_DISPLAY_NAME` "
+                    "to your public eBird checklist name."
+                )
+            elif not species_code:
+                st.write("This gallery bird has no eBird species code.")
+            else:
+                mine = local_own_recent_sightings_for_species(species_code, limit=5)
+                if not mine:
+                    st.write("No personal sightings of this species in the export or cached checklists.")
+                else:
+                    render_cached_sighting_lines(
+                        mine,
+                        highlight_region=str(region_code or ""),
+                    )
+        with region_col:
+            st.markdown("**Recent sightings in this region**")
+            if not species_code:
+                st.write("This gallery bird has no eBird species code.")
+            else:
+                sightings = local_recent_sightings_for_species(
+                    str(region_code or ""),
+                    species_code,
+                    limit=5,
+                )
+                if not sightings:
+                    st.write(
+                        f"No cached checklists in {region_label or region_code} "
+                        "include this species."
+                    )
+                else:
+                    render_cached_sighting_lines(sightings)
+        st.caption(
+            "Highlighted rows in My recent sightings are in the current region. "
+            "Both lists use downloaded checklists only."
+        )
+
         st.markdown("**Data sources**")
         sources = (payload or {}).get("sources") or [
             "No source metadata available for this species."
@@ -3478,16 +5419,13 @@ def render_gallery_standard(
             ):
                 add_compare_bird(bird)
                 st.rerun()
-        if st.session_state.get("gallery_show_legends", True):
+        if gallery_legends_visible():
             st.caption(
                 "Species often confused with this one on iNaturalist. "
                 f"Regional last-seen uses eBird data for {region_code}."
             )
             st.markdown(
-                f"Highlights · "
-                f"<span style='color:{FRAME_COLOR_WORLD}'>■</span> new to world · "
-                f"<span style='color:{FRAME_COLOR_REGION}'>■</span> new to region · "
-                f"<span style='color:{FRAME_COLOR_SEEN}'>■</span> already counted",
+                f"Highlights · {novelty_legend_html()}",
                 unsafe_allow_html=True,
             )
         if "gallery_hide_similar_never_seen" not in st.session_state:
@@ -3549,15 +5487,14 @@ def render_gallery_standard(
                     cols = st.columns(3)
                     for col, item in zip(cols, similar[start : start + 3]):
                         with col:
-                            frame_color = (
-                                item.get("frame_color")
-                                or gallery_frame_color(similar_item_to_bird(item))
-                            )
+                            similar_bird = similar_item_to_bird(item)
+                            frame_color = gallery_frame_color(similar_bird)
+                            frame_style = gallery_frame_style(similar_bird)
                             image_url = str(item.get("image_url") or "").strip()
                             if image_url:
                                 src = html.escape(image_url, quote=True)
                                 st.markdown(
-                                    f"<div style='border:4px solid {frame_color};"
+                                    f"<div style='border:4px {frame_style} {frame_color};"
                                     f"border-radius:10px;padding:4px;"
                                     f"box-sizing:border-box;line-height:0'>"
                                     f"<img src='{src}' alt='' "
@@ -3565,7 +5502,6 @@ def render_gallery_standard(
                                     f"border-radius:6px;margin:0'/></div>",
                                     unsafe_allow_html=True,
                                 )
-                            similar_bird = similar_item_to_bird(item)
                             name = similar_bird["name"]
                             novelty = item.get("novelty_label") or ""
                             title = f"**{name}**"
@@ -3622,6 +5558,7 @@ def load_life_list(region_code: str) -> dict[str, set[str]] | None:
     Returns dict with:
       - common: normalized common names
       - sci: binomial scientific names
+      - last_by_common / last_by_sci: latest CSV Date per species
     """
     birds = load_life_list_birds(region_code)
     if birds is None:
@@ -3632,42 +5569,128 @@ def load_life_list(region_code: str) -> dict[str, set[str]] | None:
         for bird in birds
         if bird.get("sciName")
     }
-    return {"common": common, "sci": sci}
+    last_by_common: dict[str, date] = {}
+    last_by_sci: dict[str, date] = {}
+    for bird in birds:
+        last_day = bird.get("last_day")
+        if not isinstance(last_day, date):
+            continue
+        name_key = normalize_common_name(str(bird.get("name") or ""))
+        if name_key:
+            previous = last_by_common.get(name_key)
+            if previous is None or last_day > previous:
+                last_by_common[name_key] = last_day
+        sci_key = binomial_sci_name(str(bird.get("sciName") or ""))
+        if sci_key:
+            previous = last_by_sci.get(sci_key)
+            if previous is None or last_day > previous:
+                last_by_sci[sci_key] = last_day
+    return {
+        "common": common,
+        "sci": sci,
+        "last_by_common": last_by_common,
+        "last_by_sci": last_by_sci,
+    }
+
+
+def _life_list_bird_key(name: str, sci_name: str) -> str:
+    display = name.split(" (", 1)[0].strip() or name
+    if display:
+        return normalize_common_name(display)
+    return binomial_sci_name(sci_name)
+
+
+def _merge_life_list_bird(
+    birds: list[dict],
+    index_by_key: dict[str, int],
+    *,
+    name: str,
+    sci_name: str,
+    code: str = "",
+    last_day: date | None = None,
+    taxon_order: float | None = None,
+) -> None:
+    display = name.split(" (", 1)[0].strip() or name or sci_name
+    key = _life_list_bird_key(display, sci_name)
+    if not key:
+        return
+    existing_idx = index_by_key.get(key)
+    if existing_idx is not None:
+        existing = birds[existing_idx]
+        if last_day is not None:
+            previous = existing.get("last_day")
+            if not isinstance(previous, date) or last_day > previous:
+                existing["last_day"] = last_day
+        if code and not existing.get("code"):
+            existing["code"] = code
+        if taxon_order is not None and existing.get("taxon_order") is None:
+            existing["taxon_order"] = taxon_order
+        return
+    index_by_key[key] = len(birds)
+    birds.append(
+        {
+            "name": display,
+            "sciName": sci_name,
+            "code": code,
+            "last_day": last_day,
+            "taxon_order": taxon_order,
+        }
+    )
 
 
 def load_life_list_birds(region_code: str) -> list[dict] | None:
-    """Load ordered life-list species rows for gallery browsing."""
-    path = life_list_path(region_code)
-    if not path.exists():
-        return None
+    """Load ordered life-list species rows for gallery browsing.
 
+    Merges ``lifeLists/ebird_<region>_life_list.csv`` with ticks from the
+    My eBird data export when that file is present.
+    """
+    path = life_list_path(region_code)
     birds: list[dict] = []
-    seen: set[str] = set()
-    with path.open(newline="", encoding="utf-8") as handle:
-        reader = csv.DictReader(handle)
-        for row in reader:
-            category = (row.get("Category") or "").strip().casefold()
-            if category and category != "species":
-                continue
-            countable = (row.get("Countable") or "1").strip()
-            if countable == "0":
-                continue
-            name = (row.get("Common Name") or "").strip()
-            sci_name = (row.get("Scientific Name") or "").strip()
-            if not name and not sci_name:
-                continue
-            display = name.split(" (", 1)[0].strip() or name or sci_name
-            key = normalize_common_name(display) if name else binomial_sci_name(sci_name)
-            if key in seen:
-                continue
-            seen.add(key)
-            birds.append(
-                {
-                    "name": display,
-                    "sciName": sci_name,
-                    "code": "",
-                }
+    index_by_key: dict[str, int] = {}
+    if path.exists():
+        with path.open(newline="", encoding="utf-8") as handle:
+            reader = csv.DictReader(handle)
+            for row in reader:
+                category = (row.get("Category") or "").strip().casefold()
+                if category and category != "species":
+                    continue
+                countable = (row.get("Countable") or "1").strip()
+                if countable == "0":
+                    continue
+                name = (row.get("Common Name") or "").strip()
+                sci_name = (row.get("Scientific Name") or "").strip()
+                if not name and not sci_name:
+                    continue
+                _merge_life_list_bird(
+                    birds,
+                    index_by_key,
+                    name=name,
+                    sci_name=sci_name,
+                    last_day=parse_ebird_obs_day(str(row.get("Date") or "")),
+                )
+    try:
+        from my_ebird_data import my_ebird_life_list_birds
+    except Exception:
+        my_ebird_life_list_birds = None  # type: ignore[assignment]
+    if my_ebird_life_list_birds is not None:
+        for row in my_ebird_life_list_birds(region_code):
+            _merge_life_list_bird(
+                birds,
+                index_by_key,
+                name=str(row.get("name") or ""),
+                sci_name=str(row.get("sciName") or ""),
+                code=str(row.get("code") or ""),
+                last_day=row.get("last_day") if isinstance(row.get("last_day"), date) else None,
+                taxon_order=row.get("taxon_order") if isinstance(row.get("taxon_order"), (int, float)) else None,
             )
+    if not birds:
+        return None
+    birds.sort(
+        key=lambda bird: (
+            bird.get("taxon_order") if isinstance(bird.get("taxon_order"), (int, float)) else float("inf"),
+            str(bird.get("name") or "").casefold(),
+        )
+    )
     return birds
 
 
@@ -3684,38 +5707,90 @@ def open_life_list_gallery(region_code: str, *, title: str) -> None:
     if not birds:
         st.warning(f"No species found for life list `{region_code}`.")
         return
-    open_gallery(birds, title=title)
+    extra = [f"Opened from the {region_code} life list."]
+    try:
+        from my_ebird_data import my_ebird_data_path
+
+        export_path = my_ebird_data_path()
+        if export_path is not None:
+            extra.append(f"Includes ticks from `{export_path.name}`.")
+    except Exception:
+        pass
+    csv_path = life_list_path(region_code)
+    if csv_path.exists():
+        extra.append(f"Includes `{csv_path.name}`.")
+    open_gallery(
+        birds,
+        title=title,
+        notes=default_gallery_notes(
+            title=title,
+            source_title="Life list",
+            species_count=len(birds),
+            region_code="" if region_code == WORLD_LIFE_LIST_CODE else region_code,
+            extra_lines=extra,
+        ),
+    )
+
+
+def render_life_list_gallery_links() -> None:
+    """World and region life-list gallery shortcuts."""
+    region_code = selected_region_code()
+    world_life = load_life_list(WORLD_LIFE_LIST_CODE)
+    region_life = load_life_list(region_code) if region_code else None
+    world_total = life_list_total(world_life)
+    region_total = life_list_total(region_life)
+    _, region_label = region_display_names(region_code, allow_api=False)
+    total_cols = st.columns(2)
+    with total_cols[0]:
+        if world_total is None:
+            st.warning(
+                f"No world life list at `{life_list_path(WORLD_LIFE_LIST_CODE)}`."
+            )
+        else:
+            st.caption("World life list")
+            if st.button(
+                f"{world_total} species",
+                key="gallery_world_life_list",
+                type="tertiary",
+                help="Open world life list gallery",
+            ):
+                open_life_list_gallery(
+                    WORLD_LIFE_LIST_CODE,
+                    title="World life list gallery",
+                )
+    with total_cols[1]:
+        if region_code and region_total is None:
+            st.warning(
+                f"No region life list at `{life_list_path(region_code)}`."
+            )
+        elif region_total is not None:
+            st.caption(f"Region life list ({region_label or region_code})")
+            if st.button(
+                f"{region_total} species",
+                key="gallery_region_life_list",
+                type="tertiary",
+                help=f"Open region life list gallery for {region_code}",
+            ):
+                open_life_list_gallery(
+                    region_code,
+                    title=f"Region life list gallery · {region_code}",
+                )
+        else:
+            st.caption("Region life list")
+            st.write("—")
 
 
 def load_region_species_gallery_birds(region_code: str) -> list[dict]:
     """Resolve the full eBird regional species list into gallery bird rows.
 
-    ``/product/spplist/{region}`` returns only species codes. Taxonomy batches
-    supply common/scientific names; non-species categories are skipped.
+    Uses the on-disk region species cache when present. Otherwise
+    ``/product/spplist/{region}`` codes are fetched, named via taxonomy, and
+    written back to ``ebird_region_species_cache.json``.
     """
     code = (region_code or "").strip()
     if not code:
         return []
-    client = EBirdClient()
-    species_codes = client.region_species_codes(code)
-    if not species_codes:
-        return []
-    taxa = client.species_taxa(species_codes)
-    birds: list[dict] = []
-    for species_code in species_codes:
-        taxon = taxa.get(species_code) or {}
-        category = str(taxon.get("category") or "species").strip().casefold()
-        if category and category != "species":
-            continue
-        name = str(taxon.get("comName") or species_code).strip()
-        birds.append(
-            {
-                "code": species_code,
-                "name": name.split(" (", 1)[0].strip() or name,
-                "sciName": str(taxon.get("sciName") or "").strip(),
-            }
-        )
-    return birds
+    return EBirdClient().region_species_birds(code)
 
 
 def open_region_species_gallery(region_code: str) -> None:
@@ -3741,7 +5816,21 @@ def open_region_species_gallery(region_code: str) -> None:
     if not birds:
         st.warning(f"No species found for region `{code}`.")
         return
-    open_gallery(birds, title=f"Region species gallery · {code}")
+    extra = [
+        "Opened from the full eBird historical species list for this region.",
+        "This is every species ever reported in the region, not only your ticks.",
+    ]
+    open_gallery(
+        birds,
+        title=f"Region species gallery · {code}",
+        notes=default_gallery_notes(
+            title=f"Region species gallery · {code}",
+            source_title="Region species list",
+            species_count=len(birds),
+            region_code=code,
+            extra_lines=extra,
+        ),
+    )
 
 
 def load_life_list_names(region_code: str) -> set[str] | None:
@@ -3769,6 +5858,91 @@ def is_new_to_life_list(taxon: dict, life: dict[str, set[str]] | None) -> bool |
     return True
 
 
+def is_new_to_region_life_list(
+    taxon: dict,
+    region_life: dict[str, set[str]] | None,
+    world_life: dict[str, set[str]] | None,
+) -> bool | None:
+    """New to the region only when the bird is already on the world life list."""
+    region_new = is_new_to_life_list(taxon, region_life)
+    if region_new is None:
+        return None
+    if is_new_to_life_list(taxon, world_life) is not False:
+        return False
+    return bool(region_new)
+
+
+def life_list_last_day(taxon: dict, life: dict[str, set[str]] | None) -> date | None:
+    """Most recent date from the My eBird data export or a life-list CSV."""
+    if not life:
+        return None
+    common = normalize_common_name(str(taxon.get("comName") or taxon.get("name") or ""))
+    last_by_common = life.get("last_by_common") or {}
+    if common and isinstance(last_by_common, dict) and common in last_by_common:
+        day = last_by_common[common]
+        return day if isinstance(day, date) else None
+    sci = binomial_sci_name(str(taxon.get("sciName") or ""))
+    last_by_sci = life.get("last_by_sci") or {}
+    if sci and isinstance(last_by_sci, dict) and sci in last_by_sci:
+        day = last_by_sci[sci]
+        return day if isinstance(day, date) else None
+    return None
+
+
+def is_missing_first_of_year(
+    taxon: dict,
+    *,
+    year: int,
+    life: dict[str, set[str]] | None,
+    obs_day: date | None,
+) -> bool:
+    """True when the bird is on the life list but last seen before ``year``."""
+    if life is None:
+        return False
+    if is_new_to_life_list(taxon, life) is not False:
+        return False
+    if obs_day is not None and obs_day.year == year:
+        return False
+    last_day = life_list_last_day(taxon, life)
+    return last_day is None or last_day.year < year
+
+
+def is_recorded_in_region_this_year(
+    taxon: dict,
+    *,
+    year: int,
+    region_life: dict[str, set[str]] | None,
+    obs_day: date | None = None,
+    obs_is_in_region: bool = False,
+) -> bool:
+    """True when the bird was seen in the selected region this calendar year."""
+    last_day = life_list_last_day(taxon, region_life)
+    if last_day is not None and last_day.year >= year:
+        return True
+    return bool(
+        obs_is_in_region and obs_day is not None and obs_day.year == year
+    )
+
+
+def novelty_labels(
+    *,
+    is_new_world: bool,
+    is_new_region: bool,
+    is_foy_world: bool = False,
+    is_foy_region: bool = False,
+) -> list[str]:
+    labels: list[str] = []
+    if is_new_world:
+        labels.append("new to world")
+    elif is_new_region:
+        labels.append("new to region")
+    if is_foy_world and not is_new_world:
+        labels.append("missing FoY world")
+    elif is_foy_region and not is_new_region:
+        labels.append("missing FoY region")
+    return labels
+
+
 def obs_is_new_for_scope(obs: dict, scope: str) -> bool:
     """Whether an observation is new for the selected life-list scope."""
     if scope == "world":
@@ -3777,6 +5951,12 @@ def obs_is_new_for_scope(obs: dict, scope: str) -> bool:
         if "is_new_region" in obs:
             return bool(obs.get("is_new_region"))
         return bool(obs.get("is_new"))
+    if scope == "foy_world":
+        return bool(obs.get("is_foy_world"))
+    if scope == "foy_region":
+        return bool(obs.get("is_foy_region"))
+    if scope == "recorded":
+        return bool(obs.get("is_recorded_region"))
     return False
 
 
@@ -3785,23 +5965,55 @@ def summary_is_new_for_scope(item: dict, scope: str) -> bool:
         return bool(item.get("New_world"))
     if scope == "region":
         return bool(item.get("New_region") or item.get("New"))
+    if scope == "foy_world":
+        return bool(item.get("FoY_world") or item.get("is_foy_world"))
+    if scope == "foy_region":
+        return bool(item.get("FoY_region") or item.get("is_foy_region"))
+    if scope == "recorded":
+        return bool(item.get("Recorded") or item.get("is_recorded_region"))
     return False
 
 
-def new_bird_marker(is_new_region: bool, is_new_world: bool, *, scope: str) -> str:
-    """Build a short marker for region/world new status."""
+def new_bird_marker(
+    is_new_region: bool,
+    is_new_world: bool,
+    *,
+    scope: str,
+    is_foy_region: bool = False,
+    is_foy_world: bool = False,
+) -> str:
+    """Build a short marker for region/world new and missing-FoY status."""
     if scope == "region":
-        return " · **new to region**" if is_new_region else ""
+        bits: list[str] = []
+        if is_new_region:
+            bits.append("new to region")
+        elif is_foy_region:
+            bits.append("missing FoY region")
+        if not bits:
+            return ""
+        return " · **" + ", ".join(bits) + "**"
     if scope == "world":
-        return " · **new to world**" if is_new_world else ""
-    bits: list[str] = []
-    if is_new_world:
-        bits.append("new to world")
-    elif is_new_region:
-        bits.append("new to region")
-    if not bits:
+        bits = []
+        if is_new_world:
+            bits.append("new to world")
+        elif is_foy_world:
+            bits.append("missing FoY world")
+        if not bits:
+            return ""
+        return " · **" + ", ".join(bits) + "**"
+    if scope == "foy_world":
+        return " · **missing FoY world**" if is_foy_world else ""
+    if scope == "foy_region":
+        return " · **missing FoY region**" if is_foy_region else ""
+    labels = novelty_labels(
+        is_new_world=is_new_world,
+        is_new_region=is_new_region,
+        is_foy_world=is_foy_world,
+        is_foy_region=is_foy_region,
+    )
+    if not labels:
         return ""
-    return " · **" + ", ".join(bits) + "**"
+    return " · **" + ", ".join(labels) + "**"
 
 
 def parse_obs_count(value: object) -> int | None:
@@ -3833,6 +6045,9 @@ def build_species_summary(rows: list[dict]) -> list[dict]:
                     "Checklists": 0,
                     "New_region": False,
                     "New_world": False,
+                    "FoY_region": False,
+                    "FoY_world": False,
+                    "Recorded": False,
                     "code": obs.get("code") or "",
                     "sciName": obs.get("sciName") or "",
                     "_checklist_ids": set(),
@@ -3857,6 +6072,12 @@ def build_species_summary(rows: list[dict]) -> list[dict]:
                 entry["New_region"] = True
             if obs.get("is_new_world"):
                 entry["New_world"] = True
+            if obs.get("is_foy_region"):
+                entry["FoY_region"] = True
+            if obs.get("is_foy_world"):
+                entry["FoY_world"] = True
+            if obs.get("is_recorded_region"):
+                entry["Recorded"] = True
 
     results: list[dict] = []
     for entry in summary.values():
@@ -3867,6 +6088,9 @@ def build_species_summary(rows: list[dict]) -> list[dict]:
                 "Checklists": len(entry["_checklist_ids"]),
                 "New_region": entry["New_region"],
                 "New_world": entry["New_world"],
+                "FoY_region": entry["FoY_region"],
+                "FoY_world": entry["FoY_world"],
+                "Recorded": entry["Recorded"],
                 # Backward-compatible alias used by gallery open_gallery.
                 "New": entry["New_region"],
                 "code": entry.get("code") or "",
@@ -3904,13 +6128,18 @@ def _filter_regions_or_all(
     return matches if matches else list(rows)
 
 
-def render_region_code_lookup(*, session_key: str = "checklists_region") -> None:
+def render_region_code_lookup(
+    *,
+    session_key: str = "checklists_region",
+    in_expander: bool = True,
+) -> None:
     """Country → state → county picker that writes an eBird region code."""
-    with st.expander("Look up region code", expanded=False):
-        st.caption(
-            "Browse eBird regions by name, then apply the code to the field above. "
-            "Pick a country and state first, then filter for a county name."
-        )
+    def _body() -> None:
+        if in_expander:
+            st.caption(
+                "Browse eBird regions by name, then apply the code. "
+                "Pick a country and state first, then filter for a county name."
+            )
         query = st.text_input(
             "Filter by name or code",
             key=f"{session_key}_region_lookup_query",
@@ -4062,16 +6291,23 @@ def render_region_code_lookup(*, session_key: str = "checklists_region") -> None
             type="primary",
             use_container_width=True,
         ):
-            # Only update the logical region here. The Region code text input
-            # already exists this run, so its widget key is synced on rerun.
             st.session_state[session_key] = selected_code
+            st.session_state.pop("_region_display_names", None)
+            apply_region_code(selected_code)
             st.rerun()
+
+    if in_expander:
+        with st.expander("Look up region code", expanded=False):
+            _body()
+    else:
+        _body()
 
 
 def render_region_code_input(
     *,
     session_key: str = "checklists_region",
     help: str,
+    lookup_in_expander: bool = True,
 ) -> str:
     """Region-code text field plus lookup, without mutating the widget after create."""
     default_region = os.environ.get("EBIRD_HOME_REGION", "US-FL-099")
@@ -4087,8 +6323,143 @@ def render_region_code_input(
     ).strip()
     if region_code:
         st.session_state[session_key] = region_code
-    render_region_code_lookup(session_key=session_key)
+    render_region_code_lookup(
+        session_key=session_key,
+        in_expander=lookup_in_expander,
+    )
     return str(st.session_state.get(session_key) or "").strip()
+
+
+def leave_region_select() -> None:
+    """Save the chosen region and return to the previous screen."""
+    apply_region_code(selected_region_code())
+    previous = st.session_state.pop("dashboard_before_region", None)
+    if previous == "gallery":
+        go_dashboard("gallery")
+    elif previous in DASHBOARD_SCREENS and previous != "region":
+        go_dashboard(previous)
+    else:
+        go_dashboard("checklists")
+
+
+def render_region_select() -> None:
+    """Dedicated screen for choosing the eBird region."""
+    render_page_header("Region", screen="region")
+    st.caption(
+        "This region is used by Checklists, Checklist cache, Cache maintenance, "
+        "and gallery filters."
+    )
+    code = selected_region_code()
+    short, long_name = region_display_names(code, allow_api=True)
+    if code:
+        st.write(f"**{long_name}**")
+        if short != code:
+            st.caption(code)
+    else:
+        st.info("No region selected yet.")
+    if st.button(
+        "Open full region species gallery",
+        key="gallery_region_species_list",
+        use_container_width=True,
+        help=(
+            "Loads every species ever recorded in this region from "
+            "eBird /product/spplist, resolves names via taxonomy, and opens "
+            "the gallery."
+        ),
+        disabled=not bool(code),
+    ):
+        if ensure_api_key():
+            open_region_species_gallery(code)
+    render_recent_region_buttons(code)
+    render_region_code_input(
+        help=(
+            "eBird region, e.g. US-FL-099, US-FL, or US. "
+            "Browse by name below if you do not know the code."
+        ),
+        lookup_in_expander=False,
+    )
+    if st.button(
+        "Done",
+        type="primary",
+        use_container_width=True,
+        key="region_select_done",
+    ):
+        leave_region_select()
+
+
+def _checklist_sub_id(row: dict) -> str:
+    return str(row.get("subId") or row.get("subID") or "").strip()
+
+
+def merge_checklist_summaries(*groups: list[dict]) -> list[dict]:
+    """Union checklist rows by id, preferring local ``_detail`` payloads."""
+    found: dict[str, dict] = {}
+    for group in groups:
+        for row in group:
+            if not isinstance(row, dict):
+                continue
+            sub_id = _checklist_sub_id(row)
+            if not sub_id:
+                continue
+            current = found.get(sub_id)
+            if current is None:
+                found[sub_id] = dict(row)
+                continue
+            merged = dict(current)
+            for key, value in row.items():
+                if key == "_detail":
+                    if value and not merged.get("_detail"):
+                        merged["_detail"] = value
+                    continue
+                if not merged.get(key) and value not in (None, ""):
+                    merged[key] = value
+            found[sub_id] = merged
+    return sorted(
+        found.values(),
+        key=lambda row: str(row.get("isoObsDate") or row.get("obsDt") or ""),
+        reverse=True,
+    )
+
+
+def load_checklists_for_date_windows(
+    region_code: str,
+    loc_id: str,
+    start: date,
+    end: date,
+    *,
+    prior_years: int = 0,
+    client: EBirdClient | None = None,
+) -> list[dict]:
+    """Load hotspot checklists for the date range and the same window in prior years.
+
+    Local detail files and the regional daily-feed cache are used first. The
+    eBird API is called only for missing feed days (and today), and those
+    results are written back into the feed cache.
+    """
+    slices = download_window_slices(start, end, prior_years=max(0, int(prior_years)))
+    groups: list[list[dict]] = []
+    for _year, window_start, window_end in slices:
+        groups.append(
+            load_local_checklists_for_hotspot(
+                region_code,
+                loc_id,
+                start_date=window_start,
+                end_date=window_end,
+            )
+        )
+        if client is not None:
+            api_rows = client.location_checklists(
+                loc_id,
+                start_date=window_start,
+                end_date=window_end,
+                region_code=region_code,
+                persist=True,
+            )
+            for row in api_rows:
+                if isinstance(row, dict) and region_code:
+                    row.setdefault("regionCode", region_code)
+            groups.append(api_rows)
+    return merge_checklist_summaries(*groups)
 
 
 def enrich_checklists(
@@ -4098,14 +6469,22 @@ def enrich_checklists(
     world_life: dict[str, set[str]] | None = None,
     *,
     allow_api: bool = True,
+    region_code: str | None = None,
 ) -> list[dict]:
     """Attach species names and life-list-new counts to checklist summaries.
 
     When a row already includes ``_detail`` (local cache), that payload is used.
-    Otherwise details are fetched via the eBird API when ``allow_api`` is true.
+    Otherwise details are fetched via the eBird API when ``allow_api`` is true,
+    then written into the on-disk checklist cache.
     """
     details: dict[str, dict] = {}
     codes: list[str] = []
+    persist_region = str(
+        region_code
+        or st.session_state.get("checklists_region")
+        or os.environ.get("EBIRD_HOME_REGION", "")
+        or ""
+    ).strip()
     for row in rows:
         sub_id = str(row.get("subId") or row.get("subID") or "")
         if not sub_id:
@@ -4116,6 +6495,14 @@ def enrich_checklists(
         elif allow_api and client is not None:
             detail = client.checklist(sub_id)
             details[sub_id] = detail
+            save_region = str(
+                row.get("regionCode") or row.get("_region") or persist_region or ""
+            ).strip()
+            if save_region and detail:
+                saved = save_checklist_detail(save_region, row, detail)
+                if saved is not None:
+                    row["_detail"] = detail
+                    row["_path"] = str(saved)
         else:
             details[sub_id] = {}
         for obs in details[sub_id].get("obs") or []:
@@ -4126,7 +6513,9 @@ def enrich_checklists(
     if allow_api and client is not None and codes:
         taxa_by_code = client.species_taxa(codes)
     else:
-        taxa_by_code = {}
+        taxa_by_code = load_cached_taxa(codes) if codes else {}
+    this_year = date.today().year
+
     enriched: list[dict] = []
     for row in rows:
         sub_id = str(row.get("subId") or row.get("subID") or "")
@@ -4135,23 +6524,65 @@ def enrich_checklists(
         new_region_names: list[str] = []
         new_world_names: list[str] = []
         seen_codes: set[str] = set()
+        obs_day = parse_ebird_obs_day(
+            str(row.get("isoObsDate") or row.get("obsDt") or "")
+        )
         for obs in detail.get("obs") or []:
             code = str(obs.get("speciesCode") or "")
-            if not code or code in seen_codes:
+            taxon = taxa_by_code.get(code, {}) if code else {}
+            common = taxon.get("comName") or obs.get("comName") or code
+            sci_name = taxon.get("sciName") or obs.get("sciName") or ""
+            identity = (
+                code
+                or binomial_sci_name(str(sci_name))
+                or normalize_common_name(str(common))
+            )
+            if not identity or identity in seen_codes:
                 continue
-            seen_codes.add(code)
-            taxon = taxa_by_code.get(code, {})
-            common = taxon.get("comName") or code
-            sci_name = taxon.get("sciName") or ""
+            seen_codes.add(identity)
             count = (
                 obs.get("howManyAtleast")
                 or obs.get("howMany")
                 or obs.get("howManyStr")
                 or ""
             )
-            taxon_for_match = taxon or {"comName": common, "sciName": sci_name}
-            is_new_region = is_new_to_life_list(taxon_for_match, region_life)
+            taxon_for_match = {
+                "comName": common,
+                "sciName": sci_name,
+                "category": taxon.get("category") or "",
+            }
+            is_new_region = is_new_to_region_life_list(
+                taxon_for_match, region_life, world_life
+            )
             is_new_world = is_new_to_life_list(taxon_for_match, world_life)
+            is_foy_region = is_missing_first_of_year(
+                taxon_for_match,
+                year=this_year,
+                life=region_life,
+                obs_day=obs_day,
+            )
+            is_foy_world = is_missing_first_of_year(
+                taxon_for_match,
+                year=this_year,
+                life=world_life,
+                obs_day=obs_day,
+            )
+            row_region = str(
+                row.get("regionCode") or row.get("_region") or persist_region or ""
+            ).strip()
+            obs_is_in_region = bool(persist_region) and (
+                not row_region
+                or row_region == persist_region
+                or row_region.startswith(persist_region + "-")
+                or persist_region.startswith(row_region + "-")
+            )
+            is_recorded_region = is_recorded_in_region_this_year(
+                taxon_for_match,
+                year=this_year,
+                region_life=region_life,
+                obs_day=obs_day,
+                obs_is_in_region=obs_is_in_region,
+            )
             if is_new_region:
                 new_region_names.append(common)
             if is_new_world:
@@ -4164,6 +6595,9 @@ def enrich_checklists(
                     "count": count,
                     "is_new_region": bool(is_new_region),
                     "is_new_world": bool(is_new_world),
+                    "is_foy_region": is_foy_region,
+                    "is_foy_world": is_foy_world,
+                    "is_recorded_region": is_recorded_region,
                     # Prefer region for legacy consumers / default gallery mark.
                     "is_new": bool(is_new_region),
                     "category": taxon.get("category") or "",
@@ -4253,7 +6687,8 @@ def render_general_cache_maintenance() -> None:
         key="ui_layout_mode_radio",
         on_change=_sync_ui_layout_pref,
         help="Applies to every screen. Desktop uses the full browser width. "
-        "Mobile constrains the layout to a phone-sized column.",
+        "Mobile constrains the layout to a phone-sized column. "
+        "iPhone browsers start in mobile; you can still switch here.",
     )
     st.caption(
         "Local API and image caches. Checklist feeds/details are reported separately "
@@ -4261,9 +6696,7 @@ def render_general_cache_maintenance() -> None:
         "region’s historical species list."
     )
 
-    region_code = render_region_code_input(
-        help="Uses the same region selection as Checklists / Checklist cache.",
-    )
+    region_code = selected_region_code()
 
     coverage: dict = {}
     if region_code:
@@ -4599,8 +7032,9 @@ def render_checklist_download_maintenance(
 
     st.subheader("Download missing checklist details")
     st.caption(
-        "Runs in a separate process. The worker stays below 60 calls/minute "
-        "(37.5/min) and pauses for eBird’s Retry-After interval on HTTP 429."
+        "Every eBird HTTP call goes through ``EBirdClient.get``, which spaces "
+        "requests at 37.5/min (shared with this app) and pauses for eBird’s "
+        "Retry-After interval on HTTP 429."
     )
 
     if st.button(
@@ -4682,12 +7116,22 @@ def render_checklist_download_maintenance(
         finish_at = finished_at
 
     scope_bits: list[str] = []
-    if progress.get("day"):
+    if progress.get("windows"):
+        scope_bits.append(str(progress["windows"]))
+    elif progress.get("start_day") or progress.get("end_day"):
+        scope_bits.append(
+            f"{progress.get('start_day') or '…'}–{progress.get('end_day') or '…'}"
+        )
+    if progress.get("day") and not progress.get("windows"):
         scope_bits.append(f"day {progress['day']}")
+    if progress.get("prior_years"):
+        scope_bits.append(f"{int(progress['prior_years'])} prior year(s)")
     if progress.get("loc_id"):
         scope_bits.append(f"hotspot {progress['loc_id']}")
     if progress.get("min_species"):
         scope_bits.append(f"≥{int(progress['min_species'])} species")
+    if progress.get("phase") == "feed":
+        scope_bits.append("filling daily feed")
     scope_label = " · ".join(scope_bits) if scope_bits else "all missing in year"
 
     if total:
@@ -4761,12 +7205,14 @@ def render_checklist_download_maintenance(
         )
 
     st.markdown("**Download scope**")
+    if st.session_state.get("checklist_download_scope") == "day":
+        st.session_state.checklist_download_scope = "range"
     scope = st.radio(
         "Scope",
-        options=["all", "day", "hotspot"],
+        options=["all", "range", "hotspot"],
         format_func=lambda value: {
             "all": "All missing for year",
-            "day": "One day only",
+            "range": "Date range",
             "hotspot": "One hotspot only",
         }[value],
         horizontal=True,
@@ -4790,28 +7236,69 @@ def render_checklist_download_maintenance(
         )
     )
 
-    selected_day: str | None = None
+    selected_start: str | None = None
+    selected_end: str | None = None
     selected_loc: str | None = None
-    day_options = [
-        str(row.get("day") or "")
-        for row in (days or [])
-        if str(row.get("day") or "")
-        and int(row.get("expected") or 0) > int(row.get("downloaded") or 0)
-    ]
-    if not day_options:
-        day_options = [str(row.get("day") or "") for row in (days or []) if row.get("day")]
+    prior_years = 0
+    today = date.today()
+    year_start = date(int(year), 1, 1)
+    year_end = date(int(year), 12, 31) if int(year) < today.year else today
+    if year_start > year_end:
+        year_end = year_start
 
-    if scope == "day":
-        if day_options:
-            selected_day = st.selectbox(
-                "Day",
-                options=day_options,
-                key="checklist_download_day",
-                disabled=active,
-                help="Download only missing checklist details for this observation day.",
+    if scope == "range":
+        if (
+            st.session_state.get("checklist_download_range_year") != int(year)
+            or "checklist_download_range" not in st.session_state
+        ):
+            default_start = (
+                date(int(year), today.month, 1)
+                if int(year) == today.year
+                else year_start
             )
-        else:
-            st.warning("No days available in the feed cache status.")
+            if default_start < year_start:
+                default_start = year_start
+            if default_start > year_end:
+                default_start = year_end
+            st.session_state.checklist_download_range = (default_start, year_end)
+            st.session_state.checklist_download_range_year = int(year)
+        range_value = st.date_input(
+            "Days / months to download",
+            min_value=date(2002, 1, 1),
+            max_value=today,
+            key="checklist_download_range",
+            disabled=active,
+            help="Inclusive observation-date window. One day or several months.",
+        )
+        parsed = parse_streamlit_date_range(range_value)
+        if parsed:
+            selected_start, selected_end = (
+                parsed[0].isoformat(),
+                parsed[1].isoformat(),
+            )
+        include_prior = st.checkbox(
+            "Also download this same period from prior years",
+            key="checklist_download_prior",
+            disabled=active,
+            help="Repeats this month/day window in earlier years (needs daily feeds for those years; missing days are fetched first).",
+        )
+        if include_prior:
+            prior_years = int(
+                st.number_input(
+                    "Prior years",
+                    min_value=1,
+                    max_value=15,
+                    value=1,
+                    step=1,
+                    key="checklist_download_prior_years",
+                    disabled=active,
+                    help="1 = last year as well, 2 = the two previous years, and so on.",
+                )
+            )
+            if parsed:
+                st.caption(prior_year_download_caption(parsed[0], parsed[1], prior_years))
+        elif parsed:
+            st.caption(prior_year_download_caption(parsed[0], parsed[1], 0))
     elif scope == "hotspot":
         hotspot_rows = [
             row
@@ -4862,7 +7349,7 @@ def render_checklist_download_maintenance(
             "Resume / start download",
             type="primary",
             disabled=active
-            or (scope == "day" and not selected_day)
+            or (scope == "range" and not selected_start)
             or (scope == "hotspot" and not selected_loc),
             use_container_width=True,
             help="Starts a separate, resumable worker for missing checklist details.",
@@ -4905,22 +7392,23 @@ def render_checklist_download_maintenance(
         error = _start_checklist_download(
             region_code,
             year,
-            day=selected_day,
+            start_day=selected_start,
+            end_day=selected_end,
             loc_id=selected_loc,
             min_species=min_species,
+            prior_years=prior_years,
         )
         if error:
             st.error(f"Could not start background downloader: {error}")
         else:
-            label = (
-                "all missing in year"
-                if scope == "all"
-                else (
-                    f"day {selected_day}"
-                    if selected_day
-                    else f"hotspot {selected_loc}"
-                )
-            )
+            if scope == "all":
+                label = "all missing in year"
+            elif selected_start:
+                label = f"{selected_start}–{selected_end or selected_start}"
+                if prior_years:
+                    label = f"{label} + {prior_years} prior year(s)"
+            else:
+                label = f"hotspot {selected_loc}"
             if min_species > 0:
                 label = f"{label} · ≥{min_species} species"
             st.success(
@@ -4939,9 +7427,7 @@ def render_cache_status() -> None:
         "daily feed cache. Days and hotspots are derived from on-disk files."
     )
 
-    region_code = render_region_code_input(
-        help="eBird region, e.g. US-FL-099. Use Look up region code if you only know the name.",
-    )
+    region_code = selected_region_code()
 
     current_year = date.today().year
     stored_year = int(st.session_state.get("cache_status_year", current_year))
@@ -5018,7 +7504,7 @@ def render_cache_status() -> None:
         st.session_state["cache_status_force_refresh"] = True
 
     if not region_code:
-        st.info("Enter a region code to inspect the checklist cache.")
+        st.info("Select a region to inspect the checklist cache.")
         return
 
     interval_seconds = None if auto_refresh == "never" else int(auto_refresh)
@@ -5037,7 +7523,7 @@ def render_cache_status() -> None:
             st.session_state.get("cache_status_year", date.today().year)
         )
         if not live_region:
-            st.info("Enter a region code to inspect the checklist cache.")
+            st.info("Select a region to inspect the checklist cache.")
             return
         if interval_seconds:
             label = {
@@ -5473,115 +7959,156 @@ def _render_cache_status_body(
     )
 
 
+HOTSPOT_DROPDOWN_LIMIT = 100
+RECENT_REGIONS_MAX = 10
+RECENT_REGIONS_PATH = Path(__file__).parent / "ebird_recent_regions.json"
+
+
+def load_recent_checklist_regions() -> list[str]:
+    stored = st.session_state.get("recent_checklist_regions")
+    if isinstance(stored, list):
+        return [str(code).strip() for code in stored if str(code).strip()][:RECENT_REGIONS_MAX]
+    rows: list[str] = []
+    try:
+        payload = json.loads(RECENT_REGIONS_PATH.read_text(encoding="utf-8"))
+        if isinstance(payload, list):
+            rows = [str(code).strip() for code in payload if str(code).strip()]
+    except (OSError, json.JSONDecodeError):
+        rows = []
+    home = str(os.environ.get("EBIRD_HOME_REGION", "US-FL-099") or "").strip()
+    if home and home not in rows:
+        rows.append(home)
+    rows = rows[:RECENT_REGIONS_MAX]
+    st.session_state.recent_checklist_regions = rows
+    return rows
+
+
+def remember_checklist_region(code: str) -> None:
+    region = str(code or "").strip()
+    if not region:
+        return
+    items = [item for item in load_recent_checklist_regions() if item != region]
+    items.insert(0, region)
+    items = items[:RECENT_REGIONS_MAX]
+    st.session_state.recent_checklist_regions = items
+    try:
+        RECENT_REGIONS_PATH.write_text(
+            json.dumps(items, indent=2) + "\n", encoding="utf-8"
+        )
+    except OSError:
+        pass
+
+
+def hotspot_dropdown_rows(region_code: str) -> list[dict]:
+    """Top hotspots for the dropdown, without expanding a full-region cache."""
+    region = str(region_code or "").strip()
+    if not region:
+        return []
+    cached = load_cached_hotspots(region)
+    if not cached:
+        return []
+    return sort_hotspots(filter_hotspots_for_region(cached, region))[
+        :HOTSPOT_DROPDOWN_LIMIT
+    ]
+
+
+def apply_checklist_hotspots(
+    region: str,
+    rows: list[dict],
+    *,
+    remember: bool = True,
+) -> None:
+    previous = str(st.session_state.get("checklists_hotspots_region") or "")
+    rows = filter_hotspots_for_region(rows, region)
+    st.session_state.checklists_region = region
+    st.session_state.checklists_hotspots = rows
+    st.session_state.checklists_hotspots_region = region
+    hotspot_ids = [row["locId"] for row in rows if row.get("locId")]
+    if hotspot_ids and st.session_state.get("checklists_loc_id") not in hotspot_ids:
+        st.session_state.checklists_loc_id = (
+            DEFAULT_HOTSPOT_ID
+            if DEFAULT_HOTSPOT_ID in hotspot_ids
+            else hotspot_ids[0]
+        )
+    if previous != region:
+        st.session_state.pop("checklist_rows", None)
+        st.session_state.pop("checklist_summaries", None)
+        st.session_state.pop("checklist_shown", None)
+        st.session_state.pop("checklist_source", None)
+    if remember:
+        remember_checklist_region(region)
+
+
+def apply_region_code(code: str) -> None:
+    """Store the selected region and refresh hotspot rows for Checklists."""
+    region = str(code or "").strip()
+    if not region:
+        return
+    st.session_state.checklists_region = region
+    names = st.session_state.get("_region_display_names")
+    if isinstance(names, dict):
+        names.pop(region, None)
+    rows = hotspot_dropdown_rows(region)
+    if not rows and get_api_key():
+        try:
+            rows = EBirdClient().top_hotspots(region, limit=HOTSPOT_DROPDOWN_LIMIT)
+        except Exception:
+            rows = []
+    apply_checklist_hotspots(region, rows)
+
+
+def select_checklist_region(code: str) -> None:
+    """Switch region and reset the hotspot dropdown to the top 100."""
+    apply_region_code(code)
+    st.rerun()
+
+
+def render_recent_region_buttons(current: str) -> None:
+    recents = load_recent_checklist_regions()
+    if not recents:
+        return
+    st.caption("Recent regions")
+    for start in range(0, len(recents), 5):
+        chunk = recents[start : start + 5]
+        cols = st.columns(5)
+        for col, code in zip(cols, chunk):
+            with col:
+                short, _ = region_display_names(code, allow_api=False)
+                if st.button(
+                    short,
+                    key=f"recent_region_{code}",
+                    use_container_width=True,
+                    type="primary" if code == current else "secondary",
+                    help=code if short != code else None,
+                ):
+                    select_checklist_region(code)
+
+
 def render_checklists() -> None:
     render_page_header("Checklists", screen="checklists")
     st.caption(
-        "Pick a region, choose a top hotspot, then browse recent checklists. "
-        "New-bird counts use `lifeLists/ebird_world_life_list.csv` and "
+        "Choose a top hotspot, then browse recent checklists. "
+        "Tap the region name in the upper right to change region. "
+        "New-bird counts use your My eBird data export when present, plus "
+        "`lifeLists/ebird_world_life_list.csv` and "
         "`lifeLists/ebird_<region>_life_list.csv`."
     )
 
-    region_code = render_region_code_input(
-        help=(
-            "eBird region, e.g. US-FL-099, US-FL, or US. "
-            "Use Look up region code if you only know the place name."
-        ),
-    )
-
-    world_life = load_life_list(WORLD_LIFE_LIST_CODE)
-    region_life = load_life_list(region_code) if region_code else None
-    world_total = life_list_total(world_life)
-    region_total = life_list_total(region_life)
-
-    if st.button(
-        "Open full region species gallery",
-        key="gallery_region_species_list",
-        use_container_width=True,
-        help=(
-            "Loads every species ever recorded in this region from "
-            "eBird /product/spplist, resolves names via taxonomy, and opens "
-            "the gallery."
-        ),
-        disabled=not bool(region_code),
-    ):
-        if ensure_api_key():
-            open_region_species_gallery(region_code)
-
-    total_cols = st.columns(2)
-    with total_cols[0]:
-        if world_total is None:
-            st.warning(
-                f"No world life list at `{life_list_path(WORLD_LIFE_LIST_CODE)}`."
-            )
-        else:
-            st.caption("World life list")
-            if st.button(
-                f"{world_total} species",
-                key="gallery_world_life_list",
-                type="tertiary",
-                help="Open world life list gallery",
-            ):
-                open_life_list_gallery(
-                    WORLD_LIFE_LIST_CODE,
-                    title="World life list gallery",
-                )
-    with total_cols[1]:
-        if region_code and region_total is None:
-            st.warning(
-                f"No region life list at `{life_list_path(region_code)}`."
-            )
-        elif region_total is not None:
-            st.caption(f"Region life list ({region_code})")
-            if st.button(
-                f"{region_total} species",
-                key="gallery_region_life_list",
-                type="tertiary",
-                help=f"Open region life list gallery for {region_code}",
-            ):
-                open_life_list_gallery(
-                    region_code,
-                    title=f"Region life list gallery · {region_code}",
-                )
-        else:
-            st.caption("Region life list")
-            st.write("—")
-
-    if "life_list_scope" not in st.session_state:
-        st.session_state.life_list_scope = current_life_list_scope()
-    life_scope = st.radio(
-        "Filter new birds by",
-        options=["all", "region", "world"],
-        format_func=lambda value: {
-            "all": "All birds",
-            "region": f"New to region ({region_code or 'region'})",
-            "world": "New to world",
-        }[value],
-        horizontal=True,
-        key="life_list_scope",
-        on_change=_sync_life_list_scope_pref,
-        help="Controls which birds count as “new” in the summary, checklists, and gallery.",
-    )
-    st.session_state.life_list_scope_pref = life_scope
-
-    def apply_hotspots(region: str, rows: list[dict]) -> None:
-        st.session_state.checklists_region = region
-        st.session_state.checklists_hotspots = rows
-        hotspot_ids = [h["locId"] for h in rows if h.get("locId")]
-        if hotspot_ids and st.session_state.get("checklists_loc_id") not in hotspot_ids:
-            st.session_state.checklists_loc_id = (
-                DEFAULT_HOTSPOT_ID
-                if DEFAULT_HOTSPOT_ID in hotspot_ids
-                else hotspot_ids[0]
-            )
+    region_code = selected_region_code()
+    life_scope = "all"
 
     hotspots: list[dict] = []
-    if region_code:
-        if st.session_state.get("checklists_region") == region_code:
-            hotspots = list(st.session_state.get("checklists_hotspots") or [])
-        if not hotspots:
-            hotspots = load_cached_hotspots(region_code)
-            if hotspots:
-                apply_hotspots(region_code, hotspots)
+    loaded_region = str(st.session_state.get("checklists_hotspots_region") or "")
+    if region_code and loaded_region == region_code:
+        hotspots = filter_hotspots_for_region(
+            list(st.session_state.get("checklists_hotspots") or []),
+            region_code,
+        )
+        if hotspots != list(st.session_state.get("checklists_hotspots") or []):
+            apply_checklist_hotspots(region_code, hotspots, remember=False)
+    elif region_code:
+        hotspots = hotspot_dropdown_rows(region_code)
+        apply_checklist_hotspots(region_code, hotspots, remember=bool(hotspots))
 
     load_label = "Load additional hotspots" if hotspots else "Load hotspots"
     if st.button(
@@ -5589,19 +8116,32 @@ def render_checklists() -> None:
         key="load_hotspots_button",
         type="primary" if not hotspots else "secondary",
         help=(
-            "Fetch hotspots for this region that are not already in the "
-            "dropdown / on-disk cache."
+            "With an empty dropdown, fetch the top 100 hotspots. "
+            "If the dropdown already has the top 100, this adds the rest of the region."
         ),
     ):
         if not region_code:
             st.warning("Enter a region code.")
         elif ensure_api_key():
-            with st.spinner(f"Loading additional hotspots for {region_code}…"):
+            spinner = (
+                f"Loading additional hotspots for {region_code}…"
+                if hotspots
+                else f"Loading top {HOTSPOT_DROPDOWN_LIMIT} hotspots for {region_code}…"
+            )
+            with st.spinner(spinner):
                 try:
-                    merged, added = EBirdClient().additional_hotspots(
-                        region_code,
-                        existing=hotspots,
-                    )
+                    client = EBirdClient()
+                    if hotspots:
+                        merged, added = client.additional_hotspots(
+                            region_code,
+                            existing=hotspots,
+                        )
+                    else:
+                        merged = client.top_hotspots(
+                            region_code,
+                            limit=HOTSPOT_DROPDOWN_LIMIT,
+                        )
+                        added = merged
                 except MissingEbirdApiKey:
                     ensure_api_key()
                 except requests.HTTPError as exc:
@@ -5611,17 +8151,26 @@ def render_checklists() -> None:
                 except Exception as exc:
                     st.error(str(exc))
                 else:
-                    apply_hotspots(region_code, merged)
+                    apply_checklist_hotspots(region_code, merged)
                     hotspots = merged
-                    if added:
+                    if not merged:
+                        st.warning(f"No hotspots found for {region_code}.")
+                    elif added and len(merged) <= HOTSPOT_DROPDOWN_LIMIT:
                         st.success(
-                            f"Added {len(added):,} hotspot{'s' if len(added) != 1 else ''} "
+                            f"Loaded {len(merged):,} hotspot"
+                            f"{'' if len(merged) == 1 else 's'} "
+                            f"(top {HOTSPOT_DROPDOWN_LIMIT})."
+                        )
+                    elif added:
+                        st.success(
+                            f"Added {len(added):,} hotspot"
+                            f"{'' if len(added) == 1 else 's'} "
                             f"({len(merged):,} total)."
                         )
-                    elif merged:
-                        st.info(f"No additional hotspots. {len(merged):,} already cached.")
                     else:
-                        st.warning(f"No hotspots found for {region_code}.")
+                        st.info(
+                            f"No additional hotspots. {len(merged):,} already cached."
+                        )
 
     if not hotspots:
         st.info("Enter a region and click Load hotspots.")
@@ -5640,17 +8189,57 @@ def render_checklists() -> None:
         options=loc_ids,
         index=index,
         format_func=lambda lid: labels.get(lid, lid),
-        help="Cached hotspots for this region, ordered by all-time species count.",
+        help="Top 100 hotspots for this region by all-time species count. Load additional hotspots to expand the list.",
     )
-    end_date = st.date_input(
-        "Last observation day",
-        value=st.session_state.get("checklist_end_date", date.today()),
-        max_value=date.today(),
-        help="Include checklists on this day and the prior days in the range.",
+    today = date.today()
+    if "checklist_end_date_input" not in st.session_state:
+        previous_end = st.session_state.get("checklist_end_date", today)
+        if not isinstance(previous_end, date):
+            try:
+                previous_end = date.fromisoformat(str(previous_end)[:10])
+            except ValueError:
+                previous_end = today
+        st.session_state.checklist_end_date_input = previous_end
+    if "checklist_start_date_input" not in st.session_state:
+        previous_end = st.session_state.checklist_end_date_input
+        previous_days = int(st.session_state.get("checklist_days") or 7)
+        st.session_state.checklist_start_date_input = previous_end - timedelta(
+            days=max(1, previous_days) - 1
+        )
+    date_cols = st.columns(2)
+    with date_cols[0]:
+        start_date = st.date_input(
+            "Start date",
+            min_value=date(2002, 1, 1),
+            max_value=date(2100, 12, 31),
+            key="checklist_start_date_input",
+            help="First observation day to include. Future dates are allowed.",
+        )
+    with date_cols[1]:
+        end_date = st.date_input(
+            "End date",
+            min_value=date(2002, 1, 1),
+            max_value=date(2100, 12, 31),
+            key="checklist_end_date_input",
+            help="Last observation day to include. Future dates are allowed.",
+        )
+    if start_date > end_date:
+        start_date, end_date = end_date, start_date
+    if "checklists_prior_years" not in st.session_state:
+        st.session_state.checklists_prior_years = 0
+    prior_years = int(
+        st.slider(
+            "Prior years",
+            min_value=0,
+            max_value=15,
+            key="checklists_prior_years",
+            help=(
+                "0 = only this start/end window. 1 also includes the same dates last year "
+                "when showing, caching, and downloading, and so on."
+            ),
+        )
     )
-    days_back = st.slider("Days to include", min_value=1, max_value=30, value=7)
     page_size = 50
-    stored_start = end_date - timedelta(days=days_back - 1)
 
     action_cols = st.columns(3)
     with action_cols[0]:
@@ -5661,7 +8250,7 @@ def render_checklists() -> None:
             use_container_width=True,
             help=(
                 "Browse downloaded checklist files for the selected hotspot "
-                "in the date range above — no eBird checklist API calls."
+                "in the date range above, including prior years if set."
             ),
         )
     with action_cols[2]:
@@ -5670,9 +8259,50 @@ def render_checklists() -> None:
             use_container_width=True,
             help=(
                 "Browse every downloaded checklist for the selected hotspot, "
-                "ignoring the days-to-include limit."
+                "ignoring the start and end dates."
             ),
         )
+
+    with st.expander("Download checklist details for this period"):
+        st.caption(
+            "Downloads missing full checklists for the hotspot and date range above. "
+            "Missing daily-feed days are fetched first."
+        )
+        st.caption(prior_year_download_caption(start_date, end_date, prior_years))
+        download_busy = bool(
+            region_code and _checklist_download_active(region_code, end_date.year)
+        )
+        if st.button(
+            "Download missing details",
+            type="primary",
+            disabled=not region_code or not loc_id or download_busy,
+            use_container_width=True,
+            key="checklists_download_period",
+            help="Starts the same background downloader used on the cache screen.",
+        ):
+            if not ensure_api_key():
+                pass
+            else:
+                error = _start_checklist_download(
+                    region_code,
+                    end_date.year,
+                    start_day=start_date.isoformat(),
+                    end_day=end_date.isoformat(),
+                    loc_id=loc_id,
+                    prior_years=prior_years,
+                )
+                if error:
+                    st.error(f"Could not start background downloader: {error}")
+                else:
+                    label = f"{start_date.isoformat()}–{end_date.isoformat()} · {loc_id}"
+                    if prior_years:
+                        label = f"{label} + {prior_years} prior year(s)"
+                    st.success(
+                        f"Background downloader started ({label}). "
+                        "Watch progress on Checklist cache."
+                    )
+                    time.sleep(0.25)
+                    st.rerun()
 
     if show_api:
         if ensure_api_key():
@@ -5682,17 +8312,21 @@ def render_checklists() -> None:
             with st.spinner("Loading checklists…"):
                 try:
                     client = EBirdClient()
-                    summaries = client.location_checklists(
+                    summaries = load_checklists_for_date_windows(
+                        active_region,
                         loc_id,
-                        days_back=days_back,
-                        end_date=end_date,
+                        start_date,
+                        end_date,
+                        prior_years=prior_years,
+                        client=client,
                     )
-                    first_page = enrich_checklists(
+                    enriched = enrich_checklists(
                         client,
-                        summaries[:page_size],
+                        summaries,
                         life_for_region,
                         life_for_world,
                         allow_api=True,
+                        region_code=active_region,
                     )
                 except MissingEbirdApiKey:
                     ensure_api_key()
@@ -5704,11 +8338,12 @@ def render_checklists() -> None:
                     st.error(str(exc))
                 else:
                     st.session_state.checklists_loc_id = loc_id
-                    st.session_state.checklist_days = days_back
+                    st.session_state.checklist_start_date = start_date
                     st.session_state.checklist_end_date = end_date
+                    st.session_state.checklist_prior_years = prior_years
                     st.session_state.checklist_summaries = summaries
-                    st.session_state.checklist_rows = first_page
-                    st.session_state.checklist_shown = len(first_page)
+                    st.session_state.checklist_rows = enriched
+                    st.session_state.checklist_shown = len(enriched)
                     st.session_state.checklist_life = life_for_region
                     st.session_state.checklist_world_life = life_for_world
                     st.session_state.checklist_hotspot_name = labels.get(loc_id, loc_id)
@@ -5732,11 +8367,12 @@ def render_checklists() -> None:
                     loc_id,
                 )
             else:
-                summaries = load_local_checklists_for_hotspot(
+                summaries = load_checklists_for_date_windows(
                     active_region,
                     loc_id,
-                    start_date=stored_start,
-                    end_date=end_date,
+                    start_date,
+                    end_date,
+                    prior_years=prior_years,
                 )
             # Resolve names via taxonomy when an API key is available; otherwise
             # keep species codes from the cached checklist payload.
@@ -5751,14 +8387,16 @@ def render_checklists() -> None:
                     allow_api = False
             first_page = enrich_checklists(
                 client,
-                summaries[:page_size],
+                summaries,
                 life_for_region,
                 life_for_world,
                 allow_api=allow_api,
+                region_code=active_region,
             )
         st.session_state.checklists_loc_id = loc_id
-        st.session_state.checklist_days = days_back
+        st.session_state.checklist_start_date = start_date
         st.session_state.checklist_end_date = end_date
+        st.session_state.checklist_prior_years = 0 if all_dates else prior_years
         st.session_state.checklist_summaries = summaries
         st.session_state.checklist_rows = first_page
         st.session_state.checklist_shown = len(first_page)
@@ -5780,8 +8418,11 @@ def render_checklists() -> None:
         "checklist_hotspot_name", labels.get(loc_id, loc_id)
     )
     stored_end = st.session_state.get("checklist_end_date", end_date)
-    stored_days = st.session_state.get("checklist_days", days_back)
-    stored_start = stored_end - timedelta(days=stored_days - 1)
+    stored_start = st.session_state.get("checklist_start_date", start_date)
+    if not isinstance(stored_end, date):
+        stored_end = end_date
+    if not isinstance(stored_start, date):
+        stored_start = start_date
     source_label = "local cache" if source == "cache" else "eBird API"
     if source == "cache" and st.session_state.get("checklist_cache_all_dates"):
         obs_days = [
@@ -5802,9 +8443,11 @@ def render_checklists() -> None:
         else:
             range_label = "(all cached dates)"
     else:
-        range_label = (
-            f"from **{stored_start.isoformat()}** to **{stored_end.isoformat()}**"
+        stored_prior = int(st.session_state.get("checklist_prior_years") or 0)
+        windows = download_window_slices(
+            stored_start, stored_end, prior_years=max(0, stored_prior)
         )
+        range_label = f"in **{format_download_windows(windows)}**"
     st.write(
         f"Showing **{len(rows)}** of **{total}** checklist(s) at **{hotspot_name}** "
         f"{range_label} ({source_label})."
@@ -5838,6 +8481,9 @@ def render_checklists() -> None:
                             life_for_region,
                             life_for_world,
                             allow_api=bool(client),
+                            region_code=str(
+                                st.session_state.get("checklists_region") or ""
+                            ),
                         )
                     elif ensure_api_key():
                         more = enrich_checklists(
@@ -5846,6 +8492,9 @@ def render_checklists() -> None:
                             life_for_region,
                             life_for_world,
                             allow_api=True,
+                            region_code=str(
+                                st.session_state.get("checklists_region") or ""
+                            ),
                         )
                 except MissingEbirdApiKey:
                     ensure_api_key()
@@ -5865,7 +8514,6 @@ def render_checklists() -> None:
     loaded_rows = st.session_state.get("checklist_rows", [])
     species_summary = build_species_summary(loaded_rows)
     if species_summary:
-        st.subheader("Species summary")
         if life_scope == "all":
             filtered = species_summary
         else:
@@ -5875,31 +8523,35 @@ def render_checklists() -> None:
                 if summary_is_new_for_scope(row, life_scope)
             ]
         if life_scope != "all" and not filtered:
-            label = "world" if life_scope == "world" else "region"
-            st.info(f"No birds new to your {label} life list in the loaded checklists.")
-        else:
-            if st.button(
-                "Open gallery from summary",
-                type="primary",
-                key="gallery_from_summary",
-            ):
-                open_gallery(
-                    [
-                        {
-                            "code": item.get("code"),
-                            "name": item.get("Species"),
-                            "sciName": item.get("sciName"),
-                            "is_new_region": bool(item.get("New_region")),
-                            "is_new_world": bool(item.get("New_world")),
-                            "is_new": bool(item.get("New_region")),
-                            "New": bool(item.get("New_region")),
-                        }
-                        for item in filtered
-                    ],
-                    title="Species summary gallery",
+            st.subheader("Species summary")
+            st.info(
+                "No birds missing FoY world in the loaded checklists."
+                if life_scope == "foy_world"
+                else (
+                    "No birds missing FoY region in the loaded checklists."
+                    if life_scope == "foy_region"
+                    else (
+                        "No birds new to your "
+                        f"{'world' if life_scope == 'world' else 'region'} "
+                        "life list in the loaded checklists."
+                    )
                 )
-            render_species_thumbnail_table(filtered, columns=6, width=144)
-            st.caption(f"{len(filtered)} species")
+            )
+        else:
+            gallery_birds = species_summary_gallery_birds(filtered)
+            st.session_state.summary_gallery_birds = gallery_birds
+            open_col, name_col = st.columns([1, 16], vertical_alignment="center")
+            with open_col:
+                render_open_gallery_icon_button(
+                    key="open_gallery_icon_summary",
+                    on_click=queue_open_summary_gallery,
+                )
+            with name_col:
+                st.markdown("**Species summary**")
+            render_checklist_species_summary_grid(filtered, width=144)
+            st.caption(
+                f"{len(filtered)} species · tap a photo or the photo-library icon to open the gallery"
+            )
 
     st.subheader("Checklists")
     for row in loaded_rows:
@@ -5920,6 +8572,20 @@ def render_checklists() -> None:
         elif life_scope == "world":
             if world_new is not None:
                 new_bits.append(f"**{world_new} new** to world")
+        elif life_scope == "foy_world":
+            foy_count = sum(
+                1
+                for obs in (row.get("species_rows") or [])
+                if obs_is_new_for_scope(obs, "foy_world")
+            )
+            new_bits.append(f"**{foy_count}** missing FoY world")
+        elif life_scope == "foy_region":
+            foy_count = sum(
+                1
+                for obs in (row.get("species_rows") or [])
+                if obs_is_new_for_scope(obs, "foy_region")
+            )
+            new_bits.append(f"**{foy_count}** missing FoY region")
         else:
             if region_new is not None:
                 new_bits.append(f"**{region_new}** new to region")
@@ -5928,45 +8594,21 @@ def render_checklists() -> None:
         new_label = f" · {' · '.join(new_bits)}" if new_bits else ""
         location_label = f" · {location}" if location else ""
 
+        gallery_rows = checklist_gallery_birds(row, life_scope)
+        date_text = date_label or str(sub_id)
+        if gallery_rows and sub_id:
+            date_md = f"[{date_text}]({checklist_gallery_url(str(sub_id))})"
+        elif date_text:
+            date_md = date_text
+        else:
+            date_md = str(sub_id)
         with st.container(border=True):
             st.markdown(
-                f"**[{date_label}]({checklist_url})** · {species} species · "
-                f"{observer}{location_label}{new_label}"
+                f"**{date_md}** · {species} species · "
+                f"{observer}{location_label}{new_label} · "
+                f"[eBird]({checklist_url})"
             )
             species_rows = row.get("species_rows") or []
-            gallery_rows = species_rows
-            if life_scope != "all":
-                gallery_rows = [
-                    obs
-                    for obs in species_rows
-                    if obs_is_new_for_scope(obs, life_scope)
-                ]
-            if gallery_rows and st.button(
-                "Open gallery",
-                key=f"gallery_checklist_{sub_id}",
-            ):
-                open_gallery(
-                    [
-                        {
-                            "code": obs.get("code"),
-                            "name": obs.get("name"),
-                            "sciName": obs.get("sciName"),
-                            "is_new_region": bool(
-                                obs.get("is_new_region")
-                                if "is_new_region" in obs
-                                else obs.get("is_new")
-                            ),
-                            "is_new_world": bool(obs.get("is_new_world")),
-                            "is_new": bool(
-                                obs.get("is_new_region")
-                                if "is_new_region" in obs
-                                else obs.get("is_new")
-                            ),
-                        }
-                        for obs in gallery_rows
-                    ],
-                    title=f"Checklist gallery · {date_label}",
-                )
             with st.expander("Species"):
                 if not species_rows:
                     # Fallback for older session rows: resolve codes to common names now.
@@ -6031,6 +8673,8 @@ def render_checklists() -> None:
                         ),
                         bool(obs.get("is_new_world")),
                         scope=life_scope,
+                        is_foy_region=bool(obs.get("is_foy_region")),
+                        is_foy_world=bool(obs.get("is_foy_world")),
                     )
                     # new_bird_marker returns markdown; strip ** for plain write
                     plain_marker = (
@@ -6050,20 +8694,32 @@ def render_checklists() -> None:
 
 
 st.set_page_config(page_title="Birds", page_icon="🪶", layout="wide")
+apply_iphone_mobile_layout()
 apply_ui_layout()
+apply_gallery_chrome_defaults()
 get_api_key()  # ingest ?EBIRD_API_KEY=… into session when present
 if st.session_state.get("ebird_api_key_needed") and not get_api_key():
     render_api_key_form()
 render_ebird_rate_limit_notices()
 maybe_open_saved_gallery_from_query()
+maybe_open_checklist_gallery_from_query()
+maybe_open_summary_gallery_from_query()
+consume_open_summary_gallery()
 missing = st.session_state.pop("saved_gallery_missing", None)
 if missing:
     st.warning(f"Saved gallery `{missing}` was not found.")
+missing_checklist = st.session_state.pop("checklist_gallery_missing", None)
+if missing_checklist:
+    st.warning(f"Checklist `{missing_checklist}` was not found in the local cache.")
 dashboard = current_dashboard()
 if dashboard == "gallery" and st.session_state.get("gallery_birds"):
     render_gallery()
+elif dashboard == "mine":
+    render_own_checklists()
 elif dashboard == "checklists":
     render_checklists()
+elif dashboard == "region":
+    render_region_select()
 elif dashboard == "cache":
     render_cache_status()
 elif dashboard == "maintenance":

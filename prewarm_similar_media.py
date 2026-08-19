@@ -24,11 +24,8 @@ from dotenv import load_dotenv
 
 from ebird import (
     EBirdClient,
-    REGION_SPECIES_CACHE_PATH,
-    _load_json_file,
-    _save_json_file,
     load_cached_taxa,
-    load_disk_region_species_codes,
+    load_disk_region_species_birds,
     resolve_ebird_code,
 )
 from inaturalist import (
@@ -68,15 +65,11 @@ def _gallery_by_code(gallery_cache: dict) -> dict[str, dict]:
 
 
 def ensure_region_species_codes(region: str) -> list[str]:
-    codes = load_disk_region_species_codes(region)
-    if codes:
-        return codes
-    print(f"Fetching historical species list for {region}…", flush=True)
-    codes = EBirdClient().region_species_codes(region)
-    cache = _load_json_file(REGION_SPECIES_CACHE_PATH)
-    cache[region] = codes
-    _save_json_file(REGION_SPECIES_CACHE_PATH, cache)
-    print(f"Saved {len(codes):,} species codes to {REGION_SPECIES_CACHE_PATH.name}", flush=True)
+    client = EBirdClient()
+    codes = client.region_species_codes(region)
+    if load_disk_region_species_birds(region) is None and codes:
+        print(f"Caching named species list for {region}…", flush=True)
+        client.region_species_birds(region)
     return [str(item) for item in codes if item]
 
 

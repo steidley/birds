@@ -14,16 +14,19 @@ import re
 import signal
 import time
 from collections import Counter, defaultdict
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 import requests
 
-from ebird import EBirdClient, ROOT, region_year_checklist_cache_path
+from ebird import (
+    EBirdClient,
+    MAX_CALLS_PER_MINUTE,
+    ROOT,
+    region_year_checklist_cache_path,
+)
 
-MAX_CALLS_PER_MINUTE = 37.5
-REQUEST_DELAY_SECONDS = 60 / MAX_CALLS_PER_MINUTE
 PROGRESS_VERSION = 1
 
 
@@ -205,6 +208,74 @@ def _update_progress(
     _write_json(download_progress_path(region_code, year), progress)
 
 
+def _parse_iso_day(value: object) -> date | None:
+    raw = str(value or "").strip()
+    if len(raw) < 10:
+        return None
+    try:
+        return date.fromisoformat(raw[:10])
+    except ValueError:
+        return None
+
+
+def _shift_calendar_date(day: date, years_back: int) -> date:
+    """Same month/day in an earlier year; Feb 29 becomes Feb 28."""
+    year = day.year - years_back
+    try:
+        return day.replace(year=year)
+    except ValueError:
+        return date(year, 2, 28)
+
+
+def _month_bounds(year: int, month: int) -> tuple[date, date]:
+    start = date(year, month, 1)
+    if month == 12:
+        end = date(year, 12, 31)
+    else:
+        end = date(year, month + 1, 1) - timedelta(days=1)
+    return start, end
+
+
+def download_window_slices(
+    start: date,
+    end: date,
+    *,
+    prior_years: int = 0,
+) -> list[tuple[int, date, date]]:
+    """Per-year slices for a date range plus the same calendar window in prior years."""
+    if start > end:
+        start, end = end, start
+    slices: list[tuple[int, date, date]] = []
+    seen: set[tuple[int, str, str]] = set()
+    for back in range(0, max(0, int(prior_years)) + 1):
+        window_start = _shift_calendar_date(start, back)
+        window_end = _shift_calendar_date(end, back)
+        if window_start > window_end:
+            window_start, window_end = window_end, window_start
+        year = window_start.year
+        while year <= window_end.year:
+            slice_start = (
+                window_start if year == window_start.year else date(year, 1, 1)
+            )
+            slice_end = (
+                window_end if year == window_end.year else date(year, 12, 31)
+            )
+            key = (year, slice_start.isoformat(), slice_end.isoformat())
+            if key not in seen:
+                seen.add(key)
+                slices.append((year, slice_start, slice_end))
+            year += 1
+    return slices
+
+
+def format_download_windows(slices: list[tuple[int, date, date]]) -> str:
+    """Human-readable list of download windows."""
+    return ", ".join(
+        f"{start.isoformat()}–{end.isoformat()}" if start != end else start.isoformat()
+        for _year, start, end in slices
+    )
+
+
 def load_cached_summaries(
     region_code: str,
     year: int,
@@ -243,6 +314,56 @@ def _checklist_obs_day(row: dict[str, Any]) -> str:
     return obs[:10] if len(obs) >= 10 else ""
 
 
+def save_checklist_detail(
+    region_code: str,
+    summary: dict[str, Any],
+    detail: dict[str, Any],
+    *,
+    output_root: Path | None = None,
+) -> Path | None:
+    """Write a checklist detail file in the same layout as the downloader."""
+    region = (region_code or "").strip()
+    checklist_id = str(summary.get("subId") or summary.get("subID") or "").strip()
+    if not region or not checklist_id or not isinstance(detail, dict) or not detail:
+        return None
+    region_destination = (output_root or (ROOT / "ebird_checklists")) / safe_component(
+        region, "region"
+    )
+    filename = f"{safe_component(checklist_id, 'unknown')}.json"
+    existing = (
+        next(region_destination.rglob(filename), None)
+        if region_destination.exists()
+        else None
+    )
+    if existing is not None:
+        checklist_path = existing
+    else:
+        location_id = str(summary.get("locId") or summary.get("locID") or "").strip()
+        location_name = str(summary.get("locName") or "").strip()
+        hotspot = safe_component(location_id, "unknown-location")
+        if location_name:
+            hotspot = f"{hotspot}__{safe_component(location_name, 'unnamed')}"
+        obs_day = _checklist_obs_day(summary)
+        period = obs_day[:4] if len(obs_day) >= 4 else "unknown-year"
+        checklist_path = region_destination / period / hotspot / filename
+    feed_summary = {
+        key: value
+        for key, value in summary.items()
+        if not str(key).startswith("_")
+    }
+    checklist_path.parent.mkdir(parents=True, exist_ok=True)
+    checklist_path.write_text(
+        json.dumps(
+            {"feed_summary": feed_summary, "checklist": detail},
+            indent=2,
+            sort_keys=True,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    return checklist_path
+
+
 def _sort_summaries_for_download(
     rows: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
@@ -268,6 +389,8 @@ def missing_cached_summaries(
     *,
     month: int | None = None,
     day: str | None = None,
+    start_day: str | None = None,
+    end_day: str | None = None,
     loc_id: str | None = None,
     min_species: int = 0,
     output_root: Path = ROOT / "ebird_checklists",
@@ -275,14 +398,20 @@ def missing_cached_summaries(
     """Return feed summaries whose full detail files are not on disk."""
     summaries, truncated_dates = load_cached_summaries(region_code, year, month)
     day_key = (day or "").strip()
+    start_key = (start_day or "").strip() or day_key
+    end_key = (end_day or "").strip() or day_key
     location = (loc_id or "").strip()
     species_floor = max(0, int(min_species or 0))
-    if day_key:
-        filtered: list[dict[str, Any]] = []
-        for row in summaries:
-            if _checklist_obs_day(row) == day_key:
-                filtered.append(row)
-        summaries = filtered
+    if start_key or end_key:
+        lo = start_key or "0000-01-01"
+        hi = end_key or "9999-12-31"
+        if lo > hi:
+            lo, hi = hi, lo
+        summaries = [
+            row
+            for row in summaries
+            if lo <= _checklist_obs_day(row) <= hi
+        ]
     if location:
         summaries = [
             row
@@ -493,7 +622,6 @@ def cache_year_feed(region_code: str, year: int) -> dict[str, Any]:
     result = client.cache_region_year_checklists(
         region_code,
         year,
-        delay_seconds=REQUEST_DELAY_SECONDS,
         on_progress=_on_progress,
         should_stop=_should_stop,
     )
@@ -520,36 +648,42 @@ def download_cached_checklists(
     *,
     month: int | None = None,
     day: str | None = None,
+    start_day: str | None = None,
+    end_day: str | None = None,
     loc_id: str | None = None,
     min_species: int = 0,
+    prior_years: int = 0,
     output_root: Path = ROOT / "ebird_checklists",
 ) -> dict[str, Any]:
     """Download missing cached checklist details, grouped by hotspot.
 
     Progress is durable, so this can run in a separate process and be stopped
-    safely from the cache-maintenance UI.
+    safely from the cache-maintenance UI. When ``start_day``/``end_day`` (or
+    ``day`` / ``month``) is set, ``prior_years`` also fetches the same calendar
+    window in earlier years.
     """
     species_floor = max(0, int(min_species or 0))
-    summaries, truncated_dates = missing_cached_summaries(
-        region_code,
-        year,
-        month=month,
-        day=day,
-        loc_id=loc_id,
-        min_species=species_floor,
-        output_root=output_root,
+    prior = max(0, int(prior_years or 0))
+    start = _parse_iso_day(start_day) or _parse_iso_day(day)
+    end = _parse_iso_day(end_day) or _parse_iso_day(day)
+    if start is None and end is None and month is not None:
+        start, end = _month_bounds(year, month)
+    windowed = start is not None and end is not None
+    if not windowed:
+        prior = 0
+    slices = (
+        download_window_slices(start, end, prior_years=prior)
+        if windowed
+        else []
     )
-    period = f"{year}-{month:02d}" if month is not None else str(year)
+
     region_destination = output_root / safe_component(region_code, "region")
-    destination = region_destination / period
-    destination.mkdir(parents=True, exist_ok=True)
-    # Dedupe any legacy double-writes before downloading more.
+    region_destination.mkdir(parents=True, exist_ok=True)
     dedupe_downloaded_checklists(region_code, output_root=output_root)
-    existing_paths = {
-        path.stem: path
+    existing_ids = {
+        path.stem
         for path in region_destination.rglob("S*.json")
     }
-    existing_ids = set(existing_paths)
 
     client = EBirdClient()
     downloaded = 0
@@ -564,16 +698,21 @@ def download_cached_checklists(
         "year": year,
         "month": month,
         "day": (day or "").strip() or None,
+        "start_day": start.isoformat() if start else None,
+        "end_day": end.isoformat() if end else None,
+        "prior_years": prior or None,
+        "windows": format_download_windows(slices) if slices else None,
         "loc_id": (loc_id or "").strip() or None,
         "min_species": species_floor or None,
         "status": "running",
+        "phase": "starting",
         "pid": os.getpid(),
-        "total_missing": len(summaries),
+        "total_missing": 0,
         "processed": 0,
         "downloaded": 0,
         "skipped": 0,
         "failed": 0,
-        "remaining": len(summaries),
+        "remaining": 0,
         "http_429_count": 0,
         "retried_loads": 0,
         "wait_count": 0,
@@ -583,6 +722,81 @@ def download_cached_checklists(
         "stop_requested": False,
         "started_at": datetime.now().astimezone().isoformat(),
     }
+    _update_progress(region_code, year, progress)
+
+    def _stop_requested() -> bool:
+        return bool(load_download_progress(region_code, year).get("stop_requested"))
+
+    summaries: list[dict[str, Any]] = []
+    truncated_dates: list[str] = []
+    if windowed:
+        seen_ids: set[str] = set()
+        for slice_year, slice_start, slice_end in slices:
+            if _stop_requested():
+                progress["status"] = "stopped"
+                progress["finished_at"] = datetime.now().astimezone().isoformat()
+                _update_progress(region_code, year, progress)
+                break
+            progress["phase"] = "feed"
+            progress["window"] = (
+                f"{slice_start.isoformat()}–{slice_end.isoformat()}"
+            )
+            _update_progress(region_code, year, progress)
+            print(
+                f"filling daily feed {region_code} {slice_year} "
+                f"{slice_start.isoformat()}–{slice_end.isoformat()}",
+                flush=True,
+            )
+            try:
+                client.cache_region_year_checklists(
+                    region_code,
+                    slice_year,
+                    first_day=slice_start,
+                    last_day=slice_end,
+                    should_stop=_stop_requested,
+                )
+            except Exception as exc:
+                print(f"feed fill failed {slice_year}: {exc}", flush=True)
+            try:
+                more, trunc = missing_cached_summaries(
+                    region_code,
+                    slice_year,
+                    start_day=slice_start.isoformat(),
+                    end_day=slice_end.isoformat(),
+                    loc_id=loc_id,
+                    min_species=species_floor,
+                    output_root=output_root,
+                )
+            except FileNotFoundError:
+                continue
+            truncated_dates.extend(trunc)
+            for row in more:
+                checklist_id = str(
+                    row.get("subId") or row.get("subID") or ""
+                ).strip()
+                if not checklist_id or checklist_id in seen_ids:
+                    continue
+                seen_ids.add(checklist_id)
+                summaries.append(row)
+        summaries = _sort_summaries_for_download(summaries)
+    else:
+        summaries, truncated_dates = missing_cached_summaries(
+            region_code,
+            year,
+            month=month,
+            day=day,
+            loc_id=loc_id,
+            min_species=species_floor,
+            output_root=output_root,
+        )
+
+    progress.update(
+        {
+            "phase": "details",
+            "total_missing": len(summaries),
+            "remaining": len(summaries),
+        }
+    )
     _update_progress(region_code, year, progress)
 
     remaining_by_day: Counter[str] = Counter()
@@ -626,7 +840,18 @@ def download_cached_checklists(
         hotspot = safe_component(location_id, "unknown-location")
         if location_name:
             hotspot = f"{hotspot}__{safe_component(location_name, 'unnamed')}"
-        checklist_path = destination / hotspot / f"{safe_component(checklist_id, 'unknown')}.json"
+        if month is not None and len(obs_day) >= 7:
+            period = obs_day[:7]
+        elif len(obs_day) >= 4:
+            period = obs_day[:4]
+        else:
+            period = str(year)
+        checklist_path = (
+            region_destination
+            / period
+            / hotspot
+            / f"{safe_component(checklist_id, 'unknown')}.json"
+        )
         hotspots[hotspot] += 1
         day_remaining = int(remaining_by_day[obs_day])
         day_hotspot_remaining = int(remaining_by_day_hotspot[(obs_day, loc_key)])
@@ -648,15 +873,11 @@ def download_cached_checklists(
             try:
                 # EBirdClient pauses for the 429 Retry-After interval.
                 detail = client.checklist(checklist_id)
-                checklist_path.parent.mkdir(parents=True, exist_ok=True)
-                checklist_path.write_text(
-                    json.dumps(
-                        {"feed_summary": summary, "checklist": detail},
-                        indent=2,
-                        sort_keys=True,
-                    )
-                    + "\n",
-                    encoding="utf-8",
+                save_checklist_detail(
+                    region_code,
+                    summary,
+                    detail,
+                    output_root=output_root,
                 )
                 downloaded += 1
                 existing_ids.add(checklist_id)
@@ -664,9 +885,6 @@ def download_cached_checklists(
                 failures.append({"checklist_id": checklist_id, "error": str(exc)})
             if int(client.http_429_count) > rate_limits_before:
                 retried_loads += 1
-
-            # Keep under 60 calls/minute. This is intentionally 37.5 RPM.
-            time.sleep(REQUEST_DELAY_SECONDS)
 
         remaining_by_day[obs_day] = max(0, day_remaining - 1)
         remaining_by_day_hotspot[(obs_day, loc_key)] = max(0, day_hotspot_remaining - 1)
@@ -737,11 +955,18 @@ def download_cached_checklists(
         "year": year,
         "month": month,
         "day": (day or "").strip() or None,
+        "start_day": start.isoformat() if start else None,
+        "end_day": end.isoformat() if end else None,
+        "prior_years": prior or None,
+        "windows": format_download_windows(slices) if slices else None,
         "loc_id": (loc_id or "").strip() or None,
         "min_species": species_floor or None,
         "source": "locally cached daily checklist feeds",
         "max_calls_per_minute": MAX_CALLS_PER_MINUTE,
-        "rate_limit_policy": "on HTTP 429 wait 2x Retry-After, then 2x again before next request",
+        "rate_limit_policy": (
+            f"{MAX_CALLS_PER_MINUTE:g} calls/min via EBirdClient.get; "
+            "on HTTP 429 wait 2x Retry-After, then 2x again before the next request"
+        ),
         "truncated_dates": truncated_dates,
         "expected_checklists": len(summaries),
         "downloaded_this_run": downloaded,
@@ -753,7 +978,9 @@ def download_cached_checklists(
         "failures": failures,
         "hotspots": dict(sorted(hotspots.items())),
     }
-    (destination / "manifest.json").write_text(
+    manifest_dir = region_destination / str(year)
+    manifest_dir.mkdir(parents=True, exist_ok=True)
+    (manifest_dir / "manifest.json").write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
     )
@@ -779,6 +1006,20 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--day",
         help="Optional ISO day (YYYY-MM-DD) to download missing checklists for one date only.",
+    )
+    parser.add_argument(
+        "--start-day",
+        help="Inclusive start of a date window (YYYY-MM-DD).",
+    )
+    parser.add_argument(
+        "--end-day",
+        help="Inclusive end of a date window (YYYY-MM-DD).",
+    )
+    parser.add_argument(
+        "--prior-years",
+        type=int,
+        default=0,
+        help="Also download the same calendar window from this many previous years.",
     )
     parser.add_argument(
         "--loc-id",
@@ -834,8 +1075,11 @@ if __name__ == "__main__":
             args.year,
             month=args.month,
             day=args.day,
+            start_day=args.start_day,
+            end_day=args.end_day,
             loc_id=args.loc_id,
             min_species=args.min_species,
+            prior_years=args.prior_years,
         )
         print(
             f"complete expected={result['expected_checklists']} "

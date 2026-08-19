@@ -4,14 +4,20 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 import time
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
 from urllib.parse import quote
 
 import requests
 from dotenv import load_dotenv
+
+try:
+    import fcntl
+except ImportError:  # pragma: no cover - Windows
+    fcntl = None  # type: ignore[assignment]
 
 from api_log import log_api_done, log_api_send
 
@@ -20,6 +26,7 @@ ROOT = Path(__file__).parent
 CHECKLIST_CACHE_VERSION = 1
 REGION_SPECIES_CACHE_PATH = ROOT / "ebird_region_species_cache.json"
 LAST_SEEN_CACHE_PATH = ROOT / "ebird_last_seen_cache.json"
+OWN_RECENT_SIGHTINGS_PATH = ROOT / "ebird_own_recent_sightings.json"
 BIRDNET_CODE_CACHE_PATH = ROOT / "birdnet_code_cache.json"
 REGION_LIST_CACHE_PATH = ROOT / "ebird_region_list_cache.json"
 TAXONOMY_CACHE_PATH = ROOT / "ebird_taxonomy_cache.json"
@@ -29,6 +36,12 @@ REGION_LIST_CACHE_VERSION = 1
 TAXONOMY_CACHE_VERSION = 1
 MAX_RATE_LIMIT_RETRIES = 8
 MIN_RATE_LIMIT_WAIT_SECONDS = 1.0
+# Stay under eBird’s practical ~60/min ceiling, including Show checklists.
+MAX_CALLS_PER_MINUTE = 37.5
+MIN_REQUEST_INTERVAL_SECONDS = 60.0 / MAX_CALLS_PER_MINUTE
+EBIRD_THROTTLE_PATH = ROOT / ".ebird_api_throttle"
+
+_ebird_throttle_lock = threading.Lock()
 
 load_dotenv(ROOT / ".env")
 
@@ -85,6 +98,53 @@ def get_api_key() -> str | None:
         pass
 
     return None
+
+
+def _config_text(name: str) -> str:
+    """Read a non-secret config string from env, then Streamlit secrets."""
+    value = str(os.environ.get(name) or "").strip()
+    if value:
+        return value
+    if not _streamlit_runtime_active():
+        return ""
+    try:
+        import streamlit as st
+
+        secrets = getattr(st, "secrets", None)
+        if secrets is not None and name in secrets:
+            return str(secrets[name] or "").strip()
+    except Exception:
+        pass
+    return ""
+
+
+def configured_observer_names() -> list[str]:
+    """Display names that identify the user's own eBird checklists.
+
+    ``EBIRD_USER_DISPLAY_NAME`` is a comma-separated list. Use the public
+    name shown on checklists (not the profile handle), e.g.
+    ``Adam and Anastasiya Steidley``.
+    """
+    raw = _config_text("EBIRD_USER_DISPLAY_NAME")
+    names: list[str] = []
+    seen: set[str] = set()
+    for part in raw.split(","):
+        name = part.strip()
+        folded = name.casefold()
+        if not name or folded in seen:
+            continue
+        seen.add(folded)
+        names.append(name)
+    return names
+
+
+def observer_name_matches(display_name: str, names: list[str] | None = None) -> bool:
+    """True when ``display_name`` matches a configured observer name."""
+    needle = (display_name or "").strip().casefold()
+    if not needle:
+        return False
+    configured = names if names is not None else configured_observer_names()
+    return any(needle == name.strip().casefold() for name in configured)
 
 
 def _query_param_value(params: object, name: str) -> object:
@@ -156,6 +216,81 @@ def region_year_checklist_cache_path(region_code: str, year: int) -> Path:
     return ROOT / f"ebird_{safe_region}_checklists_{year}.json"
 
 
+def _feed_row_loc_id(row: dict[str, Any]) -> str:
+    return str(row.get("locId") or row.get("locID") or "").strip()
+
+
+def load_region_year_feed_cache(region_code: str, year: int) -> dict[str, Any]:
+    """Load the regional daily-feed JSON, or an empty cache dict."""
+    code = (region_code or "").strip()
+    path = region_year_checklist_cache_path(code, year)
+    if not path.exists():
+        return {}
+    try:
+        loaded = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+    if (
+        isinstance(loaded, dict)
+        and loaded.get("cache_version") == CHECKLIST_CACHE_VERSION
+        and loaded.get("region_code") == code
+        and loaded.get("year") == year
+    ):
+        return loaded
+    return {}
+
+
+def persist_region_feed_day(
+    region_code: str,
+    day: date,
+    rows: list[Any],
+    *,
+    max_results: int = 200,
+) -> None:
+    """Write one day's regional checklist feed into the year cache file."""
+    code = (region_code or "").strip()
+    if not code:
+        return
+    year = day.year
+    path = region_year_checklist_cache_path(code, year)
+    cache = load_region_year_feed_cache(code, year)
+    daily = cache.get("daily")
+    if not isinstance(daily, dict):
+        daily = {}
+    row_list = [row for row in rows if isinstance(row, dict)]
+    daily[day.isoformat()] = {
+        "checklists": row_list,
+        "truncated": len(row_list) >= max_results,
+    }
+    checklist_ids: set[str] = set()
+    for entry in daily.values():
+        if not isinstance(entry, dict):
+            continue
+        for row in entry.get("checklists") or []:
+            if not isinstance(row, dict):
+                continue
+            checklist_id = str(row.get("subId") or row.get("subID") or "").strip()
+            if checklist_id:
+                checklist_ids.add(checklist_id)
+    cache.update(
+        {
+            "cache_version": CHECKLIST_CACHE_VERSION,
+            "region_code": code,
+            "year": year,
+            "max_results_per_day": max_results,
+            "daily": daily,
+            "unique_checklist_count": len(checklist_ids),
+            "truncated_dates": sorted(
+                day_key
+                for day_key, entry in daily.items()
+                if isinstance(entry, dict) and entry.get("truncated")
+            ),
+            "updated_at": datetime.now().astimezone().isoformat(),
+        }
+    )
+    path.write_text(json.dumps(cache, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
 def _load_json_file(path: Path) -> dict[str, Any]:
     if not path.exists():
         return {}
@@ -179,6 +314,12 @@ def _safe_region_component(region_code: str) -> str:
 
 def local_checklist_index_path(region_code: str) -> Path:
     return ROOT / f"ebird_{_safe_region_component(region_code)}_local_last_seen.json"
+
+
+def local_year_first_index_path(region_code: str, year: int) -> Path:
+    return ROOT / (
+        f"ebird_{_safe_region_component(region_code)}_year_first_{int(year)}.json"
+    )
 
 
 def hotspots_cache_path(region_code: str) -> Path:
@@ -241,6 +382,33 @@ def filter_regions_by_query(
     return matches
 
 
+def hotspot_in_region(row: dict[str, Any], region_code: str) -> bool:
+    """True when a hotspot belongs to ``region_code`` (country, state, or county)."""
+    wanted = (region_code or "").strip()
+    if not wanted or wanted.casefold() == "world":
+        return True
+    codes = [
+        str(row.get(key) or "").strip()
+        for key in ("subnational2Code", "subnational1Code", "countryCode")
+    ]
+    codes = [code for code in codes if code]
+    if not codes:
+        return True
+    return any(code == wanted or code.startswith(wanted + "-") for code in codes)
+
+
+def filter_hotspots_for_region(
+    rows: list[dict[str, Any]],
+    region_code: str,
+) -> list[dict[str, Any]]:
+    """Keep only hotspots in ``region_code``."""
+    return [
+        row
+        for row in rows
+        if isinstance(row, dict) and hotspot_in_region(row, region_code)
+    ]
+
+
 def load_cached_hotspots(region_code: str) -> list[dict[str, Any]]:
     """Return disk-cached top hotspots for a region, or []."""
     code = (region_code or "").strip()
@@ -252,7 +420,9 @@ def load_cached_hotspots(region_code: str) -> list[dict[str, Any]]:
     if data.get("region_code") != code:
         return []
     rows = data.get("hotspots")
-    return rows if isinstance(rows, list) else []
+    if not isinstance(rows, list):
+        return []
+    return filter_hotspots_for_region(rows, code)
 
 
 def save_cached_hotspots(region_code: str, hotspots: list[dict[str, Any]]) -> Path:
@@ -265,7 +435,7 @@ def save_cached_hotspots(region_code: str, hotspots: list[dict[str, Any]]) -> Pa
             "cache_version": HOTSPOT_CACHE_VERSION,
             "region_code": code,
             "updated_at": datetime.now().astimezone().isoformat(),
-            "hotspots": hotspots,
+            "hotspots": filter_hotspots_for_region(hotspots, code),
         },
     )
     return path
@@ -712,11 +882,9 @@ def load_local_checklists(
     if not region:
         return []
     root = CHECKLISTS_DIR / region
-    if not root.exists():
-        return []
-
     found: dict[str, dict[str, Any]] = {}
-    for path in root.rglob("S*.json"):
+    paths = sorted(root.rglob("S*.json")) if root.exists() else []
+    for path in paths:
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
@@ -777,10 +945,12 @@ def load_local_checklists(
             "userDisplayName": checklist.get("userDisplayName")
             or feed.get("userDisplayName")
             or "",
+            "regionCode": region,
             "_detail": checklist,
             "_source": "local_cache",
             "_path": str(path),
             "_obs_day": obs_day.isoformat(),
+            "_region": region,
         }
         previous = found.get(sub_id)
         if previous is None or str(summary["isoObsDate"]) >= str(
@@ -788,11 +958,150 @@ def load_local_checklists(
         ):
             found[sub_id] = summary
 
+    from my_ebird_data import my_ebird_checklist_summaries_for
+
+    for extra in my_ebird_checklist_summaries_for(
+        region,
+        loc_id=location,
+        start_date=start_date,
+        end_date=end_date,
+    ):
+        extra_id = str(extra.get("subId") or extra.get("subID") or "").strip()
+        if not extra_id:
+            continue
+        current = found.get(extra_id)
+        if current is None:
+            found[extra_id] = extra
+            continue
+        if not current.get("_detail") and extra.get("_detail"):
+            current["_detail"] = extra["_detail"]
+        if not current.get("numSpecies") and extra.get("numSpecies"):
+            current["numSpecies"] = extra["numSpecies"]
+
     return sorted(
         found.values(),
         key=lambda row: str(row.get("isoObsDate") or row.get("obsDt") or ""),
         reverse=True,
     )
+
+
+def load_own_local_checklists(
+    observer_names: list[str] | None = None,
+) -> list[dict[str, Any]]:
+    """Own checklists from downloaded JSON and the My eBird data export."""
+    names = observer_names if observer_names is not None else configured_observer_names()
+    folded = {name.strip().casefold() for name in names if str(name).strip()}
+    found: dict[str, dict[str, Any]] = {}
+    if folded:
+        for region in list_local_checklist_regions():
+            for row in load_local_checklists(region):
+                display = str(row.get("userDisplayName") or "").strip()
+                source = str(row.get("_source") or "")
+                if (
+                    display.casefold() not in folded
+                    and source != "my_ebird_data"
+                ):
+                    continue
+                sub_id = str(row.get("subId") or row.get("subID") or "").strip()
+                if not sub_id:
+                    continue
+                tagged = dict(row)
+                tagged["regionCode"] = tagged.get("regionCode") or region
+                previous = found.get(sub_id)
+                if previous is None or str(tagged.get("isoObsDate") or "") >= str(
+                    previous.get("isoObsDate") or ""
+                ):
+                    found[sub_id] = tagged
+    from my_ebird_data import my_ebird_checklist_summaries
+
+    for extra in my_ebird_checklist_summaries():
+        extra_id = str(extra.get("subId") or extra.get("subID") or "").strip()
+        if not extra_id:
+            continue
+        current = found.get(extra_id)
+        if current is None:
+            found[extra_id] = extra
+            continue
+        if not current.get("_detail") and extra.get("_detail"):
+            current["_detail"] = extra["_detail"]
+        if not current.get("numSpecies") and extra.get("numSpecies"):
+            current["numSpecies"] = extra["numSpecies"]
+    return sorted(
+        found.values(),
+        key=lambda row: str(row.get("isoObsDate") or row.get("obsDt") or ""),
+        reverse=True,
+    )
+
+
+def _checklist_sighting_count(checklist: dict[str, Any], feed: dict[str, Any]) -> int:
+    """How many species a cached checklist reported."""
+    if not isinstance(checklist, dict):
+        checklist = {}
+    if not isinstance(feed, dict):
+        feed = {}
+    for raw in (checklist.get("numSpecies"), feed.get("numSpecies")):
+        try:
+            value = int(raw)
+        except (TypeError, ValueError):
+            continue
+        if value > 0:
+            return value
+    obs = checklist.get("obs")
+    return len(obs) if isinstance(obs, list) else 0
+
+
+def _recent_sighting_rank(row: dict[str, Any]) -> tuple[int, int, str, str]:
+    """Prefer the checklist with more species, then a higher count of this bird."""
+    try:
+        species = int(row.get("numSpecies") or 0)
+    except (TypeError, ValueError):
+        species = 0
+    raw_count = row.get("howMany")
+    try:
+        how_many = int(raw_count) if raw_count not in (None, "") else -1
+    except (TypeError, ValueError):
+        how_many = -1
+    return (
+        species,
+        how_many,
+        str(row.get("obsDt") or ""),
+        str(row.get("subId") or ""),
+    )
+
+
+def _reduce_recent_sightings(
+    rows: list[dict[str, Any]],
+    *,
+    limit: int = 5,
+) -> list[dict[str, Any]]:
+    """One checklist per hotspot+date, then the latest ``limit`` days."""
+    best: dict[tuple[str, str], dict[str, Any]] = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        day = str(row.get("obsDay") or "").strip()[:10]
+        if not day:
+            parsed = parse_ebird_obs_day(row.get("obsDt") or "")
+            day = parsed.isoformat() if parsed else ""
+        if not day:
+            continue
+        loc_id = str(row.get("locId") or "").strip()
+        loc_name = str(row.get("locName") or "").strip()
+        hotspot = loc_id or loc_name.casefold() or str(row.get("subId") or "").strip()
+        if not hotspot:
+            continue
+        key = (hotspot, day)
+        current = best.get(key)
+        if current is None or _recent_sighting_rank(row) > _recent_sighting_rank(current):
+            stored = dict(row)
+            stored["obsDay"] = day
+            best[key] = stored
+    ordered = sorted(
+        best.values(),
+        key=lambda item: str(item.get("obsDt") or ""),
+        reverse=True,
+    )
+    return ordered[:limit]
 
 
 def _parse_obs_count(obs: dict[str, Any]) -> int | None:
@@ -828,6 +1137,7 @@ def build_local_last_seen_index(
         not rebuild
         and existing.get("signature") == signature
         and isinstance(existing.get("by_code"), dict)
+        and isinstance(existing.get("recent_by_code"), dict)
     ):
         return {
             str(code): value
@@ -836,6 +1146,7 @@ def build_local_last_seen_index(
         }
 
     by_code: dict[str, dict[str, Any]] = {}
+    recent_rows: dict[str, list[dict[str, Any]]] = {}
     for path in files:
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
@@ -874,6 +1185,9 @@ def build_local_last_seen_index(
         sub_id = str(
             checklist.get("subId") or feed.get("subId") or feed.get("subID") or path.stem
         ).strip()
+        sighting_count = _checklist_sighting_count(checklist, feed if isinstance(feed, dict) else {})
+        obs_day = parse_ebird_obs_day(obs_dt)
+        day_text = obs_day.isoformat() if obs_day else ""
         for obs in checklist.get("obs") or []:
             if not isinstance(obs, dict):
                 continue
@@ -882,16 +1196,29 @@ def build_local_last_seen_index(
                 continue
             current = by_code.get(code)
             if current and str(current.get("obsDt") or "") >= obs_dt:
-                continue
-            by_code[code] = {
-                "speciesCode": code,
-                "obsDt": obs_dt,
-                "locName": loc_name,
-                "locId": loc_id,
-                "howMany": _parse_obs_count(obs),
-                "subId": sub_id,
-                "source": "local_checklist",
-            }
+                pass
+            else:
+                by_code[code] = {
+                    "speciesCode": code,
+                    "obsDt": obs_dt,
+                    "locName": loc_name,
+                    "locId": loc_id,
+                    "howMany": _parse_obs_count(obs),
+                    "subId": sub_id,
+                    "source": "local_checklist",
+                }
+            if day_text:
+                recent_rows.setdefault(code, []).append(
+                    {
+                        "obsDt": obs_dt,
+                        "obsDay": day_text,
+                        "locName": loc_name,
+                        "locId": loc_id,
+                        "subId": sub_id,
+                        "numSpecies": sighting_count,
+                        "howMany": _parse_obs_count(obs),
+                    }
+                )
 
     previous_files = int((existing.get("signature") or {}).get("file_count") or 0)
     previous_by_code = existing.get("by_code")
@@ -907,6 +1234,16 @@ def build_local_last_seen_index(
                 by_code[key] = row
             elif str(row.get("obsDt") or "") > str(current.get("obsDt") or ""):
                 by_code[key] = row
+    previous_recent = existing.get("recent_by_code")
+    if previous_files > len(files) and isinstance(previous_recent, dict):
+        for code, rows in previous_recent.items():
+            if isinstance(rows, list):
+                recent_rows.setdefault(str(code), []).extend(rows)
+
+    recent_by_code = {
+        code: _reduce_recent_sightings(rows)
+        for code, rows in recent_rows.items()
+    }
 
     _save_json_file(
         index_path,
@@ -915,9 +1252,297 @@ def build_local_last_seen_index(
             "signature": signature,
             "updated_at": datetime.now().astimezone().isoformat(),
             "by_code": by_code,
+            "recent_by_code": recent_by_code,
         },
     )
     return by_code
+
+
+def local_recent_sightings_for_species(
+    region_code: str,
+    species_code: str,
+    *,
+    limit: int = 5,
+) -> list[dict[str, Any]]:
+    """Latest cached checklist sightings for a species in a region.
+
+    Uses only downloaded checklist files. At most one checklist per hotspot
+    and date; when several exist, the list with the most species wins.
+    """
+    region = (region_code or "").strip()
+    code = (species_code or "").strip()
+    if not region or not code:
+        return []
+    build_local_last_seen_index(region)
+    payload = _load_json_file(local_checklist_index_path(region))
+    rows = payload.get("recent_by_code")
+    if not isinstance(rows, dict):
+        return []
+    items = rows.get(code)
+    if not isinstance(items, list):
+        return []
+    cleaned = [item for item in items if isinstance(item, dict)]
+    return cleaned[: max(0, int(limit))]
+
+
+def _checklist_disk_signature() -> dict[str, Any]:
+    files = sorted(CHECKLISTS_DIR.rglob("S*.json")) if CHECKLISTS_DIR.exists() else []
+    from my_ebird_data import my_ebird_source_signature
+
+    export_path, export_mtime = my_ebird_source_signature()
+    return {
+        "file_count": len(files),
+        "newest_mtime": max((path.stat().st_mtime for path in files), default=0.0),
+        "observers": [name.strip().casefold() for name in configured_observer_names()],
+        "my_ebird_path": export_path,
+        "my_ebird_mtime": export_mtime,
+    }
+
+
+def build_own_recent_sightings_index(
+    *,
+    rebuild: bool = False,
+) -> dict[str, list[dict[str, Any]]]:
+    """Index the configured observer’s cached species sightings by eBird code."""
+    names = configured_observer_names()
+    folded = {name.strip().casefold() for name in names if str(name).strip()}
+    signature = _checklist_disk_signature()
+    from my_ebird_data import my_ebird_data_path, my_ebird_own_recent_rows
+
+    if not folded and my_ebird_data_path() is None:
+        return {}
+    existing = _load_json_file(OWN_RECENT_SIGHTINGS_PATH)
+    cached = existing.get("by_code")
+    if (
+        not rebuild
+        and existing.get("signature") == signature
+        and isinstance(cached, dict)
+    ):
+        cleaned: dict[str, list[dict[str, Any]]] = {}
+        for code, rows in cached.items():
+            if isinstance(rows, list):
+                cleaned[str(code)] = [row for row in rows if isinstance(row, dict)]
+        return cleaned
+
+    recent_rows: dict[str, list[dict[str, Any]]] = {}
+    for region in list_local_checklist_regions():
+        root = CHECKLISTS_DIR / region
+        if not root.exists():
+            continue
+        for path in root.rglob("S*.json"):
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                continue
+            if not isinstance(payload, dict):
+                continue
+            checklist = payload.get("checklist") or {}
+            feed = payload.get("feed_summary") or {}
+            if not isinstance(checklist, dict):
+                continue
+            display = str(
+                checklist.get("userDisplayName")
+                or feed.get("userDisplayName")
+                or ""
+            ).strip()
+            if display.casefold() not in folded:
+                continue
+            obs_dt = str(
+                checklist.get("obsDt")
+                or feed.get("isoObsDate")
+                or feed.get("obsDt")
+                or ""
+            ).strip()
+            if not obs_dt:
+                continue
+            loc_obj = feed.get("loc") if isinstance(feed.get("loc"), dict) else {}
+            loc_id = str(
+                checklist.get("locId")
+                or feed.get("locId")
+                or feed.get("locID")
+                or loc_obj.get("locId")
+                or loc_obj.get("locID")
+                or ""
+            ).strip()
+            loc_name = str(
+                feed.get("locName")
+                or loc_obj.get("locName")
+                or loc_obj.get("name")
+                or ""
+            ).strip()
+            if not loc_name and "__" in path.parent.name:
+                loc_name = path.parent.name.split("__", 1)[1].replace("_", " ").strip()
+            sub_id = str(
+                checklist.get("subId")
+                or feed.get("subId")
+                or feed.get("subID")
+                or path.stem
+            ).strip()
+            sighting_count = _checklist_sighting_count(
+                checklist, feed if isinstance(feed, dict) else {}
+            )
+            obs_day = parse_ebird_obs_day(obs_dt)
+            day_text = obs_day.isoformat() if obs_day else ""
+            if not day_text:
+                continue
+            for obs in checklist.get("obs") or []:
+                if not isinstance(obs, dict):
+                    continue
+                code = str(obs.get("speciesCode") or "").strip()
+                if not code:
+                    continue
+                recent_rows.setdefault(code, []).append(
+                    {
+                        "obsDt": obs_dt,
+                        "obsDay": day_text,
+                        "locName": loc_name,
+                        "locId": loc_id,
+                        "subId": sub_id,
+                        "numSpecies": sighting_count,
+                        "howMany": _parse_obs_count(obs),
+                        "regionCode": region,
+                    }
+                )
+
+    for code, rows in my_ebird_own_recent_rows().items():
+        recent_rows.setdefault(code, []).extend(rows)
+
+    by_code = {
+        code: _reduce_recent_sightings(rows)
+        for code, rows in recent_rows.items()
+    }
+    _save_json_file(
+        OWN_RECENT_SIGHTINGS_PATH,
+        {
+            "signature": signature,
+            "updated_at": datetime.now().astimezone().isoformat(),
+            "by_code": by_code,
+        },
+    )
+    return by_code
+
+
+def local_own_recent_sightings_for_species(
+    species_code: str,
+    *,
+    limit: int = 5,
+) -> list[dict[str, Any]]:
+    """The observer’s latest cached sightings of a species, any region."""
+    code = (species_code or "").strip()
+    if not code:
+        return []
+    by_code = build_own_recent_sightings_index()
+    items = by_code.get(code)
+    if not isinstance(items, list):
+        return []
+    return [item for item in items if isinstance(item, dict)][: max(0, int(limit))]
+
+
+def parse_ebird_obs_day(text: str) -> date | None:
+    """Parse an eBird observation day from ISO or life-list date text."""
+    raw = str(text or "").strip()
+    if not raw:
+        return None
+    iso = raw[:10]
+    if len(iso) == 10 and iso[4] == "-" and iso[7] == "-":
+        try:
+            return date.fromisoformat(iso)
+        except ValueError:
+            pass
+    for fmt, size in (("%d %b %Y", 11), ("%d %B %Y", 15)):
+        snippet = raw[:size].strip()
+        try:
+            return datetime.strptime(snippet, fmt).date()
+        except ValueError:
+            continue
+    return None
+
+
+def build_local_year_first_index(
+    region_code: str,
+    year: int,
+    *,
+    rebuild: bool = False,
+) -> dict[str, date]:
+    """Earliest downloaded observation date in ``year`` per species code."""
+    region = (region_code or "").strip()
+    if not region or year < 2002:
+        return {}
+    root = CHECKLISTS_DIR / region
+    path = local_year_first_index_path(region, year)
+    files = sorted(root.rglob("S*.json")) if root.exists() else []
+    signature = {
+        "file_count": len(files),
+        "newest_mtime": max((item.stat().st_mtime for item in files), default=0.0),
+        "year": int(year),
+    }
+    existing = _load_json_file(path)
+    if (
+        not rebuild
+        and existing.get("signature") == signature
+        and isinstance(existing.get("by_code"), dict)
+    ):
+        found: dict[str, date] = {}
+        for code, value in existing["by_code"].items():
+            day = parse_ebird_obs_day(str(value or ""))
+            if day is not None:
+                found[str(code)] = day
+        return found
+
+    by_code: dict[str, date] = {}
+    for file_path in files:
+        try:
+            payload = json.loads(file_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            continue
+        if not isinstance(payload, dict):
+            continue
+        checklist = payload.get("checklist") or {}
+        feed = payload.get("feed_summary") or {}
+        if not isinstance(checklist, dict):
+            continue
+        obs_day = parse_ebird_obs_day(
+            str(
+                checklist.get("obsDt")
+                or feed.get("isoObsDate")
+                or feed.get("obsDt")
+                or ""
+            )
+        )
+        if obs_day is None or obs_day.year != year:
+            continue
+        for obs in checklist.get("obs") or []:
+            if not isinstance(obs, dict):
+                continue
+            code = str(obs.get("speciesCode") or "").strip()
+            if not code:
+                continue
+            current = by_code.get(code)
+            if current is None or obs_day < current:
+                by_code[code] = obs_day
+
+    _save_json_file(
+        path,
+        {
+            "region_code": region,
+            "year": int(year),
+            "signature": signature,
+            "updated_at": datetime.now().astimezone().isoformat(),
+            "by_code": {code: day.isoformat() for code, day in by_code.items()},
+        },
+    )
+    return by_code
+
+
+def build_world_year_first_index(year: int) -> dict[str, date]:
+    """Earliest downloaded observation this year across all cached regions."""
+    merged: dict[str, date] = {}
+    for region in list_local_checklist_regions():
+        for code, day in build_local_year_first_index(region, year).items():
+            previous = merged.get(code)
+            if previous is None or day < previous:
+                merged[code] = day
+    return merged
 
 
 def list_local_checklist_regions() -> list[str]:
@@ -971,6 +1596,75 @@ def _retry_after_seconds(response: requests.Response) -> float:
         return max(delay, MIN_RATE_LIMIT_WAIT_SECONDS)
     except (TypeError, ValueError, OverflowError):
         return 60.0
+
+
+def _read_ebird_not_before(handle) -> float:
+    handle.seek(0)
+    raw = handle.read().strip()
+    try:
+        return float(raw) if raw else 0.0
+    except ValueError:
+        return 0.0
+
+
+def _write_ebird_not_before(handle, when: float) -> None:
+    handle.seek(0)
+    handle.truncate()
+    handle.write(f"{when:.6f}\n")
+    handle.flush()
+
+
+def _with_ebird_throttle_file(write_fn) -> None:
+    """Run ``write_fn(handle)`` with an exclusive lock on the throttle file."""
+    EBIRD_THROTTLE_PATH.touch(exist_ok=True)
+    with open(EBIRD_THROTTLE_PATH, "a+", encoding="utf-8") as handle:
+        if fcntl is not None:
+            fcntl.flock(handle, fcntl.LOCK_EX)
+        try:
+            write_fn(handle)
+        finally:
+            if fcntl is not None:
+                fcntl.flock(handle, fcntl.LOCK_UN)
+
+
+def wait_for_ebird_request_slot() -> float:
+    """Block until the next eBird request is allowed. Returns seconds waited.
+
+    Shared by every ``EBirdClient`` in this process and by the download worker
+    via ``.ebird_api_throttle``, so Show checklists and background jobs cannot
+    burst past ``MAX_CALLS_PER_MINUTE``.
+    """
+    waited = 0.0
+
+    def _reserve(handle) -> None:
+        nonlocal waited
+        now = time.time()
+        not_before = _read_ebird_not_before(handle)
+        wait = not_before - now
+        if wait > 0:
+            time.sleep(wait)
+            waited = wait
+            now = time.time()
+        _write_ebird_not_before(handle, now + MIN_REQUEST_INTERVAL_SECONDS)
+
+    with _ebird_throttle_lock:
+        _with_ebird_throttle_file(_reserve)
+    return waited
+
+
+def defer_ebird_requests(seconds: float) -> None:
+    """Push the shared next-allowed time out (used after HTTP 429)."""
+    extra = max(float(seconds), 0.0)
+    if extra <= 0:
+        return
+
+    def _defer(handle) -> None:
+        now = time.time()
+        not_before = max(_read_ebird_not_before(handle), now + extra)
+        _write_ebird_not_before(handle, not_before)
+
+    with _ebird_throttle_lock:
+        _with_ebird_throttle_file(_defer)
 
 
 def note_rate_limit(seconds: float, *, path: str) -> None:
@@ -1145,14 +1839,109 @@ def load_disk_region_species_codes(region_code: str) -> list[str] | None:
 
     ``None`` means this region has no disk entry yet.
     """
+    entry = _load_region_species_entry(region_code)
+    if entry is None:
+        return None
+    return _codes_from_region_species_entry(entry)
+
+
+def load_disk_region_species_birds(region_code: str) -> list[dict[str, str]] | None:
+    """Return the cached named regional species list, or ``None`` if missing."""
+    entry = _load_region_species_entry(region_code)
+    if not isinstance(entry, dict):
+        return None
+    birds = entry.get("birds")
+    if not isinstance(birds, list):
+        return None
+    cleaned: list[dict[str, str]] = []
+    for bird in birds:
+        if not isinstance(bird, dict):
+            continue
+        code = str(bird.get("code") or "").strip()
+        if not code:
+            continue
+        name = str(bird.get("name") or code).strip()
+        cleaned.append(
+            {
+                "code": code,
+                "name": name.split(" (", 1)[0].strip() or name,
+                "sciName": str(bird.get("sciName") or "").strip(),
+            }
+        )
+    return cleaned
+
+
+def _load_region_species_entry(region_code: str) -> list | dict | None:
     region = (region_code or "").strip()
     if not region:
         return None
     cache = _load_json_file(REGION_SPECIES_CACHE_PATH)
     cached = cache.get(region)
-    if not isinstance(cached, list):
-        return None
-    return [str(item) for item in cached if item]
+    if isinstance(cached, (list, dict)):
+        return cached
+    return None
+
+
+def _codes_from_region_species_entry(entry: list | dict) -> list[str] | None:
+    if isinstance(entry, list):
+        return [str(item).strip() for item in entry if str(item).strip()]
+    codes = entry.get("codes")
+    if isinstance(codes, list):
+        return [str(item).strip() for item in codes if str(item).strip()]
+    birds = entry.get("birds")
+    if isinstance(birds, list):
+        out: list[str] = []
+        for bird in birds:
+            if not isinstance(bird, dict):
+                continue
+            code = str(bird.get("code") or "").strip()
+            if code:
+                out.append(code)
+        return out
+    return None
+
+
+def save_region_species_cache(
+    region_code: str,
+    *,
+    codes: list[str] | None = None,
+    birds: list[dict] | None = None,
+) -> None:
+    """Persist a region’s historical species codes and/or named bird rows."""
+    region = (region_code or "").strip()
+    if not region:
+        return
+    cache = _load_json_file(REGION_SPECIES_CACHE_PATH)
+    existing = cache.get(region)
+    entry: dict[str, Any] = {}
+    if isinstance(existing, dict):
+        entry = dict(existing)
+    elif isinstance(existing, list):
+        entry["codes"] = [str(item).strip() for item in existing if str(item).strip()]
+    if codes is not None:
+        entry["codes"] = [str(item).strip() for item in codes if str(item).strip()]
+    if birds is not None:
+        cleaned: list[dict[str, str]] = []
+        for bird in birds:
+            if not isinstance(bird, dict):
+                continue
+            code = str(bird.get("code") or "").strip()
+            if not code:
+                continue
+            name = str(bird.get("name") or code).strip()
+            cleaned.append(
+                {
+                    "code": code,
+                    "name": name.split(" (", 1)[0].strip() or name,
+                    "sciName": str(bird.get("sciName") or "").strip(),
+                }
+            )
+        entry["birds"] = cleaned
+        if "codes" not in entry:
+            entry["codes"] = [item["code"] for item in cleaned]
+    entry["updated_at"] = datetime.now().astimezone().isoformat()
+    cache[region] = entry
+    _save_json_file(REGION_SPECIES_CACHE_PATH, cache)
 
 
 def region_historical_species_cache_coverage(region_code: str) -> dict[str, Any]:
@@ -1250,8 +2039,6 @@ class EBirdClient:
             float(min_rate_limit_wait_seconds),
             MIN_RATE_LIMIT_WAIT_SECONDS,
         )
-        # Extra pause before the next request after recovering from a 429.
-        self._post_rate_limit_cooldown_seconds = 0.0
 
     def _require_api_key(self) -> str:
         """Return a usable API key, refreshing from env/session if needed."""
@@ -1277,15 +2064,13 @@ class EBirdClient:
         started = time.perf_counter()
         url = f"{BASE_URL}{path}"
         summary = _ebird_request_summary(path, params)
-        cooldown = float(self._post_rate_limit_cooldown_seconds or 0.0)
-        if cooldown > 0:
-            print(
-                f"[rate-limit] post-429 cooldown {cooldown:.0f}s before {path}",
-                flush=True,
-            )
-            self._rate_limit_wait(cooldown, path=f"{path} (post-429 cooldown)")
-            self._post_rate_limit_cooldown_seconds = 0.0
+        last_429_wait = 0.0
         for attempt in range(MAX_RATE_LIMIT_RETRIES):
+            slot_wait = wait_for_ebird_request_slot()
+            if slot_wait > 5.0:
+                self.wait_count += 1
+                self.wait_seconds_total += slot_wait
+                note_rate_limit(slot_wait, path=f"{path} (shared throttle)")
             log_api_send(
                 "ebird",
                 summary,
@@ -1300,17 +2085,14 @@ class EBirdClient:
             )
             if response.status_code == 429:
                 header_wait = _retry_after_seconds(response)
-                # Honor Retry-After; only apply the client floor when the header
-                # is missing/unusable (header helper already returns >= 1s).
                 raw_retry = (response.headers.get("Retry-After") or "").strip()
                 base_wait = (
                     max(header_wait, self.min_rate_limit_wait_seconds)
                     if not raw_retry
                     else header_wait
                 )
-                # Wait twice the recommended interval, then apply the same
-                # doubled pause before the next request after this one succeeds.
                 wait_seconds = base_wait * 2.0
+                last_429_wait = wait_seconds
                 event = {
                     "seconds": wait_seconds,
                     "path": path,
@@ -1321,7 +2103,7 @@ class EBirdClient:
                 }
                 self.rate_limit_events.append(event)
                 self.http_429_count += 1
-                self._post_rate_limit_cooldown_seconds = wait_seconds
+                defer_ebird_requests(wait_seconds)
                 log_api_done(
                     "ebird",
                     summary,
@@ -1335,6 +2117,8 @@ class EBirdClient:
                 continue
             response.raise_for_status()
             data = response.json()
+            if last_429_wait > 0:
+                defer_ebird_requests(last_429_wait)
             log_api_done(
                 "ebird",
                 summary,
@@ -1416,17 +2200,7 @@ class EBirdClient:
 
     def cached_region_species_codes(self, region_code: str) -> set[str]:
         """Return species codes ever recorded in a region (disk-cached)."""
-        code = (region_code or "").strip()
-        if not code:
-            return set()
-        cached = load_disk_region_species_codes(code)
-        if cached is not None:
-            return set(cached)
-        codes = self.region_species_codes(code)
-        cache = _load_json_file(REGION_SPECIES_CACHE_PATH)
-        cache[code] = codes
-        _save_json_file(REGION_SPECIES_CACHE_PATH, cache)
-        return set(codes)
+        return set(self.region_species_codes(region_code))
 
     def last_seen_in_region(
         self,
@@ -1526,6 +2300,8 @@ class EBirdClient:
         delay_seconds: float = 0.0,
         on_progress: Any = None,
         should_stop: Any = None,
+        first_day: date | None = None,
+        last_day: date | None = None,
     ) -> dict[str, Any]:
         """Persist daily checklist feeds for a region through today.
 
@@ -1534,7 +2310,10 @@ class EBirdClient:
         mistake the cache for a complete daily record.
 
         Missing days (including whole prior years) are fetched. Already-cached
-        historical days are skipped; today is always refreshed.
+        historical days are skipped; today is always refreshed. Pass
+        ``first_day`` / ``last_day`` to fill only a window inside the year.
+        Extra ``delay_seconds`` between days is optional; ``EBirdClient.get``
+        already enforces ``MAX_CALLS_PER_MINUTE``.
         """
         code = (region_code or "").strip()
         if not code:
@@ -1562,10 +2341,14 @@ class EBirdClient:
             daily = {}
 
         today = date.today()
-        last_day = min(date(year, 12, 31), today)
-        first_day = date(year, 1, 1)
-        if first_day > last_day:
+        year_first = date(year, 1, 1)
+        year_last = min(date(year, 12, 31), today)
+        if year_first > year_last:
             raise ValueError("The requested year has not started yet.")
+        first_day = year_first if first_day is None else max(first_day, year_first)
+        last_day = year_last if last_day is None else min(last_day, year_last)
+        if first_day > last_day:
+            raise ValueError("The requested date window is empty for this year.")
 
         pending_days: list[date] = []
         day = first_day
@@ -1647,19 +2430,75 @@ class EBirdClient:
         data = self.get(f"/product/checklist/view/{sub_id}")
         return data if isinstance(data, dict) else {}
 
-    def region_species_codes(self, region_code: str) -> list[str]:
+    def region_species_codes(
+        self,
+        region_code: str,
+        *,
+        use_cache: bool = True,
+        refresh: bool = False,
+    ) -> list[str]:
         """Species codes ever recorded in a region, in eBird taxonomic order.
 
-        Calls ``GET /product/spplist/{regionCode}``, which returns only an
-        ordered JSON array of species-level eBird codes — no names or counts.
+        Calls ``GET /product/spplist/{regionCode}`` when the region is not
+        already on disk. The ordered JSON array is persisted for reuse.
         """
         code = (region_code or "").strip()
         if not code:
             return []
+        if use_cache and not refresh:
+            cached = load_disk_region_species_codes(code)
+            if cached is not None:
+                return cached
         rows = self.get(f"/product/spplist/{code}")
         if not isinstance(rows, list):
             return []
-        return [str(item).strip() for item in rows if str(item).strip()]
+        codes = [str(item).strip() for item in rows if str(item).strip()]
+        save_region_species_cache(code, codes=codes)
+        return codes
+
+    def region_species_birds(
+        self,
+        region_code: str,
+        *,
+        use_cache: bool = True,
+        refresh: bool = False,
+    ) -> list[dict[str, str]]:
+        """Named species ever recorded in a region, in eBird taxonomic order.
+
+        Prefers the on-disk named list. Otherwise uses cached species codes,
+        resolves names from taxonomy, and writes the full list to disk.
+        Non-species taxonomy categories are omitted.
+        """
+        code = (region_code or "").strip()
+        if not code:
+            return []
+        if use_cache and not refresh:
+            cached_birds = load_disk_region_species_birds(code)
+            if cached_birds is not None:
+                return cached_birds
+        species_codes = self.region_species_codes(
+            code, use_cache=use_cache, refresh=refresh
+        )
+        if not species_codes:
+            save_region_species_cache(code, codes=[], birds=[])
+            return []
+        taxa = self.species_taxa(species_codes)
+        birds: list[dict[str, str]] = []
+        for species_code in species_codes:
+            taxon = taxa.get(species_code) or {}
+            category = str(taxon.get("category") or "species").strip().casefold()
+            if category and category != "species":
+                continue
+            name = str(taxon.get("comName") or species_code).strip()
+            birds.append(
+                {
+                    "code": species_code,
+                    "name": name.split(" (", 1)[0].strip() or name,
+                    "sciName": str(taxon.get("sciName") or "").strip(),
+                }
+            )
+        save_region_species_cache(code, codes=species_codes, birds=birds)
+        return birds
 
     def list_regions(
         self,
@@ -1714,7 +2553,12 @@ class EBirdClient:
         if back is not None:
             params["back"] = back
         rows = self.get(f"/ref/hotspot/{region_code}", params=params)
-        return rows if isinstance(rows, list) else []
+        if not isinstance(rows, list):
+            return []
+        return filter_hotspots_for_region(
+            [row for row in rows if isinstance(row, dict)],
+            region_code,
+        )
 
     def top_hotspots(
         self,
@@ -1747,10 +2591,9 @@ class EBirdClient:
         Returns ``(merged_list, newly_added)``.
         """
         code = (region_code or "").strip()
-        current = (
-            list(existing)
-            if existing is not None
-            else load_cached_hotspots(code)
+        current = filter_hotspots_for_region(
+            list(existing) if existing is not None else load_cached_hotspots(code),
+            code,
         )
         incoming = self.hotspots(code)
         merged, added = merge_hotspot_lists(current, incoming)
@@ -1758,37 +2601,68 @@ class EBirdClient:
             save_cached_hotspots(code, merged)
         return merged, added
 
-    def location_checklists(
+    def _hotspot_rows_from_feed(
+        self, rows: list[Any], loc_id: str
+    ) -> list[dict[str, Any]]:
+        wanted = (loc_id or "").strip()
+        matched: list[dict[str, Any]] = []
+        for row in rows:
+            if isinstance(row, dict) and _feed_row_loc_id(row) == wanted:
+                matched.append(row)
+        return matched
+
+    def _hotspot_checklists_for_day(
         self,
         loc_id: str,
+        day: date,
         *,
-        days_back: int = 7,
-        end_date: date | None = None,
-        max_results: int = 200,
+        region_code: str,
+        persist: bool,
+        max_results: int,
     ) -> list[dict[str, Any]]:
-        """Checklists submitted at a hotspot/location over a date window.
-
-        The window ends on ``end_date`` (default: today) and includes
-        ``days_back`` days ending on that date.
-        """
-        from datetime import date, timedelta
-
-        end = end_date or date.today()
-        start = end - timedelta(days=days_back - 1)
+        """Prefer the regional daily-feed cache; fetch and store missing days."""
+        today = date.today()
+        code = (region_code or "").strip()
         found: dict[str, dict[str, Any]] = {}
 
         def keep(rows: list[dict[str, Any]]) -> None:
             for row in rows:
-                sub_id = row.get("subId") or row.get("subID")
+                sub_id = str(row.get("subId") or row.get("subID") or "").strip()
                 if sub_id:
-                    found[str(sub_id)] = row
+                    found[sub_id] = row
 
-        # Recent feed is only useful when the window includes today.
-        if end >= date.today():
-            keep(self.recent_checklists(loc_id, max_results=max_results))
+        if day > today:
+            cache = load_region_year_feed_cache(code, day.year)
+            daily = cache.get("daily") if isinstance(cache.get("daily"), dict) else {}
+            entry = daily.get(day.isoformat()) if isinstance(daily, dict) else None
+            if isinstance(entry, dict):
+                keep(self._hotspot_rows_from_feed(entry.get("checklists") or [], loc_id))
+            return list(found.values())
 
-        for offset in range(days_back):
-            day = end - timedelta(days=offset)
+        cache = load_region_year_feed_cache(code, day.year)
+        daily = cache.get("daily") if isinstance(cache.get("daily"), dict) else {}
+        entry = daily.get(day.isoformat()) if isinstance(daily, dict) else None
+        use_cache = isinstance(entry, dict) and day < today
+        truncated = False
+        if use_cache:
+            keep(self._hotspot_rows_from_feed(entry.get("checklists") or [], loc_id))
+            truncated = bool(entry.get("truncated"))
+        else:
+            rows = self.checklists_on_date(
+                code,
+                day.year,
+                day.month,
+                day.day,
+                max_results=max_results,
+            )
+            if persist:
+                persist_region_feed_day(code, day, rows, max_results=max_results)
+            keep(self._hotspot_rows_from_feed(rows, loc_id))
+            truncated = len(rows) >= max_results
+
+        # Region feeds cap at max_results per day. Fill this hotspot from the
+        # location endpoint without overwriting the regional cache.
+        if truncated:
             keep(
                 self.checklists_on_date(
                     loc_id,
@@ -1798,6 +2672,75 @@ class EBirdClient:
                     max_results=max_results,
                 )
             )
+        return list(found.values())
+
+    def location_checklists(
+        self,
+        loc_id: str,
+        *,
+        days_back: int = 7,
+        start_date: date | None = None,
+        end_date: date | None = None,
+        max_results: int = 200,
+        region_code: str | None = None,
+        persist: bool = True,
+    ) -> list[dict[str, Any]]:
+        """Checklists submitted at a hotspot/location over a date window.
+
+        Uses ``start_date``–``end_date`` when both are provided. Otherwise the
+        window ends on ``end_date`` (default: today) and includes ``days_back``
+        days ending on that date.
+
+        When ``region_code`` is set, historical days are read from the regional
+        daily-feed cache first. Missing days (and today) are fetched from eBird
+        and written back into that cache.
+        """
+        end = end_date or date.today()
+        if start_date is not None:
+            start = start_date
+            if start > end:
+                start, end = end, start
+            days_back = (end - start).days + 1
+        else:
+            start = end - timedelta(days=max(1, int(days_back)) - 1)
+        found: dict[str, dict[str, Any]] = {}
+
+        def keep(rows: list[dict[str, Any]]) -> None:
+            for row in rows:
+                sub_id = row.get("subId") or row.get("subID")
+                if sub_id:
+                    found[str(sub_id)] = row
+
+        region = (region_code or "").strip()
+        if region:
+            day = start
+            while day <= end:
+                keep(
+                    self._hotspot_checklists_for_day(
+                        loc_id,
+                        day,
+                        region_code=region,
+                        persist=persist,
+                        max_results=max_results,
+                    )
+                )
+                day += timedelta(days=1)
+        else:
+            # Recent feed is only useful when the window includes today.
+            if end >= date.today():
+                keep(self.recent_checklists(loc_id, max_results=max_results))
+
+            for offset in range(days_back):
+                day = end - timedelta(days=offset)
+                keep(
+                    self.checklists_on_date(
+                        loc_id,
+                        day.year,
+                        day.month,
+                        day.day,
+                        max_results=max_results,
+                    )
+                )
 
         def within_window(row: dict[str, Any]) -> bool:
             iso = str(row.get("isoObsDate") or "")
