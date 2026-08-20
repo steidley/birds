@@ -67,6 +67,59 @@ load_dotenv(Path(__file__).parent / ".env")
 
 LIFE_LISTS_DIR = Path(__file__).parent / "lifeLists"
 SAVED_GALLERIES_DIR = Path(__file__).parent / "saved_galleries"
+IMAGE_SIZE_CONFIG_PATH = Path(__file__).parent / "ui_image_sizes.json"
+IMAGE_SIZE_LAYOUTS = ("desktop", "mobile")
+DEFAULT_IMAGE_SIZES_DESKTOP: dict[str, int] = {
+    "gallery_summary": 144,
+    "gallery_standard": 420,
+    "compare": 420,
+    "similar": 180,
+    "checklist_summary": 144,
+    "list_thumbs": 144,
+    "checklist_species": 56,
+}
+DEFAULT_IMAGE_SIZES_MOBILE: dict[str, int] = {
+    "gallery_summary": 96,
+    "gallery_standard": 280,
+    "compare": 280,
+    "similar": 120,
+    "checklist_summary": 96,
+    "list_thumbs": 96,
+    "checklist_species": 48,
+}
+DEFAULT_IMAGE_SIZES_BY_LAYOUT: dict[str, dict[str, int]] = {
+    "desktop": DEFAULT_IMAGE_SIZES_DESKTOP,
+    "mobile": DEFAULT_IMAGE_SIZES_MOBILE,
+}
+# Flat defaults kept for migration / single-key helpers.
+DEFAULT_IMAGE_SIZES = DEFAULT_IMAGE_SIZES_DESKTOP
+IMAGE_SIZE_LABELS: dict[str, str] = {
+    "gallery_summary": "Gallery summary",
+    "gallery_standard": "Gallery standard",
+    "compare": "Compare",
+    "similar": "Similar species",
+    "checklist_summary": "Checklist summary",
+    "list_thumbs": "Saved / my checklist cards",
+    "checklist_species": "Checklist species list",
+}
+IMAGE_SIZE_HELP: dict[str, str] = {
+    "gallery_summary": "Thumbnail size in Summary gallery view (pixels).",
+    "gallery_standard": "Main photo height in Standard view (pixels).",
+    "compare": "Compare photo height (pixels).",
+    "similar": "Similar-species thumbnail size (pixels).",
+    "checklist_summary": "Species-summary grid on Checklists (pixels).",
+    "list_thumbs": "Thumbnails on saved galleries and My checklists cards (pixels).",
+    "checklist_species": "Inline species photos in checklist lists (pixels).",
+}
+IMAGE_SIZE_RANGE: dict[str, tuple[int, int]] = {
+    "gallery_summary": (48, 320),
+    "gallery_standard": (160, 900),
+    "compare": (160, 900),
+    "similar": (72, 360),
+    "checklist_summary": (48, 320),
+    "list_thumbs": (48, 320),
+    "checklist_species": (32, 160),
+}
 SAVED_GALLERY_QUERY = "saved_gallery"
 CHECKLIST_GALLERY_QUERY = "checklist_gallery"
 SUMMARY_GALLERY_QUERY = "summary_gallery"
@@ -205,6 +258,12 @@ div[class*="st-key-header_region_"] button p {
   text-overflow: ellipsis !important;
   max-width: 22rem !important;
   text-align: right !important;
+}
+/* Keep the upper-left config / menu icon columns compact */
+div[data-testid="stHorizontalBlock"]:has([data-testid="stPopoverButton"]) > div:has([data-testid="stPopoverButton"]) {
+  width: 2.6rem !important;
+  min-width: 2.6rem !important;
+  flex: 0 0 2.6rem !important;
 }
 </style>
 """
@@ -2777,7 +2836,7 @@ def render_desktop_nav_panel(
     region_code: str = "",
     birds: list[dict] | None = None,
 ) -> None:
-    """Left sidebar with screen links (and gallery controls on that screen)."""
+    """Left sidebar with screen links (and gallery save controls on that screen)."""
     if not desktop_nav_panel_open():
         return
     key_prefix = "gallery_nav" if screen == "gallery" else f"dashboard_nav_{screen}"
@@ -2794,14 +2853,7 @@ def render_desktop_nav_panel(
         render_app_nav_buttons(current=screen, key_prefix=key_prefix)
         if screen == "gallery":
             st.divider()
-            render_gallery_menu_controls(
-                saved_id=saved_id,
-                region_code=region_code,
-                birds=birds,
-            )
-        elif screen in {"saved", "mine"}:
-            st.divider()
-            render_gallery_sort_controls()
+            render_gallery_save_controls(saved_id=saved_id)
 
 
 def _cached_region_list_name(code: str) -> str | None:
@@ -2898,21 +2950,28 @@ def render_page_header(title: str, *, screen: str) -> None:
     if current_ui_layout() == "desktop":
         render_desktop_nav_panel(screen=screen)
 
+    # Upper left: config, then optional nav menu, then title, then region.
     if show_menu and show_chip:
-        menu_col, title_col, region_col = st.columns(
-            [1, 10, 4], vertical_alignment="center"
+        config_col, menu_col, title_col, region_col = st.columns(
+            [1, 1, 9, 4], vertical_alignment="center"
         )
     elif show_menu:
-        menu_col, title_col = st.columns([1, 16], vertical_alignment="center")
+        config_col, menu_col, title_col = st.columns(
+            [1, 1, 15], vertical_alignment="center"
+        )
         region_col = None
     elif show_chip:
-        title_col, region_col = st.columns([4, 1.4], vertical_alignment="center")
+        config_col, title_col, region_col = st.columns(
+            [1, 4, 1.4], vertical_alignment="center"
+        )
         menu_col = None
     else:
+        config_col, title_col = st.columns([1, 16], vertical_alignment="center")
         menu_col = None
         region_col = None
-        title_col = None
 
+    with config_col:
+        render_config_icon(screen=screen)
     if menu_col is not None:
         with menu_col:
             if current_ui_layout() == "desktop":
@@ -2922,9 +2981,6 @@ def render_page_header(title: str, *, screen: str) -> None:
                     render_app_nav_buttons(
                         current=screen, key_prefix=f"dashboard_nav_{screen}"
                     )
-                    if screen in {"saved", "mine"}:
-                        st.divider()
-                        render_gallery_sort_controls()
     if title_col is not None:
         with title_col:
             st.title(title)
@@ -3139,7 +3195,7 @@ def render_saved_galleries() -> None:
                 render_species_thumbnail_table(
                     thumbs,
                     columns=6,
-                    width=144,
+                    width=image_size("list_thumbs"),
                     click_hrefs=[url] * len(thumbs) if thumbs else None,
                 )
                 notes = str(item.get("notes") or "").strip()
@@ -3458,7 +3514,7 @@ def render_own_checklists() -> None:
                     render_species_thumbnail_table(
                         thumbs,
                         columns=6,
-                        width=144,
+                        width=image_size("list_thumbs"),
                         click_hrefs=[href] * len(thumbs) if href else None,
                     )
                 else:
@@ -3621,7 +3677,7 @@ def _on_gallery_sort_change() -> None:
 
 
 def render_gallery_sort_controls() -> None:
-    """Shared sort radio for gallery and saved-galleries hamburger menus."""
+    """Shared sort radio for gallery and saved-galleries config menus."""
     pending = st.session_state.pop("gallery_sort_pending", None)
     if pending in GALLERY_SORT_OPTIONS:
         st.session_state.gallery_sort_radio = pending
@@ -3639,13 +3695,8 @@ def render_gallery_sort_controls() -> None:
     st.session_state.gallery_sort_pref = st.session_state.gallery_sort_radio
 
 
-def render_gallery_menu_controls(
-    *,
-    saved_id: str,
-    region_code: str,
-    birds: list[dict] | None = None,
-) -> None:
-    """Save, filter, view, sort, and legend controls for the gallery menu."""
+def render_gallery_save_controls(*, saved_id: str) -> None:
+    """Save / delete actions for the nav menu."""
     if st.button(
         "Save gallery",
         icon=":material/save:",
@@ -3679,7 +3730,14 @@ def render_gallery_menu_controls(
         ):
             st.session_state[confirm_key] = saved_id
             st.rerun()
-    st.divider()
+
+
+def render_gallery_config_controls(
+    *,
+    region_code: str,
+    birds: list[dict] | None = None,
+) -> None:
+    """Filter, sort, show switches, and image sizes for the config icon."""
     coerce_life_list_scope_widget(region_code=region_code, birds=birds)
     filter_options = life_list_filter_options(region_code=region_code, birds=birds)
     if filter_options:
@@ -3698,29 +3756,6 @@ def render_gallery_menu_controls(
         )
     else:
         st.caption("No filter labels in this gallery.")
-    st.divider()
-    gallery_mode = current_gallery_view_mode()
-    pending_mode = st.session_state.pop("gallery_view_mode_pending", None)
-    if pending_mode == "list":
-        pending_mode = "summary"
-    if pending_mode in {"summary", "standard"}:
-        st.session_state.gallery_view_mode_radio = pending_mode
-        gallery_mode = pending_mode
-    elif st.session_state.get("gallery_view_mode_radio") == "list":
-        st.session_state.gallery_view_mode_radio = gallery_mode
-    elif "gallery_view_mode_radio" not in st.session_state:
-        st.session_state.gallery_view_mode_radio = gallery_mode
-    st.radio(
-        "Gallery view",
-        options=["summary", "standard"],
-        format_func=lambda value: {
-            "summary": "Summary",
-            "standard": "Standard",
-        }[value],
-        key="gallery_view_mode_radio",
-        help="Summary is the thumbnail grid. Standard is one bird at a time. Tap a summary photo for Standard view.",
-    )
-    st.session_state.gallery_view_mode = st.session_state.gallery_view_mode_radio
     st.divider()
     render_gallery_sort_controls()
     st.divider()
@@ -3745,6 +3780,58 @@ def render_gallery_menu_controls(
         on_change=_sync_gallery_info_default,
         help="When on, Standard view opens the About this bird panel. Tap the bird name to hide or show it.",
     )
+    st.divider()
+    render_image_size_controls()
+
+
+def render_gallery_view_toggle() -> None:
+    """Button labeled View that switches between Summary and Standard."""
+    mode = current_gallery_view_mode()
+    next_mode = "standard" if mode == "summary" else "summary"
+    help_text = (
+        "Switch to Standard (one bird at a time)"
+        if mode == "summary"
+        else "Switch to Summary (thumbnail grid)"
+    )
+    if st.button(
+        "View",
+        key="gallery_view_toggle",
+        help=help_text,
+        use_container_width=True,
+    ):
+        st.session_state.gallery_view_mode = next_mode
+        st.session_state.gallery_view_mode_pending = next_mode
+        st.session_state.pop("gallery_summary_page", None)
+        if next_mode == "standard":
+            st.session_state.gallery_show_info = gallery_info_visible_default()
+        st.rerun()
+
+
+def render_config_icon(
+    *,
+    screen: str,
+    saved_id: str = "",
+    region_code: str = "",
+    birds: list[dict] | None = None,
+) -> None:
+    """Upper-left settings control for filter, sort, and display options."""
+    help_text = {
+        "gallery": "Filter, sort, show options, and image sizes",
+        "saved": "Sort order and image sizes",
+        "mine": "Sort order and image sizes",
+    }.get(screen, "Image sizes and display options")
+    with st.popover(":material/settings:", help=help_text):
+        if screen == "gallery":
+            render_gallery_config_controls(
+                region_code=region_code,
+                birds=birds,
+            )
+        elif screen in {"saved", "mine"}:
+            render_gallery_sort_controls()
+            st.divider()
+            render_image_size_controls()
+        else:
+            render_image_size_controls()
 
 
 def ebird_taxon_order_maps() -> tuple[dict[str, float], dict[str, float]]:
@@ -3835,6 +3922,159 @@ def sorted_gallery_birds(birds: list[dict]) -> list[dict]:
     annotated = annotate_gallery_birds_with_life_lists(list(birds))
     indices = sort_gallery_visible_indices(annotated, list(range(len(annotated))))
     return [annotated[i] for i in indices]
+
+
+def clamp_image_size(key: str, value: object) -> int:
+    low, high = IMAGE_SIZE_RANGE.get(key, (32, 900))
+    try:
+        size = int(value)
+    except (TypeError, ValueError):
+        size = DEFAULT_IMAGE_SIZES.get(key, 144)
+    return max(low, min(high, size))
+
+
+def _normalize_layout_sizes(
+    raw: object,
+    *,
+    layout: str,
+) -> dict[str, int]:
+    defaults = DEFAULT_IMAGE_SIZES_BY_LAYOUT.get(layout) or DEFAULT_IMAGE_SIZES_DESKTOP
+    sizes = dict(defaults)
+    if not isinstance(raw, dict):
+        return sizes
+    for key in defaults:
+        if key in raw:
+            sizes[key] = clamp_image_size(key, raw[key])
+    return sizes
+
+
+def load_image_sizes_by_layout() -> dict[str, dict[str, int]]:
+    """Read deployable per-layout image sizes; migrate flat configs."""
+    by_layout = {
+        layout: dict(defaults)
+        for layout, defaults in DEFAULT_IMAGE_SIZES_BY_LAYOUT.items()
+    }
+    try:
+        raw = json.loads(IMAGE_SIZE_CONFIG_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return by_layout
+    if not isinstance(raw, dict):
+        return by_layout
+
+    # New shape: {"desktop": {...}, "mobile": {...}}
+    if any(layout in raw for layout in IMAGE_SIZE_LAYOUTS):
+        for layout in IMAGE_SIZE_LAYOUTS:
+            by_layout[layout] = _normalize_layout_sizes(
+                raw.get(layout), layout=layout
+            )
+        return by_layout
+
+    # Legacy flat shape: treat values as desktop; keep mobile defaults.
+    if any(key in raw for key in DEFAULT_IMAGE_SIZES):
+        by_layout["desktop"] = _normalize_layout_sizes(raw, layout="desktop")
+    return by_layout
+
+
+def load_image_sizes(*, layout: str | None = None) -> dict[str, int]:
+    """Image sizes for one layout (current UI layout when omitted)."""
+    wanted = (layout or current_ui_layout() or "desktop").strip().casefold()
+    if wanted not in IMAGE_SIZE_LAYOUTS:
+        wanted = "desktop"
+    return dict(load_image_sizes_by_layout()[wanted])
+
+
+def save_image_sizes_by_layout(by_layout: dict[str, dict[str, int]]) -> None:
+    """Persist desktop and mobile sizes so they deploy with the app."""
+    payload = {
+        layout: _normalize_layout_sizes(
+            by_layout.get(layout) or DEFAULT_IMAGE_SIZES_BY_LAYOUT[layout],
+            layout=layout,
+        )
+        for layout in IMAGE_SIZE_LAYOUTS
+    }
+    IMAGE_SIZE_CONFIG_PATH.write_text(
+        json.dumps(payload, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+
+def save_image_sizes(sizes: dict[str, int], *, layout: str | None = None) -> None:
+    """Persist one layout's sizes into the shared config file."""
+    wanted = (layout or current_ui_layout() or "desktop").strip().casefold()
+    if wanted not in IMAGE_SIZE_LAYOUTS:
+        wanted = "desktop"
+    by_layout = load_image_sizes_by_layout()
+    by_layout[wanted] = _normalize_layout_sizes(sizes, layout=wanted)
+    save_image_sizes_by_layout(by_layout)
+
+
+def image_size_session_key(layout: str, key: str) -> str:
+    return f"image_size_{layout}_{key}"
+
+
+def image_size(key: str) -> int:
+    """Size for an image type in the current desktop/mobile layout."""
+    layout = current_ui_layout()
+    if layout not in IMAGE_SIZE_LAYOUTS:
+        layout = "desktop"
+    session_key = image_size_session_key(layout, key)
+    if session_key in st.session_state:
+        return clamp_image_size(key, st.session_state[session_key])
+    return load_image_sizes(layout=layout).get(
+        key, DEFAULT_IMAGE_SIZES_BY_LAYOUT[layout].get(key, 144)
+    )
+
+
+def ensure_image_size_session() -> None:
+    """Seed widget session state from disk for both layouts."""
+    by_layout = load_image_sizes_by_layout()
+    for layout, sizes in by_layout.items():
+        for key, value in sizes.items():
+            session_key = image_size_session_key(layout, key)
+            if session_key not in st.session_state:
+                st.session_state[session_key] = value
+
+
+def _on_image_size_change(layout: str, key: str) -> None:
+    session_key = image_size_session_key(layout, key)
+    sizes = load_image_sizes(layout=layout)
+    sizes[key] = clamp_image_size(
+        key,
+        st.session_state.get(
+            session_key, DEFAULT_IMAGE_SIZES_BY_LAYOUT[layout][key]
+        ),
+    )
+    save_image_sizes(sizes, layout=layout)
+
+
+def render_image_size_controls() -> None:
+    """Per-layout size steppers; saves to ui_image_sizes.json for deploy."""
+    ensure_image_size_session()
+    active = current_ui_layout()
+    st.markdown("**Image sizes**")
+    st.caption(
+        "Desktop and mobile each have their own sizes. The app uses the set for "
+        f"the current layout (**{active}**). Values save to `ui_image_sizes.json` "
+        "and ship with deploy."
+    )
+    for layout in IMAGE_SIZE_LAYOUTS:
+        label = "Desktop" if layout == "desktop" else "Mobile"
+        with st.expander(
+            f"{label} sizes" + (" · active" if layout == active else ""),
+            expanded=(layout == active),
+        ):
+            for key in DEFAULT_IMAGE_SIZES_BY_LAYOUT[layout]:
+                low, high = IMAGE_SIZE_RANGE[key]
+                st.number_input(
+                    IMAGE_SIZE_LABELS[key],
+                    min_value=low,
+                    max_value=high,
+                    step=8,
+                    key=image_size_session_key(layout, key),
+                    help=f"{IMAGE_SIZE_HELP[key]} ({label.lower()} layout.)",
+                    on_change=_on_image_size_change,
+                    args=(layout, key),
+                )
 
 
 def gallery_chrome_visible_default() -> bool:
@@ -4791,7 +5031,7 @@ def render_compare_gallery() -> None:
         compare_frame = gallery_frame_color(compare_bird)
         swipe = swipe_image(
             photo["image_url"],
-            height=420,
+            height=image_size("compare"),
             frame_color=compare_frame,
             frame_style=gallery_frame_style(compare_bird),
             key=f"compare_swipe_{compare_index}_{image_index}_{gallery_bird_key(compare_bird)}",
@@ -4901,7 +5141,8 @@ def render_gallery() -> None:
     apply_gallery_chrome_defaults()
 
     saved_id = str(st.session_state.get("gallery_saved_id") or "").strip()
-    gallery_menu_help = "Navigation, save, filter, view, and legends"
+    nav_help = "Open other screens and save this gallery"
+    config_region = str(region_code or "")
 
     def _gallery_name_input() -> None:
         if "gallery_name" not in st.session_state:
@@ -4921,41 +5162,66 @@ def render_gallery() -> None:
         render_desktop_nav_panel(
             screen="gallery",
             saved_id=saved_id,
-            region_code=str(region_code or ""),
+            region_code=config_region,
             birds=birds,
         )
         show_menu = not desktop_nav_panel_open()
         if show_menu:
-            menu_col, title_col, region_col = st.columns(
-                [1, 10, 4], vertical_alignment="center"
+            config_col, menu_col, title_col, view_col, region_col = st.columns(
+                [1, 1, 8, 1.4, 3.5], vertical_alignment="center"
             )
+            with config_col:
+                render_config_icon(
+                    screen="gallery",
+                    saved_id=saved_id,
+                    region_code=config_region,
+                    birds=birds,
+                )
             with menu_col:
-                render_nav_show_button(help=gallery_menu_help)
+                render_nav_show_button(help=nav_help)
             with title_col:
                 _gallery_name_input()
+            with view_col:
+                render_gallery_view_toggle()
             with region_col:
                 render_region_chip(screen="gallery")
         else:
-            title_col, region_col = st.columns([4, 1.4], vertical_alignment="center")
+            config_col, title_col, view_col, region_col = st.columns(
+                [1, 3.2, 1.2, 1.4], vertical_alignment="center"
+            )
+            with config_col:
+                render_config_icon(
+                    screen="gallery",
+                    saved_id=saved_id,
+                    region_code=config_region,
+                    birds=birds,
+                )
             with title_col:
                 _gallery_name_input()
+            with view_col:
+                render_gallery_view_toggle()
             with region_col:
                 render_region_chip(screen="gallery")
     else:
-        menu_col, title_col, region_col = st.columns(
-            [1, 10, 4], vertical_alignment="center"
+        config_col, menu_col, title_col, view_col, region_col = st.columns(
+            [1, 1, 8, 1.4, 3.5], vertical_alignment="center"
         )
+        with config_col:
+            render_config_icon(
+                screen="gallery",
+                saved_id=saved_id,
+                region_code=config_region,
+                birds=birds,
+            )
         with menu_col:
-            with st.popover(":material/menu:", help=gallery_menu_help):
+            with st.popover(":material/menu:", help=nav_help):
                 render_app_nav_buttons(current="gallery", key_prefix="gallery_nav")
                 st.divider()
-                render_gallery_menu_controls(
-                    saved_id=saved_id,
-                    region_code=str(region_code or ""),
-                    birds=birds,
-                )
+                render_gallery_save_controls(saved_id=saved_id)
         with title_col:
             _gallery_name_input()
+        with view_col:
+            render_gallery_view_toggle()
         with region_col:
             render_region_chip(screen="gallery")
     st.session_state.gallery_title = (
@@ -5025,7 +5291,7 @@ def render_gallery_summary(
     region_code: str = "",
 ) -> None:
     """Thumbnail grid; tap a photo to open Standard view without leaving the session."""
-    width = 144
+    width = image_size("gallery_summary")
     st.markdown(
         f"""
 <style>
@@ -5259,7 +5525,7 @@ def render_gallery_standard(
 
         swipe = swipe_image(
             photo["image_url"],
-            height=420,
+            height=image_size("gallery_standard"),
             frame_color=frame_color,
             frame_style=gallery_frame_style(bird),
             key=f"gallery_swipe_{bird_index}_{image_index}_{','.join(gallery_scopes)}",
@@ -5493,12 +5759,15 @@ def render_gallery_standard(
                             image_url = str(item.get("image_url") or "").strip()
                             if image_url:
                                 src = html.escape(image_url, quote=True)
+                                similar_w = image_size("similar")
                                 st.markdown(
                                     f"<div style='border:4px {frame_style} {frame_color};"
                                     f"border-radius:10px;padding:4px;"
-                                    f"box-sizing:border-box;line-height:0'>"
+                                    f"box-sizing:border-box;line-height:0;"
+                                    f"width:{similar_w}px;max-width:100%'>"
                                     f"<img src='{src}' alt='' "
-                                    f"style='width:100%;display:block;"
+                                    f"style='width:{similar_w}px;height:{similar_w}px;"
+                                    f"max-width:100%;object-fit:cover;display:block;"
                                     f"border-radius:6px;margin:0'/></div>",
                                     unsafe_allow_html=True,
                                 )
@@ -8548,7 +8817,7 @@ def render_checklists() -> None:
                 )
             with name_col:
                 st.markdown("**Species summary**")
-            render_checklist_species_summary_grid(filtered, width=144)
+            render_checklist_species_summary_grid(filtered, width=image_size("checklist_summary"))
             st.caption(
                 f"{len(filtered)} species · tap a photo or the photo-library icon to open the gallery"
             )
@@ -8687,7 +8956,7 @@ def render_checklists() -> None:
                         render_species_photo(
                             obs.get("code"),
                             scientific_name=obs.get("sciName") or None,
-                            width=56,
+                            width=image_size("checklist_species"),
                         )
                     with text_col:
                         st.write(f"{bird_name}{suffix}{plain_marker}")
@@ -8697,6 +8966,7 @@ st.set_page_config(page_title="Birds", page_icon="🪶", layout="wide")
 apply_iphone_mobile_layout()
 apply_ui_layout()
 apply_gallery_chrome_defaults()
+ensure_image_size_session()
 get_api_key()  # ingest ?EBIRD_API_KEY=… into session when present
 if st.session_state.get("ebird_api_key_needed") and not get_api_key():
     render_api_key_form()
