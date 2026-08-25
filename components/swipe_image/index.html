@@ -57,14 +57,54 @@
       #wrap:focus {
         outline: none;
       }
-      #wrap:focus-visible {
-        outline: 2px solid rgba(0, 0, 0, 0.25);
-        outline-offset: -2px;
+      #hide {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        width: 32px;
+        height: 32px;
+        border: 0;
+        border-radius: 8px;
+        background: rgba(15, 23, 42, 0.62);
+        color: #fff;
+        cursor: pointer;
+        z-index: 6;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+      }
+      #hide.visible {
+        display: flex;
+      }
+      #hide:hover,
+      #hide:focus-visible {
+        background: rgba(15, 23, 42, 0.86);
+        outline: none;
+      }
+      #hide svg {
+        width: 16px;
+        height: 16px;
+        pointer-events: none;
       }
     </style>
   </head>
   <body>
     <div id="wrap" tabindex="0" aria-label="Bird photo. Arrow keys navigate.">
+      <button
+        id="hide"
+        type="button"
+        title="Don't use this photo in any view"
+        aria-label="Don't use this photo in any view"
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+          <path d="M10 11v6"></path>
+          <path d="M14 11v6"></path>
+          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+        </svg>
+      </button>
       <img id="photo" alt="Bird photo" draggable="false" />
       <div id="hint">←→ photos · ↑↓ birds · keyboard works app-wide</div>
     </div>
@@ -117,6 +157,10 @@
             ? "←→ swipe photos"
             : "←→ photos · ↑↓ birds · keyboard works app-wide";
         }
+        const hide = document.getElementById("hide");
+        if (hide) {
+          hide.classList.toggle("visible", Boolean(args.show_hide));
+        }
         sendMessage("streamlit:setFrameHeight", { height: height });
       }
 
@@ -126,6 +170,12 @@
 
       const wrap = document.getElementById("wrap");
       const img = document.getElementById("photo");
+      const hide = document.getElementById("hide");
+      function isHideTarget(target) {
+        return Boolean(
+          target && hide && (target === hide || hide.contains(target))
+        );
+      }
 
       function begin(x, y) {
         tracking = true;
@@ -184,6 +234,7 @@
       wrap.addEventListener(
         "touchstart",
         (e) => {
+          if (isHideTarget(e.target)) return;
           if (e.touches.length !== 1) return;
           begin(e.touches[0].clientX, e.touches[0].clientY);
         },
@@ -213,6 +264,7 @@
       });
 
       wrap.addEventListener("pointerdown", (e) => {
+        if (isHideTarget(e.target)) return;
         if (e.pointerType === "touch") return;
         if (e.button !== 0) return;
         wrap.setPointerCapture(e.pointerId);
@@ -231,6 +283,27 @@
         tracking = false;
         wrap.classList.remove("dragging");
         img.style.transform = "translate(0, 0)";
+      });
+
+      hide.addEventListener("pointerdown", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        tracking = false;
+      });
+      hide.addEventListener(
+        "touchstart",
+        (e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          tracking = false;
+        },
+        { passive: false }
+      );
+      hide.addEventListener("click", (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        sent = true;
+        setValue("hide_photo");
       });
     </script>
   </body>

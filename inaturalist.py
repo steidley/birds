@@ -18,15 +18,16 @@ import requests
 from api_log import log_api_done, log_api_send
 
 ROOT = Path(__file__).parent
-CACHE_PATH = ROOT / "inaturalist_cache.json"
-GALLERY_CACHE_PATH = ROOT / "inaturalist_gallery_cache.json"
+CACHE_SHARED_DIR = ROOT / "cache" / "shared"
+CACHE_PATH = CACHE_SHARED_DIR / "inaturalist_cache.json"
+GALLERY_CACHE_PATH = CACHE_SHARED_DIR / "inaturalist_gallery_cache.json"
 BIRDNET_API_URL = "https://birdnet.cornell.edu/taxonomy/api/species"
 INAT_API_URL = "https://api.inaturalist.org/v1/taxa"
 INAT_OBS_API_URL = "https://api.inaturalist.org/v1/observations"
 INAT_SIMILAR_API_URL = "https://api.inaturalist.org/v1/identifications/similar_species"
 GALLERY_CACHE_VERSION = 3
 DEFAULT_MAX_PHOTOS = 200
-SIMILAR_CACHE_PATH = ROOT / "inaturalist_similar_cache.json"
+SIMILAR_CACHE_PATH = CACHE_SHARED_DIR / "inaturalist_similar_cache.json"
 
 
 def _log_timing(label: str, started: float, **details: Any) -> None:
@@ -314,6 +315,7 @@ def _load_json_cache(path: Path) -> dict[str, dict[str, Any]]:
 
 
 def _save_json_cache(path: Path, cache: dict[str, dict[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(cache, indent=2, sort_keys=True) + "\n")
 
 
@@ -350,6 +352,7 @@ def _photo_entry(
         "author": photo.get("attribution_name"),
         "source": kind_label,
         "photo_kind": photo_kind,
+        "photo_id": photo.get("id"),
     }
 
 

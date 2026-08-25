@@ -1,0 +1,759 @@
+{
+  "checklist": {
+    "allObsReported": false,
+    "checklistId": "CL23538",
+    "comments": "The trip actually lasted 5 hours but there was an error in the GPS track and the time could not be edited.",
+    "creationDt": "2025-08-31 10:45",
+    "deleteTrack": false,
+    "durationHrs": 0.617,
+    "effortDistanceEnteredUnit": "mi",
+    "effortDistanceKm": 14.724,
+    "groupId": "G15469076",
+    "lastEditedDt": "2026-07-30 15:52",
+    "locId": "L364884",
+    "numObservers": 30,
+    "numSpecies": 68,
+    "obs": [
+      {
+        "howManyAtleast": 2,
+        "howManyAtmost": 2,
+        "howManyStr": "2",
+        "mediaCounts": {
+          "P": 2
+        },
+        "obsId": "OBS3515356771",
+        "present": false,
+        "speciesCode": "bkbwhd1"
+      },
+      {
+        "howManyAtleast": 1,
+        "howManyAtmost": 1,
+        "howManyStr": "1",
+        "mediaCounts": {
+          "P": 1
+        },
+        "obsId": "OBS3515356813",
+        "present": false,
+        "speciesCode": "fuwduc"
+      },
+      {
+        "howManyAtleast": 4,
+        "howManyAtmost": 4,
+        "howManyStr": "4",
+        "obsId": "OBS3515356819",
+        "present": false,
+        "speciesCode": "buwtea"
+      },
+      {
+        "howManyAtleast": 6,
+        "howManyAtmost": 6,
+        "howManyStr": "6",
+        "mediaCounts": {
+          "P": 2
+        },
+        "obsId": "OBS3515356781",
+        "present": false,
+        "speciesCode": "motduc1"
+      },
+      {
+        "howManyAtleast": 4,
+        "howManyAtmost": 4,
+        "howManyStr": "4",
+        "obsId": "OBS3515356778",
+        "present": false,
+        "speciesCode": "cogdov"
+      },
+      {
+        "howManyAtleast": 30,
+        "howManyAtmost": 30,
+        "howManyStr": "30",
+        "obsId": "OBS3515368078",
+        "present": false,
+        "speciesCode": "moudov"
+      },
+      {
+        "howManyAtleast": 3,
+        "howManyAtmost": 3,
+        "howManyStr": "3",
+        "obsId": "OBS3515368081",
+        "present": false,
+        "speciesCode": "comnig"
+      },
+      {
+        "comments": "A bit early. Small brown rail with a yellow bill.",
+        "howManyAtleast": 1,
+        "howManyAtmost": 1,
+        "howManyStr": "1",
+        "obsId": "OBS3515356788",
+        "present": false,
+        "speciesCode": "sora"
+      },
+      {
+        "howManyAtleast": 5,
+        "howManyAtmost": 5,
+        "howManyStr": "5",
+        "mediaCounts": {
+          "P": 1
+        },
+        "obsId": "OBS3515356785",
+        "present": false,
+        "speciesCode": "commoo2"
+      },
+      {
+        "howManyAtleast": 11,
+        "howManyAtmost": 11,
+        "howManyStr": "11",
+        "mediaCounts": {
+          "P": 1
+        },
+        "obsId": "OBS3515356820",
+        "present": false,
+        "speciesCode": "amecoo"
+      },
+      {
+        "howManyAtleast": 32,
+        "howManyAtmost": 32,
+        "howManyStr": "32",
+        "mediaCounts": {
+          "P": 10
+        },
+        "obsId": "OBS3515356818",
+        "present": false,
+        "speciesCode": "bknsti1"
+      },
+      {
+        "howManyAtleast": 40,
+        "howManyAtmost": 40,
+        "howManyStr": "40",
+        "mediaCounts": {
+          "P": 2
+        },
+        "obsId": "OBS3515368083",
+        "present": false,
+        "speciesCode": "bkbplo"
+      },
+      {
+        "howManyAtleast": 100,
+        "howManyAtmost": 100,
+        "howManyStr": "100",
+        "mediaCounts": {
+          "P": 1
+        },
+        "obsId": "OBS3515356783",
+        "present": false,
+        "speciesCode": "killde"
+      },
+      {
+        "howManyAtleast": 15,
+        "howManyAtmost": 15,
+        "howManyStr": "15",
+        "mediaCounts": {
+          "P": 5
+        },
+        "obsId": "OBS3515356807",
+        "present": false,
+        "speciesCode": "semplo"
+      },
+      {
+        "howManyAtleast": 6,
+        "howManyAtmost": 6,
+        "howManyStr": "6",
+        "mediaCounts": {
+          "P": 2
+        },
+        "obsId": "OBS3515356776",
+        "present": false,
+        "speciesCode": "shbdow"
+      },
+      {
+        "howManyAtleast": 2,
+        "howManyAtmost": 2,
+        "howManyStr": "2",
+        "mediaCounts": {
+          "P": 1
+        },
+        "obsId": "OBS3515356774",
+        "present": false,
+        "speciesCode": "lobdow"
+      },
+      {
+        "howManyAtleast": 3,
+        "howManyAtmost": 3,
+        "howManyStr": "3",
+        "mediaCounts": {
+          "P": 2
+        },
+        "obsId": "OBS3515356784",
+        "present": false,
+        "speciesCode": "sposan"
+      },
+      {
+        "howManyAtleast": 2,
+        "howManyAtmost": 2,
+        "howManyStr": "2",
+        "obsId": "OBS3515356806",
+        "present": false,
+        "speciesCode": "solsan"
+      },
+      {
+        "howManyAtleast": 15,
+        "howManyAtmost": 15,
+        "howManyStr": "15",
+        "mediaCounts": {
+          "P": 3
+        },
+        "obsId": "OBS3515356815",
+        "present": false,
+        "speciesCode": "lesyel"
+      },
+      {
+        "howManyAtleast": 1,
+        "howManyAtmost": 1,
+        "howManyStr": "1",
+        "mediaCounts": {
+          "P": 1
+        },
+        "obsId": "OBS3515356798",
+        "present": false,
+        "speciesCode": "willet3"
+      },
+      {
+        "howManyAtleast": 12,
+        "howManyAtmost": 12,
+        "howManyStr": "12",
+        "mediaCounts": {
+          "P": 3
+        },
+        "obsId": "OBS3515356811",
+        "present": false,
+        "speciesCode": "greyel"
+      },
+      {
+        "howManyAtleast": 3,
+        "howManyAtmost": 3,
+        "howManyStr": "3",
+        "obsId": "OBS3515368080",
+        "present": false,
+        "speciesCode": "rudtur"
+      },
+      {
+        "comments": "Stocky medium-sized shorebird with yellow legs, scaly gray back, and a thick black bill. A cool bird for the location. Photos.",
+        "howManyAtleast": 1,
+        "howManyAtmost": 1,
+        "howManyStr": "1",
+        "mediaCounts": {
+          "P": 26
+        },
+        "obsId": "OBS3515356809",
+        "present": false,
+        "speciesCode": "redkno"
+      },
+      {
+        "howManyAtleast": 3,
+        "howManyAtmost": 3,
+        "howManyStr": "3",
+        "mediaCounts": {
+          "P": 2
+        },
+        "obsId": "OBS3515356803",
+        "present": false,
+        "speciesCode": "stisan"
+      },
+      {
+        "howManyAtleast": 300,
+        "howManyAtmost": 300,
+        "howManyStr": "300",
+        "mediaCounts": {
+          "P": 7
+        },
+        "obsId": "OBS3515356772",
+        "present": false,
+        "speciesCode": "leasan"
+      },
+      {
+        "howManyAtleast": 8,
+        "howManyAtmost": 8,
+        "howManyStr": "8",
+        "mediaCounts": {
+          "P": 5
+        },
+        "obsId": "OBS3515356790",
+        "present": false,
+        "speciesCode": "pecsan"
+      },
+      {
+        "howManyAtleast": 1,
+        "howManyAtmost": 1,
+        "howManyStr": "1",
+        "obsId": "OBS3515356816",
+        "present": false,
+        "speciesCode": "wessan"
+      },
+      {
+        "howManyAtleast": 75,
+        "howManyAtmost": 75,
+        "howManyStr": "75",
+        "mediaCounts": {
+          "P": 1
+        },
+        "obsId": "OBS3515368086",
+        "present": false,
+        "speciesCode": "semsan"
+      },
+      {
+        "howManyAtleast": 150,
+        "howManyAtmost": 150,
+        "howManyStr": "150",
+        "obsId": "OBS3515356797",
+        "present": false,
+        "speciesCode": "calidr"
+      },
+      {
+        "howManyAtleast": 100,
+        "howManyAtmost": 100,
+        "howManyStr": "100",
+        "mediaCounts": {
+          "P": 2
+        },
+        "obsId": "OBS3515356804",
+        "present": false,
+        "speciesCode": "laugul"
+      },
+      {
+        "howManyAtleast": 115,
+        "howManyAtmost": 115,
+        "howManyStr": "115",
+        "mediaCounts": {
+          "P": 13
+        },
+        "obsId": "OBS3515356795",
+        "present": false,
+        "speciesCode": "blkski"
+      },
+      {
+        "howManyAtleast": 6,
+        "howManyAtmost": 6,
+        "howManyStr": "6",
+        "obsId": "OBS3515356821",
+        "present": false,
+        "speciesCode": "leater1"
+      },
+      {
+        "howManyAtleast": 50,
+        "howManyAtmost": 50,
+        "howManyStr": "50",
+        "mediaCounts": {
+          "P": 2
+        },
+        "obsId": "OBS3515356810",
+        "present": false,
+        "speciesCode": "gubter2"
+      },
+      {
+        "howManyAtleast": 20,
+        "howManyAtmost": 20,
+        "howManyStr": "20",
+        "mediaCounts": {
+          "P": 3
+        },
+        "obsId": "OBS3515356793",
+        "present": false,
+        "speciesCode": "caster1"
+      },
+      {
+        "howManyAtleast": 8,
+        "howManyAtmost": 8,
+        "howManyStr": "8",
+        "mediaCounts": {
+          "P": 5
+        },
+        "obsId": "OBS3515356786",
+        "present": false,
+        "speciesCode": "blkter"
+      },
+      {
+        "howManyAtleast": 1,
+        "howManyAtmost": 1,
+        "howManyStr": "1",
+        "obsId": "OBS3515368087",
+        "present": false,
+        "speciesCode": "forter"
+      },
+      {
+        "comments": "Estimate and maybe an undercount. Insane numbers.",
+        "howManyAtleast": 3000,
+        "howManyAtmost": 3000,
+        "howManyStr": "3000",
+        "mediaCounts": {
+          "P": 3
+        },
+        "obsId": "OBS3515356814",
+        "present": false,
+        "speciesCode": "woosto"
+      },
+      {
+        "howManyAtleast": 2,
+        "howManyAtmost": 2,
+        "howManyStr": "2",
+        "mediaCounts": {
+          "P": 1
+        },
+        "obsId": "OBS3515356822",
+        "present": false,
+        "speciesCode": "anhing"
+      },
+      {
+        "howManyAtleast": 20,
+        "howManyAtmost": 20,
+        "howManyStr": "20",
+        "obsId": "OBS3515356770",
+        "present": false,
+        "speciesCode": "doccor"
+      },
+      {
+        "howManyAtleast": 35,
+        "howManyAtmost": 35,
+        "howManyStr": "35",
+        "obsId": "OBS3515368082",
+        "present": false,
+        "speciesCode": "whiibi"
+      },
+      {
+        "howManyAtleast": 1,
+        "howManyAtmost": 1,
+        "howManyStr": "1",
+        "mediaCounts": {
+          "P": 2
+        },
+        "obsId": "OBS3515356775",
+        "present": false,
+        "speciesCode": "gloibi"
+      },
+      {
+        "howManyAtleast": 150,
+        "howManyAtmost": 150,
+        "howManyStr": "150",
+        "mediaCounts": {
+          "P": 9
+        },
+        "obsId": "OBS3515356779",
+        "present": false,
+        "speciesCode": "rosspo1"
+      },
+      {
+        "howManyAtleast": 2,
+        "howManyAtmost": 2,
+        "howManyStr": "2",
+        "mediaCounts": {
+          "P": 2
+        },
+        "obsId": "OBS3515368088",
+        "present": false,
+        "speciesCode": "yecnih1"
+      },
+      {
+        "comments": "A few dozen at the start and easily 60 flushed off the back berm.",
+        "howManyAtleast": 100,
+        "howManyAtmost": 100,
+        "howManyStr": "100",
+        "mediaCounts": {
+          "P": 2
+        },
+        "obsId": "OBS3515356789",
+        "present": false,
+        "speciesCode": "bkcnih2"
+      },
+      {
+        "howManyAtleast": 7,
+        "howManyAtmost": 7,
+        "howManyStr": "7",
+        "obsId": "OBS3515356812",
+        "present": false,
+        "speciesCode": "libher"
+      },
+      {
+        "howManyAtleast": 8,
+        "howManyAtmost": 8,
+        "howManyStr": "8",
+        "mediaCounts": {
+          "P": 1
+        },
+        "obsId": "OBS3515356825",
+        "present": false,
+        "speciesCode": "triher"
+      },
+      {
+        "howManyAtleast": 1000,
+        "howManyAtmost": 1000,
+        "howManyStr": "1000",
+        "mediaCounts": {
+          "P": 1
+        },
+        "obsId": "OBS3515368084",
+        "present": false,
+        "speciesCode": "snoegr"
+      },
+      {
+        "howManyAtleast": 7,
+        "howManyAtmost": 7,
+        "howManyStr": "7",
+        "mediaCounts": {
+          "P": 1
+        },
+        "obsId": "OBS3515356817",
+        "present": false,
+        "speciesCode": "grnher1"
+      },
+      {
+        "howManyAtleast": 10,
+        "howManyAtmost": 10,
+        "howManyStr": "10",
+        "obsId": "OBS3515356799",
+        "present": false,
+        "speciesCode": "categr1"
+      },
+      {
+        "howManyAtleast": 800,
+        "howManyAtmost": 800,
+        "howManyStr": "800",
+        "mediaCounts": {
+          "P": 2
+        },
+        "obsId": "OBS3515356824",
+        "present": false,
+        "speciesCode": "greegr2"
+      },
+      {
+        "howManyAtleast": 35,
+        "howManyAtmost": 35,
+        "howManyStr": "35",
+        "mediaCounts": {
+          "P": 4
+        },
+        "obsId": "OBS3515356808",
+        "present": false,
+        "speciesCode": "grbher"
+      },
+      {
+        "howManyAtleast": 20,
+        "howManyAtmost": 20,
+        "howManyStr": "20",
+        "mediaCounts": {
+          "P": 5
+        },
+        "obsId": "OBS3515356802",
+        "present": false,
+        "speciesCode": "amwpel"
+      },
+      {
+        "howManyAtleast": 2,
+        "howManyAtmost": 2,
+        "howManyStr": "2",
+        "obsId": "OBS3515356787",
+        "present": false,
+        "speciesCode": "blkvul"
+      },
+      {
+        "howManyAtleast": 22,
+        "howManyAtmost": 22,
+        "howManyStr": "22",
+        "mediaCounts": {
+          "P": 1
+        },
+        "obsId": "OBS3515368079",
+        "present": false,
+        "speciesCode": "turvul2"
+      },
+      {
+        "howManyAtleast": 1,
+        "howManyAtmost": 1,
+        "howManyStr": "1",
+        "obsId": "OBS3515356782",
+        "present": false,
+        "speciesCode": "osprey1"
+      },
+      {
+        "howManyAtleast": 1,
+        "howManyAtmost": 1,
+        "howManyStr": "1",
+        "obsId": "OBS3515368077",
+        "present": false,
+        "speciesCode": "reshaw"
+      },
+      {
+        "howManyAtleast": 2,
+        "howManyAtmost": 2,
+        "howManyStr": "2",
+        "mediaCounts": {
+          "P": 7
+        },
+        "obsId": "OBS3515356792",
+        "present": false,
+        "speciesCode": "barowl8"
+      },
+      {
+        "howManyAtleast": 1,
+        "howManyAtmost": 1,
+        "howManyStr": "1",
+        "mediaCounts": {
+          "P": 1
+        },
+        "obsId": "OBS3515356780",
+        "present": false,
+        "speciesCode": "belkin1"
+      },
+      {
+        "howManyAtleast": 7,
+        "howManyAtmost": 7,
+        "howManyStr": "7",
+        "mediaCounts": {
+          "P": 1
+        },
+        "obsId": "OBS3515356801",
+        "present": false,
+        "speciesCode": "banswa"
+      },
+      {
+        "howManyAtleast": 1,
+        "howManyAtmost": 1,
+        "howManyStr": "1",
+        "obsId": "OBS3515368085",
+        "present": false,
+        "speciesCode": "treswa"
+      },
+      {
+        "howManyAtleast": 75,
+        "howManyAtmost": 75,
+        "howManyStr": "75",
+        "mediaCounts": {
+          "P": 1
+        },
+        "obsId": "OBS3515356800",
+        "present": false,
+        "speciesCode": "barswa5"
+      },
+      {
+        "howManyAtleast": 3,
+        "howManyAtmost": 3,
+        "howManyStr": "3",
+        "obsId": "OBS3515356823",
+        "present": false,
+        "speciesCode": "cliswa2"
+      },
+      {
+        "exoticCategory": "N",
+        "howManyAtleast": 6,
+        "howManyAtmost": 6,
+        "howManyStr": "6",
+        "obsId": "OBS3515356794",
+        "present": false,
+        "speciesCode": "eursta"
+      },
+      {
+        "howManyAtleast": 2,
+        "howManyAtmost": 2,
+        "howManyStr": "2",
+        "obsId": "OBS3515356777",
+        "present": false,
+        "speciesCode": "normoc"
+      },
+      {
+        "howManyAtleast": 250,
+        "howManyAtmost": 250,
+        "howManyStr": "250",
+        "mediaCounts": {
+          "P": 1
+        },
+        "obsId": "OBS3515356796",
+        "present": false,
+        "speciesCode": "rewbla1"
+      },
+      {
+        "howManyAtleast": 80,
+        "howManyAtmost": 80,
+        "howManyStr": "80",
+        "mediaCounts": {
+          "P": 1
+        },
+        "obsId": "OBS3515356805",
+        "present": false,
+        "speciesCode": "botgra3"
+      },
+      {
+        "howManyAtleast": 1,
+        "howManyAtmost": 1,
+        "howManyStr": "1",
+        "obsId": "OBS3515368076",
+        "present": false,
+        "speciesCode": "comyel3"
+      },
+      {
+        "howManyAtleast": 1,
+        "howManyAtmost": 1,
+        "howManyStr": "1",
+        "obsId": "OBS3515356791",
+        "present": false,
+        "speciesCode": "norpar"
+      },
+      {
+        "howManyAtleast": 1,
+        "howManyAtmost": 1,
+        "howManyStr": "1",
+        "mediaCounts": {
+          "P": 2
+        },
+        "obsId": "OBS3515356773",
+        "present": false,
+        "speciesCode": "yelwar1"
+      }
+    ],
+    "obsDt": "2025-08-30 07:22",
+    "obsTimeValid": true,
+    "projId": "EBIRD",
+    "projectIds": [],
+    "protocolId": "P22",
+    "subAux": [
+      {
+        "auxCode": "0",
+        "entryMethodCode": "ebird_nocturnal",
+        "fieldName": "nocturnal",
+        "subId": "S270627727"
+      }
+    ],
+    "subAuxAi": [],
+    "subId": "S270627727",
+    "submissionMethodCode": "EBIRD_iOS",
+    "submissionMethodVersion": "3.4.11",
+    "submissionMethodVersionDisp": "3.4.11",
+    "subnational1Code": "US-FL",
+    "userDisplayName": "Audubon Everglades"
+  },
+  "feed_summary": {
+    "isoObsDate": "2025-08-30 07:22",
+    "loc": {
+      "countryCode": "US",
+      "countryName": "United States",
+      "hierarchicalName": "Duda Farms - PRIVATE PROPERTY (Access via AE Trips Only), Palm Beach, Florida, US",
+      "isHotspot": true,
+      "lat": 26.6485226,
+      "latitude": 26.6485226,
+      "lng": -80.6388446,
+      "locID": "L364884",
+      "locId": "L364884",
+      "locName": "Duda Farms - PRIVATE PROPERTY (Access via AE Trips Only)",
+      "longitude": -80.6388446,
+      "name": "Duda Farms - PRIVATE PROPERTY (Access via AE Trips Only)",
+      "subnational1Code": "US-FL",
+      "subnational1Name": "Florida",
+      "subnational2Code": "US-FL-099",
+      "subnational2Name": "Palm Beach"
+    },
+    "locId": "L364884",
+    "numSpecies": 68,
+    "obsDt": "30 Aug 2025",
+    "obsTime": "07:22",
+    "subID": "S270627727",
+    "subId": "S270627727",
+    "userDisplayName": "Audubon Everglades"
+  }
+}

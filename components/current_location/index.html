@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+    />
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        overflow: hidden;
+        font-family: "Source Sans Pro", "Segoe UI", system-ui, sans-serif;
+      }
+      #wrap {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.55rem 0.75rem;
+        min-height: 2.5rem;
+        box-sizing: border-box;
+      }
+      button {
+        appearance: none;
+        border: 1px solid rgba(49, 51, 63, 0.2);
+        background: #fff;
+        color: #31333f;
+        border-radius: 0.5rem;
+        padding: 0.45rem 0.9rem;
+        font-size: 0.875rem;
+        font-weight: 600;
+        line-height: 1.4;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      button:hover:not(:disabled) {
+        border-color: rgba(49, 51, 63, 0.4);
+        background: #f0f2f6;
+      }
+      button:disabled {
+        opacity: 0.65;
+        cursor: wait;
+      }
+      #status {
+        font-size: 0.8rem;
+        color: rgba(49, 51, 63, 0.7);
+        line-height: 1.3;
+      }
+      #status.error {
+        color: #b02a37;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="wrap">
+      <button id="btn" type="button">Reset location from GPS</button>
+      <span id="status"></span>
+    </div>
+    <script>
+      /**
+       * navigator.geolocation.getCurrentPosition on a user gesture, then return
+       * coords to Streamlit via setComponentValue.
+       *
+       * Direct parent.location.assign is blocked by Streamlit's iframe sandbox
+       * (no allow-top-navigation). Same-origin parent script injection can still
+       * update the URL as a secondary bridge.
+       */
+      const GPS_KEYS = [
+        "ors_gps_lat",
+        "ors_gps_lng",
+        "ors_gps_acc",
+        "ors_gps_error",
+        "ors_gps_t",
+      ];
+      let label = "Reset location from GPS";
+      let busy = false;
+
+      function sendMessage(type, data) {
+        window.parent.postMessage(
+          {
+            isStreamlitMessage: true,
+            type: type,
+            ...data,
+          },
+          "*"
+        );
+      }
+
+      function setFrameHeight() {
+        const height = Math.max(44, document.body.scrollHeight + 4);
+        sendMessage("streamlit:setFrameHeight", { height: height });
+      }
+
+      function setStatus(text, isError) {
+        const el = document.getElementById("status");
+        el.textContent = text || "";
+        el.className = isError ? "error" : "";
+        setFrameHeight();
+      }
+
+      function setBusy(next) {
+        busy = next;
+        const btn = document.getElementById("btn");
+        btn.disabled = busy;
+        btn.textContent = busy ? "Getting location…" : label;
+      }
+
+      function errorMessage(err) {
+        if (!err) return "Unable to read location.";
+        if (err.code === 1) return "Location permission denied.";
+        if (err.code === 2) return "Location unavailable.";
+        if (err.code === 3) return "Location request timed out.";
+        return String(err.message || "Unable to read location.");
+      }
+
+      function geolocationApi() {
+        try {
+          if (
+            window.parent &&
+            window.parent.navigator &&
+            window.parent.navigator.geolocation
+          ) {
+            return window.parent.navigator.geolocation;
+          }
+        } catch (e) {
+          /* cross-origin; fall through */
+        }
+        return navigator.geolocation || null;
+      }
+
+      function buildParentGpsUrl(payload) {
+        const parentWin = window.parent;
+        const url = new URL(parentWin.location.href);
+        GPS_KEYS.forEach((key) => url.searchParams.delete(key));
+        url.searchParams.set("ors_gps_t", String(payload.t));
+        if (payload.ok) {
+          url.searchParams.set("ors_gps_lat", String(payload.lat));
+          url.searchParams.set("ors_gps_lng", String(payload.lng));
+          if (payload.accuracy_m != null && payload.accuracy_m !== "") {
+            url.searchParams.set("ors_gps_acc", String(payload.accuracy_m));
+          }
+        } else {
+          url.searchParams.set(
+            "ors_gps_error",
+            String(payload.error || "Unable to read location.")
+          );
+        }
+        return url.toString();
+      }
+
+      function navigateParentViaInjectedScript(urlString) {
+        // Sandbox blocks iframe→parent navigation; a script running in the
+        // parent page can change location when allow-same-origin is set.
+        const parentDoc = window.parent.document;
+        const script = parentDoc.createElement("script");
+        script.textContent =
+          "window.location.replace(" + JSON.stringify(urlString) + ");";
+        parentDoc.documentElement.appendChild(script);
+        script.remove();
+      }
+
+      function publish(payload) {
+        // Primary Streamlit bridge (works inside the sandboxed component iframe).
+        sendMessage("streamlit:setComponentValue", { value: payload });
+        setStatus(
+          payload.ok ? "Location received — updating app…" : String(payload.error || ""),
+          !payload.ok
+        );
+        try {
+          navigateParentViaInjectedScript(buildParentGpsUrl(payload));
+        } catch (e) {
+          // Component value alone is enough; ignore sandbox/URL fallback failures.
+        }
+      }
+
+      function requestLocation() {
+        if (busy) return;
+        const geo = geolocationApi();
+        if (!geo) {
+          const message = "Geolocation is not supported in this browser.";
+          setStatus(message, true);
+          publish({ ok: false, error: message, t: Date.now() });
+          return;
+        }
+        setBusy(true);
+        setStatus("Waiting for browser location…", false);
+        geo.getCurrentPosition(
+          (pos) => {
+            const coords = pos.coords || {};
+            const value = {
+              ok: true,
+              lat: coords.latitude,
+              lng: coords.longitude,
+              accuracy_m: coords.accuracy,
+              t: Date.now(),
+            };
+            setBusy(false);
+            publish(value);
+          },
+          (err) => {
+            const message = errorMessage(err);
+            setBusy(false);
+            publish({ ok: false, error: message, t: Date.now() });
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 20000,
+            maximumAge: 0,
+          }
+        );
+      }
+
+      function onRender(event) {
+        if (!event.data || event.data.type !== "streamlit:render") return;
+        const args = event.data.args || {};
+        if (args.label) {
+          label = String(args.label);
+          if (!busy) {
+            document.getElementById("btn").textContent = label;
+          }
+        }
+        setFrameHeight();
+      }
+
+      document.getElementById("btn").addEventListener("click", requestLocation);
+      window.addEventListener("message", onRender);
+      sendMessage("streamlit:componentReady", { apiVersion: 1 });
+      setFrameHeight();
+    </script>
+  </body>
+</html>

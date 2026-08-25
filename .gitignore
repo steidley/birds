@@ -1,7 +1,4 @@
 .DS_Store
-.env
-.env.*
-!.env.example
 node_modules/
 dist/
 build/
@@ -12,34 +9,69 @@ build/
 venv/
 __pycache__/
 *.pyc
-.ebird_api_throttle
-.streamlit/secrets.toml
-!.streamlit/secrets.toml.example
-launch.html
-ebird_*_checklists_*.json
-# Keep downloaded checklists local, except Duda Farms for key-free deploy tests.
-ebird_checklists/*
-!ebird_checklists/US-FL-099/
-ebird_checklists/US-FL-099/*
-!ebird_checklists/US-FL-099/2025/
-!ebird_checklists/US-FL-099/2026/
-!ebird_checklists/US-FL-099/2026-08/
-ebird_checklists/US-FL-099/2025/*
-ebird_checklists/US-FL-099/2026/*
-ebird_checklists/US-FL-099/2026-08/*
-!ebird_checklists/US-FL-099/2025/L364884/
-!ebird_checklists/US-FL-099/2026/L364884/
-!ebird_checklists/US-FL-099/2026-08/L364884/
-!ebird_checklists/US-FL-099/2025/L364884/**
-!ebird_checklists/US-FL-099/2026/L364884/**
-!ebird_checklists/US-FL-099/2026-08/L364884/**
-!ebird_*_local_last_seen.json
-ebird_*_year_first_*.json
-ebird_recent_regions.json
-ebird_last_seen_cache.json
-ebird_own_recent_sightings.json
-ebird_*_checklist_cache_status_*.json
-ebird_*_feed_cache_progress_*.json
-ebird_*_checklist_download_progress_*.json
 saved_galleries/
 
+# App config (secrets stay local; examples stay tracked).
+config/.env
+config/.env.*
+!config/.env.example
+config/streamlit/secrets.toml
+!config/streamlit/secrets.toml.example
+config/launch.html
+config/recent_locations.json
+# Legacy root locations (ignore if anything is left behind).
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+!.streamlit/secrets.toml.example
+/launch.html
+
+# Cache tree: ignore by default; un-ignore deployable files below.
+# Parent directories must be un-ignored before children can be.
+cache/*
+!cache/shared/
+!cache/*/
+cache/shared/**
+cache/*/**
+
+# Shared caches that ship with the repo.
+!cache/shared/birdnet_code_cache.json
+!cache/shared/ebird_region_list_cache.json
+!cache/shared/ebird_region_species_cache.json
+!cache/shared/ebird_taxonomy_cache.json
+!cache/shared/inaturalist_cache.json
+!cache/shared/inaturalist_gallery_cache.json
+!cache/shared/inaturalist_similar_cache.json
+
+# Per-region indexes / hotspots previously tracked at the project root.
+!cache/*/local_last_seen.json
+!cache/*/hotspots.json
+
+# Keep downloaded checklists local, except Duda Farms for key-free deploy tests.
+!cache/*/checklists/
+cache/*/checklists/**
+!cache/US-FL-099/checklists/2025/
+!cache/US-FL-099/checklists/2026/
+!cache/US-FL-099/checklists/2026-08/
+cache/US-FL-099/checklists/2025/**
+cache/US-FL-099/checklists/2026/**
+cache/US-FL-099/checklists/2026-08/**
+!cache/US-FL-099/checklists/2025/L364884/
+!cache/US-FL-099/checklists/2026/L364884/
+!cache/US-FL-099/checklists/2026-08/L364884/
+!cache/US-FL-099/checklists/2025/L364884/**
+!cache/US-FL-099/checklists/2026/L364884/**
+!cache/US-FL-099/checklists/2026-08/L364884/**
+
+# Legacy root-level cache filenames (ignore if anything is left behind).
+/.ebird_api_throttle
+/ebird_*_checklists_*.json
+/ebird_*_year_first_*.json
+/ebird_recent_regions.json
+/ebird_last_seen_cache.json
+/ebird_own_recent_sightings.json
+/ebird_*_checklist_cache_status_*.json
+/ebird_*_feed_cache_progress_*.json
+/ebird_*_checklist_download_progress_*.json
+/ebird_checklists/

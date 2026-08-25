@@ -1,0 +1,22 @@
+{
+  "desktop": {
+    "gallery_summary": 268,
+    "gallery_standard": 400,
+    "compare": 160,
+    "similar": 72,
+    "checklist_summary": 48,
+    "list_thumbs": 48,
+    "checklist_species": 32,
+    "hotspots_map": 580
+  },
+  "mobile": {
+    "gallery_summary": 48,
+    "gallery_standard": 160,
+    "compare": 160,
+    "similar": 72,
+    "checklist_summary": 48,
+    "list_thumbs": 48,
+    "checklist_species": 32,
+    "hotspots_map": 280
+  }
+}

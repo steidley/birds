@@ -21,9 +21,10 @@ from typing import Any
 import requests
 
 from ebird import (
+    CACHE_DIR,
     EBirdClient,
     MAX_CALLS_PER_MINUTE,
-    ROOT,
+    region_checklists_dir,
     region_year_checklist_cache_path,
 )
 
@@ -54,16 +55,32 @@ def safe_component(value: object, fallback: str) -> str:
     return cleaned.strip("._") or fallback
 
 
+def _region_cache_dir(region_code: str) -> Path:
+    """``cache/<region>/`` for progress and related region-scoped files."""
+    from ebird import cache_region_dir
+
+    return cache_region_dir(region_code)
+
+
+def checklist_destination(
+    region_code: str,
+    *,
+    output_root: Path | None = None,
+) -> Path:
+    """Directory holding year/hotspot checklist detail JSON for one region."""
+    if output_root is None:
+        return region_checklists_dir(region_code)
+    return Path(output_root) / safe_component(region_code, "region")
+
+
 def download_progress_path(region_code: str, year: int) -> Path:
     """Location of a resumable background checklist-download progress record."""
-    region = safe_component(region_code, "region")
-    return ROOT / f"ebird_{region}_checklist_download_progress_{year}.json"
+    return _region_cache_dir(region_code) / f"checklist_download_progress_{year}.json"
 
 
 def feed_cache_progress_path(region_code: str, year: int) -> Path:
     """Location of resumable daily-feed cache progress."""
-    region = safe_component(region_code, "region")
-    return ROOT / f"ebird_{region}_feed_cache_progress_{year}.json"
+    return _region_cache_dir(region_code) / f"feed_cache_progress_{year}.json"
 
 
 def load_feed_cache_progress(region_code: str, year: int) -> dict[str, Any]:
@@ -77,6 +94,7 @@ def load_feed_cache_progress(region_code: str, year: int) -> dict[str, Any]:
 
 
 def _write_json(path: Path, data: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_suffix(".tmp")
     temporary.write_text(
         json.dumps(data, indent=2, sort_keys=True) + "\n",
@@ -93,6 +111,312 @@ def load_download_progress(region_code: str, year: int) -> dict[str, Any]:
     except (json.JSONDecodeError, OSError):
         return {}
     return data if isinstance(data, dict) else {}
+
+
+def _pid_is_running(pid: object) -> bool:
+    """True when ``pid`` refers to a live process we can signal."""
+    try:
+        process_id = int(pid)
+    except (TypeError, ValueError):
+        return False
+    if process_id <= 0:
+        return False
+    try:
+        os.kill(process_id, 0)
+        return True
+    except OSError:
+        return False
+
+
+_PROGRESS_FILE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("checklist", re.compile(r"^checklist_download_progress_(\d+)\.json$")),
+    ("feed", re.compile(r"^feed_cache_progress_(\d+)\.json$")),
+)
+
+# Keep stopped / crashed workers visible for resume this long.
+STOPPED_WORKER_VISIBLE_SECONDS = 14 * 24 * 3600
+
+
+def _parse_progress_iso(value: object) -> datetime | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        when = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if when.tzinfo is None:
+        when = when.replace(tzinfo=datetime.now().astimezone().tzinfo)
+    return when
+
+
+def list_background_workers(*, include_stopped: bool = True) -> list[dict[str, Any]]:
+    """Checklist-download / feed-cache workers across every cache region.
+
+    Each item: ``kind`` (``checklist``|``feed``), ``region_code``, ``year``,
+    ``state`` (``running``|``stopped``), ``progress``, ``path``.
+
+    Stopped includes interrupted (progress says running but pid is dead) and
+    explicit stops, while they remain recent enough to resume.
+    """
+    if not CACHE_DIR.exists():
+        return []
+    workers: list[dict[str, Any]] = []
+    now = datetime.now().astimezone()
+    for region_dir in sorted(CACHE_DIR.iterdir()):
+        if (
+            not region_dir.is_dir()
+            or region_dir.name.startswith(".")
+            or region_dir.name == "shared"
+        ):
+            continue
+        region = region_dir.name
+        for path in sorted(region_dir.iterdir()):
+            if not path.is_file():
+                continue
+            kind: str | None = None
+            year: int | None = None
+            for kind_name, pattern in _PROGRESS_FILE_PATTERNS:
+                match = pattern.match(path.name)
+                if match:
+                    kind = kind_name
+                    year = int(match.group(1))
+                    break
+            if kind is None or year is None:
+                continue
+            try:
+                data = json.loads(path.read_text(encoding="utf-8"))
+            except (json.JSONDecodeError, OSError):
+                continue
+            if not isinstance(data, dict):
+                continue
+            status = str(data.get("status") or "").strip().lower()
+            if status in {"complete", "done", "idle", ""}:
+                continue
+            pid_alive = _pid_is_running(data.get("pid"))
+            if status == "running" and pid_alive:
+                state = "running"
+            elif include_stopped and (
+                status in {"stopped", "interrupted", "error"}
+                or (status == "running" and not pid_alive)
+            ):
+                state = "stopped"
+                stamp = (
+                    _parse_progress_iso(data.get("finished_at"))
+                    or _parse_progress_iso(data.get("updated_at"))
+                    or _parse_progress_iso(data.get("started_at"))
+                )
+                if stamp is None:
+                    continue
+                age = (now - stamp).total_seconds()
+                if age > STOPPED_WORKER_VISIBLE_SECONDS:
+                    continue
+            else:
+                continue
+            workers.append(
+                {
+                    "kind": kind,
+                    "region_code": region,
+                    "year": int(year),
+                    "state": state,
+                    "progress": data,
+                    "path": path,
+                }
+            )
+    # Running first, then stopped; stable by region/year within each group.
+    workers.sort(
+        key=lambda row: (
+            0 if row.get("state") == "running" else 1,
+            str(row.get("region_code") or ""),
+            int(row.get("year") or 0),
+            str(row.get("kind") or ""),
+        )
+    )
+    return workers
+
+
+def list_active_background_workers() -> list[dict[str, Any]]:
+    """Running checklist-download / feed-cache workers across every cache region."""
+    return [
+        worker
+        for worker in list_background_workers(include_stopped=False)
+        if worker.get("state") == "running"
+    ]
+
+
+def dismiss_background_worker(
+    kind: str,
+    region_code: str,
+    year: int,
+) -> dict[str, Any]:
+    """Remove a stopped worker's progress file so it no longer appears in the UI.
+
+    Does not delete downloaded checklist or feed cache data. Refuses if the
+    worker process is still running.
+    """
+    region = str(region_code or "").strip()
+    worker_kind = str(kind or "checklist").strip().lower()
+    if not region or int(year) < 2002:
+        return {"removed": False, "reason": "invalid"}
+    if worker_kind == "feed":
+        path = feed_cache_progress_path(region, int(year))
+        progress = load_feed_cache_progress(region, int(year))
+    else:
+        path = download_progress_path(region, int(year))
+        progress = load_download_progress(region, int(year))
+    if not progress and not path.exists():
+        return {"removed": False, "reason": "not_found"}
+    if (
+        str(progress.get("status") or "") == "running"
+        and _pid_is_running(progress.get("pid"))
+    ):
+        return {"removed": False, "reason": "still_running", "pid": progress.get("pid")}
+    try:
+        path.unlink(missing_ok=True)
+    except OSError as exc:
+        return {"removed": False, "reason": "unlink_failed", "error": str(exc)}
+    return {
+        "removed": True,
+        "kind": worker_kind,
+        "region_code": region,
+        "year": int(year),
+        "path": str(path),
+    }
+
+
+LIVE_FETCH_STALE_SECONDS = 180
+
+
+def live_fetch_progress_path(region_code: str) -> Path:
+    """Progress file for in-app checklist detail fetches (Checklists / Hotspots)."""
+    return _region_cache_dir(region_code) / "checklist_live_fetch_progress.json"
+
+
+def load_live_fetch_progress(region_code: str) -> dict[str, Any]:
+    """Load in-app checklist fetch progress, or {}."""
+    path = live_fetch_progress_path(region_code)
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _write_live_fetch_progress(region_code: str, progress: dict[str, Any]) -> None:
+    progress = dict(progress)
+    progress["updated_at"] = datetime.now().astimezone().isoformat()
+    path = live_fetch_progress_path(region_code)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    _write_json(path, progress)
+
+
+def begin_live_checklist_fetch(
+    region_code: str,
+    *,
+    total: int,
+    label: str = "",
+    loc_id: str | None = None,
+    source: str = "",
+) -> dict[str, Any]:
+    """Mark an in-app checklist detail batch as running (visible on Cache screen)."""
+    region = str(region_code or "").strip()
+    if not region:
+        return {}
+    now = datetime.now().astimezone().isoformat()
+    progress = {
+        "version": PROGRESS_VERSION,
+        "status": "running",
+        "source": str(source or "").strip(),
+        "label": str(label or "").strip(),
+        "loc_id": str(loc_id or "").strip(),
+        "total": max(0, int(total)),
+        "processed": 0,
+        "downloaded": 0,
+        "failed": 0,
+        "message": "Starting…",
+        "started_at": now,
+        "finished_at": "",
+        "pid": os.getpid(),
+    }
+    _write_live_fetch_progress(region, progress)
+    return progress
+
+
+def update_live_checklist_fetch(
+    region_code: str,
+    *,
+    processed: int | None = None,
+    downloaded: int | None = None,
+    failed: int | None = None,
+    total: int | None = None,
+    message: str | None = None,
+) -> dict[str, Any]:
+    """Update in-app checklist fetch counters while a batch is running."""
+    region = str(region_code or "").strip()
+    if not region:
+        return {}
+    progress = load_live_fetch_progress(region)
+    if not progress:
+        progress = {
+            "version": PROGRESS_VERSION,
+            "status": "running",
+            "started_at": datetime.now().astimezone().isoformat(),
+            "pid": os.getpid(),
+        }
+    if total is not None:
+        progress["total"] = max(0, int(total))
+    if processed is not None:
+        progress["processed"] = max(0, int(processed))
+    if downloaded is not None:
+        progress["downloaded"] = max(0, int(downloaded))
+    if failed is not None:
+        progress["failed"] = max(0, int(failed))
+    if message is not None:
+        progress["message"] = str(message)
+    progress["status"] = "running"
+    _write_live_fetch_progress(region, progress)
+    return progress
+
+
+def finish_live_checklist_fetch(
+    region_code: str,
+    *,
+    status: str = "done",
+    message: str | None = None,
+) -> dict[str, Any]:
+    """Mark an in-app checklist fetch finished (done / error / cancelled)."""
+    region = str(region_code or "").strip()
+    if not region:
+        return {}
+    progress = load_live_fetch_progress(region)
+    if not progress:
+        return {}
+    now = datetime.now().astimezone().isoformat()
+    progress["status"] = str(status or "done")
+    progress["finished_at"] = now
+    if message is not None:
+        progress["message"] = str(message)
+    _write_live_fetch_progress(region, progress)
+    return progress
+
+
+def live_checklist_fetch_is_active(progress: dict[str, Any] | None) -> bool:
+    """True when a live fetch looks still in progress (not stale)."""
+    if not isinstance(progress, dict):
+        return False
+    if str(progress.get("status") or "") != "running":
+        return False
+    updated = str(progress.get("updated_at") or progress.get("started_at") or "")
+    if not updated:
+        return False
+    try:
+        when = datetime.fromisoformat(updated)
+    except ValueError:
+        return False
+    if when.tzinfo is None:
+        when = when.replace(tzinfo=datetime.now().astimezone().tzinfo)
+    age = (datetime.now().astimezone() - when).total_seconds()
+    return age <= LIVE_FETCH_STALE_SECONDS
 
 
 def request_download_stop(region_code: str, year: int) -> dict[str, Any]:
@@ -326,9 +650,7 @@ def save_checklist_detail(
     checklist_id = str(summary.get("subId") or summary.get("subID") or "").strip()
     if not region or not checklist_id or not isinstance(detail, dict) or not detail:
         return None
-    region_destination = (output_root or (ROOT / "ebird_checklists")) / safe_component(
-        region, "region"
-    )
+    region_destination = checklist_destination(region, output_root=output_root)
     filename = f"{safe_component(checklist_id, 'unknown')}.json"
     existing = (
         next(region_destination.rglob(filename), None)
@@ -393,7 +715,7 @@ def missing_cached_summaries(
     end_day: str | None = None,
     loc_id: str | None = None,
     min_species: int = 0,
-    output_root: Path = ROOT / "ebird_checklists",
+    output_root: Path | None = None,
 ) -> tuple[list[dict[str, Any]], list[str]]:
     """Return feed summaries whose full detail files are not on disk."""
     summaries, truncated_dates = load_cached_summaries(region_code, year, month)
@@ -424,7 +746,7 @@ def missing_cached_summaries(
             for row in summaries
             if int(row.get("numSpecies") or 0) >= species_floor
         ]
-    region_destination = output_root / safe_component(region_code, "region")
+    region_destination = checklist_destination(region_code, output_root=output_root)
     existing_ids = (
         {path.stem for path in region_destination.rglob("S*.json")}
         if region_destination.exists()
@@ -447,7 +769,7 @@ def missing_checklists_by_species_count(
     day: str | None = None,
     loc_id: str | None = None,
     min_species: int = 0,
-    output_root: Path = ROOT / "ebird_checklists",
+    output_root: Path | None = None,
 ) -> list[dict[str, int]]:
     """Histogram of missing checklist details keyed by feed ``numSpecies``."""
     summaries, _truncated = missing_cached_summaries(
@@ -516,7 +838,7 @@ def _dedupe_keep_score(path: Path) -> tuple:
 def dedupe_downloaded_checklists(
     region_code: str | None = None,
     *,
-    output_root: Path = ROOT / "ebird_checklists",
+    output_root: Path | None = None,
     dry_run: bool = False,
 ) -> dict[str, Any]:
     """Delete duplicate on-disk checklist detail files (same subId).
@@ -524,13 +846,23 @@ def dedupe_downloaded_checklists(
     Keeps the best copy per checklist id (valid detail JSON, named hotspot
     folder, largest, newest) and removes the rest.
     """
-    root = output_root
+    roots: list[Path] = []
     if region_code:
-        root = output_root / safe_component(region_code, "region")
+        roots = [checklist_destination(region_code, output_root=output_root)]
+    elif output_root is not None:
+        roots = [Path(output_root)]
+    elif CACHE_DIR.exists():
+        for path in sorted(CACHE_DIR.iterdir()):
+            if path.is_dir() and path.name != "shared":
+                checklists = path / "checklists"
+                if checklists.is_dir():
+                    roots.append(checklists)
+
     by_id: dict[str, list[Path]] = defaultdict(list)
-    if root.exists():
-        for path in root.rglob("S*.json"):
-            by_id[_checklist_id_from_path(path)].append(path)
+    for root in roots:
+        if root.exists():
+            for path in root.rglob("S*.json"):
+                by_id[_checklist_id_from_path(path)].append(path)
 
     removed: list[str] = []
     kept = 0
@@ -551,22 +883,25 @@ def dedupe_downloaded_checklists(
 
     # Drop empty hotspot directories left behind.
     empty_dirs = 0
-    if root.exists() and not dry_run:
-        for directory in sorted(
-            (p for p in root.rglob("*") if p.is_dir()),
-            key=lambda p: len(p.parts),
-            reverse=True,
-        ):
-            try:
-                next(directory.iterdir())
-            except StopIteration:
+    if not dry_run:
+        for root in roots:
+            if not root.exists():
+                continue
+            for directory in sorted(
+                (p for p in root.rglob("*") if p.is_dir()),
+                key=lambda p: len(p.parts),
+                reverse=True,
+            ):
                 try:
-                    directory.rmdir()
-                    empty_dirs += 1
+                    next(directory.iterdir())
+                except StopIteration:
+                    try:
+                        directory.rmdir()
+                        empty_dirs += 1
+                    except OSError:
+                        pass
                 except OSError:
                     pass
-            except OSError:
-                pass
 
     return {
         "region_code": region_code,
@@ -653,7 +988,7 @@ def download_cached_checklists(
     loc_id: str | None = None,
     min_species: int = 0,
     prior_years: int = 0,
-    output_root: Path = ROOT / "ebird_checklists",
+    output_root: Path | None = None,
 ) -> dict[str, Any]:
     """Download missing cached checklist details, grouped by hotspot.
 
@@ -677,7 +1012,7 @@ def download_cached_checklists(
         else []
     )
 
-    region_destination = output_root / safe_component(region_code, "region")
+    region_destination = checklist_destination(region_code, output_root=output_root)
     region_destination.mkdir(parents=True, exist_ok=True)
     dedupe_downloaded_checklists(region_code, output_root=output_root)
     existing_ids = {

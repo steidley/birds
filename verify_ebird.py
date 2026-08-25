@@ -10,8 +10,8 @@ def main() -> None:
         raise SystemExit(
             "No EBIRD_API_KEY found.\n"
             "1. Get a key: https://ebird.org/api/keygen\n"
-            "2. Put it in .env (copy from .env.example)\n"
-            "   or .streamlit/secrets.toml for Streamlit"
+            "2. Put it in config/.env (copy from config/.env.example)\n"
+            "   or config/streamlit/secrets.toml for Streamlit"
         )
 
     try:

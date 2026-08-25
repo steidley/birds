@@ -22,6 +22,11 @@ from typing import Any, Callable
 import requests
 from dotenv import load_dotenv
 
+from ebird import CONFIG_DIR, ROOT
+
+load_dotenv(CONFIG_DIR / ".env")
+load_dotenv(ROOT / ".env")  # legacy root .env if present
+
 from ebird import (
     EBirdClient,
     load_cached_taxa,
@@ -38,8 +43,6 @@ from inaturalist import (
     species_photo,
     species_similar,
 )
-
-load_dotenv(Path(__file__).parent / ".env")
 
 DEFAULT_REGION = os.environ.get("EBIRD_HOME_REGION", "US-FL-099")
 

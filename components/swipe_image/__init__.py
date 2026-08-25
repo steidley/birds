@@ -19,6 +19,7 @@ def swipe_image(
     height: int = 420,
     show_hint: bool = True,
     image_only: bool = False,
+    show_hide: bool = False,
     frame_color: str | None = None,
     frame_style: str | None = None,
     key: str | None = None,
@@ -28,12 +29,14 @@ def swipe_image(
     Returns ``{"action": "...", "t": <ms>}`` when the user swipes:
       - image_next / image_prev for horizontal swipes
       - bird_next / bird_prev for vertical swipes (unless image_only)
+      - hide_photo when the trash control is used
     """
     return _COMPONENT(
         image_url=image_url,
         height=height,
         show_hint=show_hint,
         image_only=image_only,
+        show_hide=show_hide,
         frame_color=frame_color or "",
         frame_style=frame_style or "solid",
         key=key,

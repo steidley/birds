@@ -1,4 +1,4 @@
-"""Parse an eBird “Download my data” CSV (MyEBirdData*.csv)."""
+"""Parse a personal eBird observations CSV (``requiredData/MyBirdData.csv``)."""
 
 from __future__ import annotations
 
@@ -12,17 +12,24 @@ from typing import Any
 
 from ebird import (
     REGION_LIST_CACHE_PATH,
+    REQUIRED_DATA_DIR,
     ROOT,
     configured_observer_names,
     parse_ebird_obs_day,
     resolve_ebird_code,
 )
 
-_MY_EBIRD_GLOBS = ("MyEBirdData*.csv", "MyEbirdData*.csv")
+# Preferred name first; keep eBird’s default export names as fallbacks.
+_MY_EBIRD_GLOBS = (
+    "MyBirdData*.csv",
+    "MyEBirdData*.csv",
+    "MyEbirdData*.csv",
+)
+_SEARCH_DIRS = (REQUIRED_DATA_DIR, ROOT)
 
 
 def my_ebird_data_path() -> Path | None:
-    """Newest My eBird data CSV in the project, or ``MY_EBIRD_DATA_PATH``."""
+    """Personal observations CSV under ``requiredData/``, or ``MY_EBIRD_DATA_PATH``."""
     override = (os.environ.get("MY_EBIRD_DATA_PATH") or "").strip()
     if override:
         path = Path(override).expanduser()
@@ -30,8 +37,11 @@ def my_ebird_data_path() -> Path | None:
             path = ROOT / path
         return path if path.is_file() else None
     found: list[Path] = []
-    for pattern in _MY_EBIRD_GLOBS:
-        found.extend(path for path in ROOT.glob(pattern) if path.is_file())
+    for directory in _SEARCH_DIRS:
+        if not directory.is_dir():
+            continue
+        for pattern in _MY_EBIRD_GLOBS:
+            found.extend(path for path in directory.glob(pattern) if path.is_file())
     if not found:
         return None
     return max(found, key=lambda path: path.stat().st_mtime)
@@ -356,6 +366,7 @@ def my_ebird_life_list_birds(region_code: str) -> list[dict[str, Any]]:
                 "code": str(row.get("code") or ""),
                 "last_day": day,
                 "first_day": day,
+                "first_by_year": {day.year: day} if day is not None else {},
                 "taxon_order": taxon_order,
             }
             continue
@@ -366,6 +377,10 @@ def my_ebird_life_list_birds(region_code: str) -> list[dict[str, Any]]:
             previous_first = existing.get("first_day")
             if previous_first is None or day < previous_first:
                 existing["first_day"] = day
+            years = existing.setdefault("first_by_year", {})
+            previous_year = years.get(day.year)
+            if previous_year is None or day < previous_year:
+                years[day.year] = day
         if not existing.get("code") and row.get("code"):
             existing["code"] = row["code"]
     return sorted(
