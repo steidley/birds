@@ -4,6 +4,22 @@ Streamlit app for eBird checklists, hotspots, and galleries.
 
 Default screen: **Hot Spot Finder** (`?screen=hotspot_finder`).
 
+## Shipped caches
+
+Deployable caches under `cache/` are stored in git as **zip sidecars** (for example `inaturalist_gallery_cache.json.zip`). The app expands them on startup; workers do the same when launched.
+
+Before committing cache updates:
+
+```bash
+./.venv/bin/python scripts/pack_shipped_cache.py pack
+```
+
+Manual extract (usually unnecessary if you run the app):
+
+```bash
+./.venv/bin/python scripts/pack_shipped_cache.py extract
+```
+
 ## Deeplinks
 
 All paths are relative to the app origin (for example `http://localhost:8502`).

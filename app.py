@@ -64,6 +64,7 @@ from ebird import (
     resolve_ebird_code,
     sort_hotspots,
 )
+from cache_ship import ensure_shipped_caches_extracted
 from download_checklists import (
     begin_live_checklist_fetch,
     dedupe_downloaded_checklists,
@@ -13909,6 +13910,8 @@ def render_checklists() -> None:
 
 
 st.set_page_config(page_title="Birds", page_icon="🪶", layout="wide")
+# Expand zip sidecars from git into working JSON / checklist paths.
+ensure_shipped_caches_extracted()
 apply_iphone_mobile_layout()
 apply_ui_layout()
 apply_gallery_chrome_defaults()

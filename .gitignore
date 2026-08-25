@@ -27,42 +27,37 @@ config/recent_locations.json
 !.streamlit/secrets.toml.example
 /launch.html
 
-# Cache tree: ignore by default; un-ignore deployable files below.
+# Cache tree: ignore by default; un-ignore deployable zip sidecars below.
 # Parent directories must be un-ignored before children can be.
+# Expanded JSON / checklist trees stay local; pack with
+# ``scripts/pack_shipped_cache.py pack`` before check-in.
 cache/*
 !cache/shared/
 !cache/*/
 cache/shared/**
 cache/*/**
 
-# Shared caches that ship with the repo.
-!cache/shared/birdnet_code_cache.json
-!cache/shared/ebird_region_list_cache.json
-!cache/shared/ebird_region_species_cache.json
-!cache/shared/ebird_taxonomy_cache.json
-!cache/shared/inaturalist_cache.json
-!cache/shared/inaturalist_gallery_cache.json
-!cache/shared/inaturalist_similar_cache.json
+# Shared caches that ship with the repo (compressed).
+!cache/shared/*.json.zip
 
-# Per-region indexes / hotspots previously tracked at the project root.
-!cache/*/local_last_seen.json
-!cache/*/hotspots.json
+# Per-region indexes / hotspots (compressed).
+!cache/*/local_last_seen.json.zip
+!cache/*/hotspots.json.zip
 
-# Keep downloaded checklists local, except Duda Farms for key-free deploy tests.
+# Keep downloaded checklists local, except Duda Farms sample zips.
 !cache/*/checklists/
 cache/*/checklists/**
+!cache/US-FL-099/checklists/
+cache/US-FL-099/checklists/**
 !cache/US-FL-099/checklists/2025/
 !cache/US-FL-099/checklists/2026/
 !cache/US-FL-099/checklists/2026-08/
 cache/US-FL-099/checklists/2025/**
 cache/US-FL-099/checklists/2026/**
 cache/US-FL-099/checklists/2026-08/**
-!cache/US-FL-099/checklists/2025/L364884/
-!cache/US-FL-099/checklists/2026/L364884/
-!cache/US-FL-099/checklists/2026-08/L364884/
-!cache/US-FL-099/checklists/2025/L364884/**
-!cache/US-FL-099/checklists/2026/L364884/**
-!cache/US-FL-099/checklists/2026-08/L364884/**
+!cache/US-FL-099/checklists/2025/L364884.zip
+!cache/US-FL-099/checklists/2026/L364884.zip
+!cache/US-FL-099/checklists/2026-08/L364884.zip
 
 # Legacy root-level cache filenames (ignore if anything is left behind).
 /.ebird_api_throttle

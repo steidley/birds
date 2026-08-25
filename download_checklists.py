@@ -1383,6 +1383,9 @@ def parse_args() -> argparse.Namespace:
 
 
 if __name__ == "__main__":
+    from cache_ship import ensure_shipped_caches_extracted
+
+    ensure_shipped_caches_extracted()
     args = parse_args()
     if args.dedupe_only:
         result = dedupe_downloaded_checklists(args.region)
