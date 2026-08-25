@@ -6,7 +6,7 @@ Default screen: **Hot Spot Finder** (`?screen=hotspot_finder`).
 
 ## Shipped caches
 
-Deployable caches under `cache/` are stored in git as **zip sidecars** (for example `inaturalist_gallery_cache.json.zip`). The app expands them on startup; workers do the same when launched.
+Deployable caches under `cache/` are stored in git as **zip sidecars** (for example `inaturalist_gallery_cache.json.zip`). The app expands them on startup; workers do the same when launched. Existing on-disk caches that are larger than the zip payload are left alone.
 
 Before committing cache updates:
 

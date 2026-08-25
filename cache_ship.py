@@ -102,6 +102,19 @@ def _needs_extract_dir(directory: Path, archive: Path) -> bool:
     return archive.stat().st_mtime > newest
 
 
+def _zip_uncompressed_bytes(archive: Path) -> int:
+    with zipfile.ZipFile(archive, "r") as zip_file:
+        return sum(
+            info.file_size
+            for info in zip_file.infolist()
+            if not info.is_dir() and info.file_size >= 0
+        )
+
+
+def _zip_member_uncompressed(zip_file: zipfile.ZipFile, member: str) -> int:
+    return int(zip_file.getinfo(member).file_size)
+
+
 def _needs_pack_file(json_path: Path, archive: Path) -> bool:
     if not json_path.is_file():
         return False
@@ -204,7 +217,12 @@ def pack_checklist_dir(directory: Path, *, force: bool = False) -> dict[str, Any
 
 
 def extract_json_file(json_path: Path, *, force: bool = False) -> dict[str, Any]:
-    """Expand ``path.json.zip`` to ``path.json`` when missing or older."""
+    """Expand ``path.json.zip`` to ``path.json`` when missing or older.
+
+    Never replaces an on-disk file that is larger than the zip member
+    (local caches grow beyond the shipped snapshot). ``force`` only ignores
+    freshness timestamps, not the larger-file guard.
+    """
     archive = json_zip_path(json_path)
     if not archive.is_file():
         return {
@@ -220,7 +238,11 @@ def extract_json_file(json_path: Path, *, force: bool = False) -> dict[str, Any]
         }
     json_path.parent.mkdir(parents=True, exist_ok=True)
     with zipfile.ZipFile(archive, "r") as zip_file:
-        names = zip_file.namelist()
+        names = [
+            name
+            for name in zip_file.namelist()
+            if name and not name.endswith("/")
+        ]
         if not names:
             return {
                 "path": str(json_path),
@@ -229,6 +251,17 @@ def extract_json_file(json_path: Path, *, force: bool = False) -> dict[str, Any]
             }
         # Prefer the expected basename; otherwise take the first file member.
         member = json_path.name if json_path.name in names else names[0]
+        packed_size = _zip_member_uncompressed(zip_file, member)
+        if json_path.is_file():
+            on_disk = json_path.stat().st_size
+            if on_disk > packed_size:
+                return {
+                    "path": str(json_path),
+                    "archive": str(archive),
+                    "status": "kept_larger",
+                    "bytes_on_disk": on_disk,
+                    "bytes_in_zip": packed_size,
+                }
         with zip_file.open(member) as source:
             json_path.write_bytes(source.read())
     return {
@@ -240,7 +273,12 @@ def extract_json_file(json_path: Path, *, force: bool = False) -> dict[str, Any]
 
 
 def extract_checklist_dir(directory: Path, *, force: bool = False) -> dict[str, Any]:
-    """Expand ``dir.zip`` into ``dir/``."""
+    """Expand ``dir.zip`` into ``dir/``.
+
+    Never replaces an existing file that is larger than its zip member.
+    Extra local checklist files are left alone. ``force`` only ignores
+    freshness timestamps.
+    """
     archive = dir_zip_path(directory)
     if not archive.is_file():
         return {
@@ -254,15 +292,39 @@ def extract_checklist_dir(directory: Path, *, force: bool = False) -> dict[str, 
             "archive": str(archive),
             "status": "fresh",
         }
+
+    packed_total = _zip_uncompressed_bytes(archive)
     directory.mkdir(parents=True, exist_ok=True)
+    extracted = 0
+    skipped_larger = 0
     with zipfile.ZipFile(archive, "r") as zip_file:
-        zip_file.extractall(directory)
+        for info in zip_file.infolist():
+            if info.is_dir() or not info.filename or info.filename.endswith("/"):
+                continue
+            dest = directory / info.filename
+            if dest.is_file() and dest.stat().st_size > info.file_size:
+                skipped_larger += 1
+                continue
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            with zip_file.open(info, "r") as source, dest.open("wb") as target:
+                target.write(source.read())
+            extracted += 1
+    if extracted == 0 and skipped_larger:
+        return {
+            "path": str(directory),
+            "archive": str(archive),
+            "status": "kept_larger",
+            "files_skipped": skipped_larger,
+            "bytes_in_zip": packed_total,
+        }
     files = sum(1 for path in directory.rglob("*") if path.is_file())
     return {
         "path": str(directory),
         "archive": str(archive),
         "status": "extracted",
         "files": files,
+        "files_written": extracted,
+        "files_skipped_larger": skipped_larger,
     }
 
 
@@ -279,7 +341,8 @@ def pack_shipped_caches(*, force: bool = False) -> list[dict[str, Any]]:
 def ensure_shipped_caches_extracted(*, force: bool = False) -> list[dict[str, Any]]:
     """Expand zip sidecars into working JSON / checklist directories.
 
-    Safe to call on every app start: skips archives that are already up to date.
+    Safe to call on every app start: skips archives that are already up to date,
+    and never replaces an on-disk cache that is larger than the shipped zip.
     """
     results: list[dict[str, Any]] = []
     # Shared files always (zip may exist even if json does not yet).
@@ -328,6 +391,11 @@ def print_results(results: Iterable[dict[str, Any]], *, action: str) -> int:
             actionable += 1
         label = Path(str(row.get("archive") or row.get("path") or "")).name
         detail_bits: list[str] = []
+        if row.get("bytes_on_disk") is not None and row.get("bytes_in_zip") is not None:
+            detail_bits.append(
+                f"kept {_format_bytes(row['bytes_on_disk'])} > "
+                f"zip {_format_bytes(row['bytes_in_zip'])}"
+            )
         if row.get("bytes_in") is not None and row.get("bytes_out") is not None:
             detail_bits.append(
                 f"{_format_bytes(row['bytes_in'])} → {_format_bytes(row['bytes_out'])}"

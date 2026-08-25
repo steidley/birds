@@ -51,3 +51,6 @@ Logic lives in `cache_ship.py` (`pack_shipped_caches` / `ensure_shipped_caches_e
 4. Commit.
 
 If a zip is missing after a fresh clone, run `extract` or start the app once.
+
+Extract never overwrites an on-disk cache that is **larger** than the zip
+payload (local gallery / last-seen growth is preserved).
