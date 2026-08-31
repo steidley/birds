@@ -39,6 +39,7 @@ Extract for a clean checkout / local run (the Streamlit app also does this on st
 | `cache/shared/*.json` (shipped list) | `cache/shared/*.json.zip` |
 | `cache/<region>/local_last_seen.json` | `…/local_last_seen.json.zip` |
 | `cache/<region>/hotspots.json` | `…/hotspots.json.zip` |
+| `cache/CA-QC-MR/checklists_<year>.json` | `…/checklists_<year>.json.zip` |
 | `cache/US-FL-099/checklists/{2025,2026,2026-08}/L364884/` | `…/L364884.zip` |
 
 Logic lives in `cache_ship.py` (`pack_shipped_caches` / `ensure_shipped_caches_extracted`).

@@ -46,6 +46,7 @@ cache/*/**
 # Per-region indexes / hotspots (compressed).
 !cache/*/local_last_seen.json.zip
 !cache/*/hotspots.json.zip
+!cache/*/checklists_*.json.zip
 
 # Keep downloaded checklists local, except Duda Farms sample zips.
 !cache/*/checklists/

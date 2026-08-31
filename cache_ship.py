@@ -33,6 +33,12 @@ SHIPPED_CHECKLIST_DIRS = (
     Path("US-FL-099/checklists/2026-08/L364884"),
 )
 
+# Regional daily-feed caches (``checklists_<year>.json``) committed as zips.
+SHIPPED_REGION_FEED_JSON = tuple(
+    Path(f"CA-QC-MR/checklists_{year}.json")
+    for year in (2020, 2021, 2022, 2023, 2024, 2025, 2026)
+)
+
 COMPRESS_LEVEL = 9
 
 
@@ -69,6 +75,7 @@ def shipped_json_targets() -> list[Path]:
     """All single-file JSON caches that are meant to be committed as zips."""
     targets = [CACHE_SHARED_DIR / name for name in SHIPPED_SHARED_JSON]
     targets.extend(iter_shipped_region_json())
+    targets.extend(CACHE_DIR / relative for relative in SHIPPED_REGION_FEED_JSON)
     return targets
 
 
@@ -360,6 +367,15 @@ def ensure_shipped_caches_extracted(*, force: bool = False) -> list[dict[str, An
                 continue
             for name in ("local_last_seen.json", "hotspots.json"):
                 path = region_dir / name
+                if path in seen:
+                    continue
+                seen.add(path)
+                if path.is_file() or json_zip_path(path).is_file():
+                    results.append(extract_json_file(path, force=force))
+            for relative in SHIPPED_REGION_FEED_JSON:
+                if relative.parent.name != region_dir.name:
+                    continue
+                path = region_dir / relative.name
                 if path in seen:
                     continue
                 seen.add(path)
