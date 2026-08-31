@@ -19,6 +19,9 @@ config/streamlit/secrets.toml
 !config/streamlit/secrets.toml.example
 config/launch.html
 config/recent_locations.json
+config/recent_date_ranges.json
+config/ui_image_sizes.local.json
+config/ui_gallery_chrome.local.json
 # Legacy root locations (ignore if anything is left behind).
 .env
 .env.*

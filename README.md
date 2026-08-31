@@ -30,11 +30,10 @@ All paths are relative to the app origin (for example `http://localhost:8502`).
 | --- | --- |
 | `?screen=hotspot_finder` | Hot Spot Finder (home) |
 | `?screen=browse_hotspots` | Hotspots (catalog, map, cached JSON) |
-| `?screen=location` | Location (GPS / street address) |
+| `?screen=place` | Region & location (eBird region + drive origin) |
 | `?screen=saved` | Saved galleries |
 | `?screen=mine` | My checklists |
 | `?screen=checklists` | Checklists |
-| `?screen=region` | Region picker |
 | `?screen=cache` | Checklist cache |
 | `?screen=maintenance` | Cache maintenance |
 | `?screen=gallery` | Gallery (only if a gallery is already open in the session) |
@@ -45,6 +44,7 @@ Aliases for `screen` (same destinations):
 | --- | --- |
 | `hotspots`, `finder`, `home` | `hotspot_finder` |
 | `browse`, `hotspot_browse` | `browse_hotspots` |
+| `region`, `location` | `place` |
 | `galleries`, `saved_galleries` | `saved` |
 | `my_checklists`, `my` | `mine` |
 
@@ -77,7 +77,7 @@ Optional bird focus (0-based index into the gallery list):
 
 ### GPS bridge (internal)
 
-Used by the Location screen GPS control to return coordinates to the app. Not meant for hand-authored bookmarks.
+Used by the Region & location screen GPS control to return coordinates to the app. Not meant for hand-authored bookmarks.
 
 | Param | Meaning |
 | --- | --- |

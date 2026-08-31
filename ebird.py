@@ -41,9 +41,11 @@ HOTSPOT_CACHE_VERSION = 1
 REGION_LIST_CACHE_VERSION = 1
 TAXONOMY_CACHE_VERSION = 1
 RECENT_OBS_CACHE_VERSION = 1
-# Recent-obs feeds change slowly enough that a multi-hour TTL saves many
+# Keep a short history of earlier fetches on each cache file.
+RECENT_OBS_PRIOR_CALLS_MAX = 25
+# Recent-obs feeds change slowly enough that a day-long TTL saves many
 # hotspot-finder / last-seen API calls without feeling badly stale.
-RECENT_OBS_CACHE_TTL_SECONDS = 3 * 60 * 60
+RECENT_OBS_CACHE_TTL_SECONDS = 24 * 60 * 60
 MAX_RATE_LIMIT_RETRIES = 8
 MIN_RATE_LIMIT_WAIT_SECONDS = 1.0
 # Stay under eBird’s practical ~60/min ceiling, including Show checklists.
@@ -400,8 +402,13 @@ def load_cached_recent_observations(
     max_results: int | None = 10,
     hotspot: bool = False,
     ttl_seconds: int = RECENT_OBS_CACHE_TTL_SECONDS,
+    allow_stale: bool = False,
 ) -> Any | None:
-    """Return cached recent-obs payload if present and fresh, else ``None``."""
+    """Return cached recent-obs payload if present and fresh, else ``None``.
+
+    When ``allow_stale`` is True, a matching cache entry is returned even if
+    older than ``ttl_seconds``.
+    """
     path = recent_obs_cache_path(
         region_code,
         species_code,
@@ -429,10 +436,42 @@ def load_cached_recent_observations(
         return None
     if fetched_at.tzinfo is None:
         fetched_at = fetched_at.astimezone()
-    age = (datetime.now().astimezone() - fetched_at).total_seconds()
-    if age < 0 or age > max(0, int(ttl_seconds)):
-        return None
+    if not allow_stale:
+        age = (datetime.now().astimezone() - fetched_at).total_seconds()
+        if age < 0 or age > max(0, int(ttl_seconds)):
+            return None
     return data.get("observations")
+
+
+def _prior_call_record(payload: dict[str, Any]) -> dict[str, Any] | None:
+    """Build a history row from a previous cache payload."""
+    fetched_at = str(payload.get("fetched_at") or "").strip()
+    if not fetched_at:
+        return None
+    observations = payload.get("observations")
+    count: int | None
+    if isinstance(observations, list):
+        count = len(observations)
+    else:
+        count = None
+    back_raw = payload.get("back")
+    try:
+        back = int(back_raw) if back_raw is not None else None
+    except (TypeError, ValueError):
+        back = None
+    record: dict[str, Any] = {
+        "fetched_at": fetched_at,
+        "back": back,
+    }
+    if count is not None:
+        record["observation_count"] = count
+    max_results = payload.get("max_results")
+    if max_results is not None:
+        try:
+            record["max_results"] = int(max_results)
+        except (TypeError, ValueError):
+            pass
+    return record
 
 
 def save_cached_recent_observations(
@@ -444,7 +483,11 @@ def save_cached_recent_observations(
     max_results: int | None = 10,
     hotspot: bool = False,
 ) -> Path:
-    """Persist a recent-observations API response for later reuse."""
+    """Persist a recent-observations API response for later reuse.
+
+    Previous fetches for the same query are kept under ``prior_calls`` with
+    their fetch timestamp and ``back`` (days) window.
+    """
     path = recent_obs_cache_path(
         region_code,
         species_code,
@@ -452,6 +495,20 @@ def save_cached_recent_observations(
         max_results=max_results,
         hotspot=hotspot,
     )
+    existing = _load_json_file(path)
+    prior_calls: list[dict[str, Any]] = []
+    if isinstance(existing.get("prior_calls"), list):
+        prior_calls.extend(
+            row
+            for row in existing["prior_calls"]
+            if isinstance(row, dict) and str(row.get("fetched_at") or "").strip()
+        )
+    previous = _prior_call_record(existing) if existing else None
+    if previous:
+        prior_calls.append(previous)
+    if len(prior_calls) > RECENT_OBS_PRIOR_CALLS_MAX:
+        prior_calls = prior_calls[-RECENT_OBS_PRIOR_CALLS_MAX:]
+
     payload = {
         "cache_version": RECENT_OBS_CACHE_VERSION,
         "cache_key": _recent_obs_cache_key(
@@ -467,10 +524,120 @@ def save_cached_recent_observations(
         "max_results": None if max_results is None else int(max_results),
         "hotspot": bool(hotspot),
         "fetched_at": datetime.now().astimezone().isoformat(),
+        "prior_calls": prior_calls,
         "observations": observations,
     }
     _save_json_file(path, payload)
     return path
+
+
+def _parse_cache_timestamp(value: object) -> datetime | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        when = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    if when.tzinfo is None:
+        when = when.astimezone()
+    return when
+
+
+def recent_obs_cache_stats() -> dict[str, Any]:
+    """Summary for Cache maintenance (file count, size, last fetch, history)."""
+    root = RECENT_OBS_CACHE_DIR
+    files: list[Path] = []
+    if root.is_dir():
+        files = sorted(path for path in root.glob("*.json") if path.is_file())
+    total_bytes = 0
+    newest_mtime: datetime | None = None
+    newest_fetched: datetime | None = None
+    call_rows: list[dict[str, Any]] = []
+    for path in files:
+        try:
+            total_bytes += path.stat().st_size
+            mtime = datetime.fromtimestamp(path.stat().st_mtime).astimezone()
+        except OSError:
+            continue
+        if newest_mtime is None or mtime > newest_mtime:
+            newest_mtime = mtime
+        data = _load_json_file(path)
+        if not data:
+            continue
+        fetched = _parse_cache_timestamp(data.get("fetched_at"))
+        if fetched is not None and (
+            newest_fetched is None or fetched > newest_fetched
+        ):
+            newest_fetched = fetched
+        region = str(data.get("region_code") or path.stem).strip()
+        try:
+            back = int(data.get("back")) if data.get("back") is not None else None
+        except (TypeError, ValueError):
+            back = None
+        observations = data.get("observations")
+        obs_count = len(observations) if isinstance(observations, list) else None
+        if fetched is not None:
+            call_rows.append(
+                {
+                    "region_code": region,
+                    "fetched_at": fetched.isoformat(),
+                    "back": back,
+                    "observation_count": obs_count,
+                    "current": True,
+                }
+            )
+        for prior in data.get("prior_calls") or []:
+            if not isinstance(prior, dict):
+                continue
+            prior_fetched = _parse_cache_timestamp(prior.get("fetched_at"))
+            if prior_fetched is None:
+                continue
+            try:
+                prior_back = (
+                    int(prior["back"]) if prior.get("back") is not None else None
+                )
+            except (TypeError, ValueError):
+                prior_back = None
+            call_rows.append(
+                {
+                    "region_code": region,
+                    "fetched_at": prior_fetched.isoformat(),
+                    "back": prior_back,
+                    "observation_count": prior.get("observation_count"),
+                    "current": False,
+                }
+            )
+    call_rows.sort(key=lambda row: str(row.get("fetched_at") or ""), reverse=True)
+    return {
+        "path": root,
+        "exists": root.is_dir(),
+        "entries": len(files),
+        "bytes": total_bytes,
+        "updated_at": (newest_fetched or newest_mtime).isoformat()
+        if (newest_fetched or newest_mtime)
+        else "",
+        "last_fetched_at": newest_fetched.isoformat() if newest_fetched else "",
+        "ttl_seconds": int(RECENT_OBS_CACHE_TTL_SECONDS),
+        "calls": call_rows,
+    }
+
+
+def clear_recent_obs_cache() -> int:
+    """Delete all recent-observations cache files. Returns how many were removed."""
+    root = RECENT_OBS_CACHE_DIR
+    if not root.is_dir():
+        return 0
+    removed = 0
+    for path in list(root.glob("*.json")):
+        if not path.is_file():
+            continue
+        try:
+            path.unlink()
+            removed += 1
+        except OSError:
+            pass
+    return removed
 
 
 def load_cached_region_list(region_type: str, parent_region_code: str) -> list[dict[str, str]]:
@@ -727,6 +894,23 @@ def _parse_checklist_day(value: object) -> date | None:
 CHECKLIST_CACHE_STATUS_VERSION = 3
 
 
+def checklist_cache_window_status_path(
+    region_code: str,
+    year: int,
+    start: date,
+    end: date,
+) -> Path:
+    """Per-window status cache path (does not overwrite the full-year index)."""
+    region = (region_code or "").strip() or "_unknown"
+    return (
+        cache_region_dir(region)
+        / (
+            f"checklist_cache_status_{int(year)}_"
+            f"{start.isoformat()}_{end.isoformat()}.json"
+        )
+    )
+
+
 def build_checklist_cache_status(
     region_code: str,
     year: int,
@@ -785,8 +969,13 @@ def build_checklist_cache_status(
         "end_date": window_end.isoformat() if windowed else "",
     }
     status_path = checklist_cache_status_path(region, year)
-    if not force_refresh and not windowed:
-        existing = _load_json_file(status_path)
+    window_status_path = (
+        checklist_cache_window_status_path(region, year, window_start, window_end)
+        if windowed
+        else status_path
+    )
+    if not force_refresh:
+        existing = _load_json_file(window_status_path)
         if (
             existing.get("signature") == signature
             and existing.get("cache_version") == CHECKLIST_CACHE_STATUS_VERSION
@@ -1003,8 +1192,7 @@ def build_checklist_cache_status(
         "days": days,
         "hotspots": hotspots,
     }
-    if not windowed:
-        _save_json_file(status_path, result)
+    _save_json_file(window_status_path, result)
     return result
 
 
@@ -1735,6 +1923,45 @@ def local_own_recent_sightings_for_species(
     if not isinstance(items, list):
         return []
     return [item for item in items if isinstance(item, dict)][: max(0, int(limit))]
+
+
+def local_own_recent_sightings_for_hotspot(
+    loc_id: str,
+) -> list[dict[str, Any]]:
+    """Master own-sightings rows at one hotspot (My eBird + indexed checklists)."""
+    location = str(loc_id or "").strip()
+    if not location:
+        return []
+    rows: list[dict[str, Any]] = []
+    for code, items in build_own_recent_sightings_index().items():
+        if not isinstance(items, list):
+            continue
+        species = str(code or "").strip()
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            if str(item.get("locId") or "").strip() != location:
+                continue
+            row = dict(item)
+            row["speciesCode"] = species
+            rows.append(row)
+    rows.sort(
+        key=lambda item: str(item.get("obsDt") or item.get("obsDay") or ""),
+        reverse=True,
+    )
+    return rows
+
+
+def own_hotspot_master_latest_day(loc_id: str) -> date | None:
+    """Latest observation day in the master own-sightings list for a hotspot."""
+    latest: date | None = None
+    for row in local_own_recent_sightings_for_hotspot(loc_id):
+        day = parse_ebird_obs_day(
+            str(row.get("obsDay") or row.get("obsDt") or "")
+        )
+        if day is not None and (latest is None or day > latest):
+            latest = day
+    return latest
 
 
 def parse_ebird_obs_day(text: str) -> date | None:
@@ -2490,13 +2717,15 @@ class EBirdClient:
         hotspot: bool = False,
         use_cache: bool = True,
         refresh: bool = False,
+        allow_stale: bool = False,
         cache_ttl_seconds: int = RECENT_OBS_CACHE_TTL_SECONDS,
     ) -> Any:
         """Recent observations for a region or hotspot location.
 
         Results are cached on disk under ``cache/shared/ebird_recent_obs/``
-        for ``cache_ttl_seconds`` (default 3 hours) unless ``use_cache`` is
-        False or ``refresh`` is True.
+        for ``cache_ttl_seconds`` (default 24 hours) unless ``use_cache`` is
+        False or ``refresh`` is True. ``allow_stale`` reuses a matching cache
+        entry even after the TTL expires.
         """
         region = str(region_code or "").strip()
         species = str(species_code or "").strip() or None
@@ -2509,6 +2738,7 @@ class EBirdClient:
                 max_results=max_results,
                 hotspot=hotspot,
                 ttl_seconds=cache_ttl_seconds,
+                allow_stale=allow_stale,
             )
             if cached is not None:
                 return cached

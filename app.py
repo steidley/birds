@@ -13,10 +13,12 @@ from urllib.parse import urlparse, urlunparse
 
 import requests
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 from dotenv import load_dotenv
 
 from components.swipe_image import swipe_image
+from components.settings_opener import settings_opener
 from components.current_location import (
     GPS_QUERY_ACC,
     GPS_QUERY_ERROR,
@@ -54,9 +56,14 @@ from ebird import (
     load_local_checklists_for_hotspot,
     load_local_checklists,
     load_own_local_checklists,
+    build_own_recent_sightings_index,
     local_own_recent_sightings_for_species,
+    local_own_recent_sightings_for_hotspot,
+    own_hotspot_master_latest_day,
     local_recent_sightings_for_species,
     observer_name_matches,
+    clear_recent_obs_cache,
+    recent_obs_cache_stats,
     rebuild_local_last_seen_indexes,
     region_checklists_dir,
     region_historical_species_cache_coverage,
@@ -126,7 +133,14 @@ LIFE_LISTS_DIR = REQUIRED_DATA_DIR / "lifeLists"
 BIRD_LIST_PATH = REQUIRED_DATA_DIR / "birdList"
 SAVED_GALLERIES_DIR = Path(__file__).parent / "saved_galleries"
 IMAGE_SIZE_CONFIG_PATH = CONFIG_DIR / "ui_image_sizes.json"
+IMAGE_SIZE_LOCAL_CONFIG_PATH = CONFIG_DIR / "ui_image_sizes.local.json"
+GALLERY_CHROME_CONFIG_PATH = CONFIG_DIR / "ui_gallery_chrome.local.json"
 HIDDEN_PHOTOS_PATH = CONFIG_DIR / "hidden_photos.json"
+RECENT_DATE_RANGES_PATH = CONFIG_DIR / "recent_date_ranges.json"
+FRAME_STYLE_CONFIG_PATH = CONFIG_DIR / "ui_frame_styles.json"
+RECENT_DATE_RANGES_LIMIT = 5
+RECENT_DATE_RANGES_VERSION = 1
+FRAME_STYLE_CONFIG_VERSION = 2
 IMAGE_SIZE_LAYOUTS = ("desktop", "mobile")
 DEFAULT_IMAGE_SIZES_DESKTOP: dict[str, int] = {
     "gallery_summary": 144,
@@ -335,7 +349,9 @@ div[class*="st-key-header_cache_refresh"] {
   justify-content: flex-end !important;
 }
 /* Keep the upper-left config / menu icon columns compact */
-div[data-testid="stHorizontalBlock"]:has([data-testid="stPopoverButton"]) > div:has([data-testid="stPopoverButton"]) {
+div[data-testid="stHorizontalBlock"]:has([data-testid="stPopoverButton"]) > div:has([data-testid="stPopoverButton"]),
+div[data-testid="stHorizontalBlock"]:has([class*="st-key-header_config_open"]) > div:has([class*="st-key-header_config_open"]),
+div[data-testid="stHorizontalBlock"]:has(iframe[title^="settings_opener"]) > div:has(iframe[title^="settings_opener"]) {
   width: 2.6rem !important;
   min-width: 2.6rem !important;
   flex: 0 0 2.6rem !important;
@@ -990,6 +1006,169 @@ def parse_streamlit_date_range(value: object) -> tuple[date, date] | None:
     return None
 
 
+def _recent_date_range_key(start: date, end: date, prior_years: int) -> str:
+    return f"{start.isoformat()}|{end.isoformat()}|{max(0, int(prior_years or 0))}"
+
+
+def load_recent_date_ranges() -> list[dict[str, Any]]:
+    """Load recent date ranges from ``config/recent_date_ranges.json`` (newest first)."""
+    try:
+        raw = json.loads(RECENT_DATE_RANGES_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        return []
+    rows = raw.get("ranges") if isinstance(raw, dict) else raw
+    if not isinstance(rows, list):
+        return []
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        try:
+            start = date.fromisoformat(str(row.get("start") or "")[:10])
+            end = date.fromisoformat(str(row.get("end") or "")[:10])
+        except ValueError:
+            continue
+        if start > end:
+            start, end = end, start
+        prior = max(0, int(row.get("prior_years") or 0))
+        key = _recent_date_range_key(start, end, prior)
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(
+            {
+                "start": start.isoformat(),
+                "end": end.isoformat(),
+                "prior_years": prior,
+                "used_at": str(row.get("used_at") or "").strip(),
+            }
+        )
+        if len(out) >= RECENT_DATE_RANGES_LIMIT:
+            break
+    return out
+
+
+def save_recent_date_ranges(ranges: list[dict[str, Any]]) -> None:
+    """Persist recent date ranges to ``config/recent_date_ranges.json``."""
+    payload = {
+        "version": RECENT_DATE_RANGES_VERSION,
+        "ranges": [
+            {
+                "start": str(row.get("start") or "")[:10],
+                "end": str(row.get("end") or "")[:10],
+                "prior_years": max(0, int(row.get("prior_years") or 0)),
+                "used_at": str(row.get("used_at") or "").strip(),
+            }
+            for row in ranges[:RECENT_DATE_RANGES_LIMIT]
+            if row.get("start") and row.get("end")
+        ],
+    }
+    RECENT_DATE_RANGES_PATH.parent.mkdir(parents=True, exist_ok=True)
+    RECENT_DATE_RANGES_PATH.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+
+
+def remember_recent_date_range(
+    start: date,
+    end: date,
+    *,
+    prior_years: int = 0,
+) -> list[dict[str, Any]]:
+    """Upsert a date range at the front of the recent list (max 5)."""
+    if start > end:
+        start, end = end, start
+    prior = max(0, int(prior_years or 0))
+    key = _recent_date_range_key(start, end, prior)
+    now = datetime.now().astimezone().isoformat(timespec="seconds")
+    entry = {
+        "start": start.isoformat(),
+        "end": end.isoformat(),
+        "prior_years": prior,
+        "used_at": now,
+    }
+    existing = load_recent_date_ranges()
+    merged = [entry] + [
+        row
+        for row in existing
+        if _recent_date_range_key(
+            date.fromisoformat(str(row["start"])),
+            date.fromisoformat(str(row["end"])),
+            int(row.get("prior_years") or 0),
+        )
+        != key
+    ]
+    saved = merged[:RECENT_DATE_RANGES_LIMIT]
+    try:
+        save_recent_date_ranges(saved)
+    except OSError:
+        pass
+    return saved
+
+
+def delete_recent_date_range(
+    start: date | str,
+    end: date | str,
+    *,
+    prior_years: int = 0,
+) -> bool:
+    """Remove one saved date range from the recent list."""
+    try:
+        start_day = start if isinstance(start, date) else date.fromisoformat(str(start)[:10])
+        end_day = end if isinstance(end, date) else date.fromisoformat(str(end)[:10])
+    except ValueError:
+        return False
+    if start_day > end_day:
+        start_day, end_day = end_day, start_day
+    key = _recent_date_range_key(start_day, end_day, max(0, int(prior_years or 0)))
+    existing = load_recent_date_ranges()
+    kept: list[dict[str, Any]] = []
+    removed = False
+    for row in existing:
+        try:
+            row_key = _recent_date_range_key(
+                date.fromisoformat(str(row["start"])),
+                date.fromisoformat(str(row["end"])),
+                int(row.get("prior_years") or 0),
+            )
+        except (KeyError, TypeError, ValueError):
+            continue
+        if row_key == key:
+            removed = True
+            continue
+        kept.append(row)
+    if not removed:
+        return False
+    try:
+        save_recent_date_ranges(kept)
+    except OSError:
+        return False
+    return True
+
+
+def format_recent_date_range_label(entry: dict[str, Any]) -> str:
+    """Compact button label for a saved date range."""
+    try:
+        start = date.fromisoformat(str(entry.get("start") or "")[:10])
+        end = date.fromisoformat(str(entry.get("end") or "")[:10])
+    except ValueError:
+        return "Invalid range"
+    prior = max(0, int(entry.get("prior_years") or 0))
+    if start == end:
+        base = start.strftime("%d %b %Y")
+    elif start.year == end.year and start.month == end.month:
+        base = f"{start.day}–{end.day} {start.strftime('%b %Y')}"
+    elif start.year == end.year:
+        base = f"{start.strftime('%d %b')}–{end.strftime('%d %b %Y')}"
+    else:
+        base = f"{start.strftime('%d %b %Y')}–{end.strftime('%d %b %Y')}"
+    if prior:
+        base += f" · +{prior}y"
+    return base
+
+
 def render_date_range_popover(
     *,
     start_key: str,
@@ -1038,6 +1217,61 @@ def render_date_range_popover(
         disabled=disabled,
     ):
         st.markdown(f"**{title}**")
+        recent_ranges = load_recent_date_ranges()
+        if recent_ranges and not disabled:
+            st.caption("Recent ranges")
+            for index, entry in enumerate(recent_ranges[:RECENT_DATE_RANGES_LIMIT]):
+                label = format_recent_date_range_label(entry)
+                apply_col, delete_col = st.columns([5, 1])
+                with apply_col:
+                    if st.button(
+                        label,
+                        key=f"recent_date_range_{start_key}_{index}",
+                        use_container_width=True,
+                        help="Reapply this saved date range",
+                    ):
+                        try:
+                            apply_start = _clamp(
+                                date.fromisoformat(str(entry["start"])[:10])
+                            )
+                            apply_end = _clamp(
+                                date.fromisoformat(str(entry["end"])[:10])
+                            )
+                        except (KeyError, TypeError, ValueError):
+                            apply_start = apply_end = None
+                        if apply_start is not None and apply_end is not None:
+                            if apply_start > apply_end:
+                                apply_start, apply_end = apply_end, apply_start
+                            st.session_state[start_key] = apply_start
+                            st.session_state[end_key] = apply_end
+                            if prior_years_key:
+                                st.session_state[prior_years_key] = max(
+                                    0,
+                                    min(
+                                        int(prior_years_max),
+                                        int(entry.get("prior_years") or 0),
+                                    ),
+                                )
+                            remember_recent_date_range(
+                                apply_start,
+                                apply_end,
+                                prior_years=int(entry.get("prior_years") or 0),
+                            )
+                            st.rerun()
+                with delete_col:
+                    if st.button(
+                        ":material/delete:",
+                        key=f"recent_date_range_del_{start_key}_{index}",
+                        use_container_width=True,
+                        help=f"Remove {label} from recent ranges",
+                    ):
+                        delete_recent_date_range(
+                            str(entry.get("start") or ""),
+                            str(entry.get("end") or ""),
+                            prior_years=int(entry.get("prior_years") or 0),
+                        )
+                        st.rerun()
+            st.divider()
         start_day = st.date_input(
             start_label,
             min_value=lo,
@@ -1077,7 +1311,24 @@ def render_date_range_popover(
         end_day = _clamp(default_end)
     if start_day > end_day:
         start_day, end_day = end_day, start_day
-    return start_day, end_day, int(prior_years if prior_years_key else 0)
+    prior_years = int(prior_years if prior_years_key else 0)
+
+    # Remember user changes (skip the first paint so defaults are not stored).
+    sig_key = f"_date_range_sig_{start_key}"
+    sig = (start_day.isoformat(), end_day.isoformat(), prior_years)
+    prev_sig = st.session_state.get(sig_key)
+    if prev_sig is None:
+        st.session_state[sig_key] = sig
+    elif prev_sig != sig:
+        st.session_state[sig_key] = sig
+        if not disabled:
+            remember_recent_date_range(
+                start_day,
+                end_day,
+                prior_years=prior_years,
+            )
+
+    return start_day, end_day, prior_years
 
 
 def prior_year_download_caption(start: date, end: date, prior_years: int) -> str:
@@ -3505,8 +3756,7 @@ DASHBOARD_SCREENS = {
     "saved": "Saved galleries",
     "mine": "My checklists",
     "checklists": "Checklists",
-    "location": "Location",
-    "region": "Region",
+    "place": "Region & location",
     "cache": "Checklist cache",
     "maintenance": "Cache maintenance",
 }
@@ -3529,7 +3779,9 @@ SCREEN_DEEPLINK_ALIASES = {
     "browse_hotspots": "browse_hotspots",
     "browse": "browse_hotspots",
     "hotspot_browse": "browse_hotspots",
-    "location": "location",
+    "place": "place",
+    "location": "place",
+    "region": "place",
     "saved": "saved",
     "galleries": "saved",
     "saved_galleries": "saved",
@@ -3537,10 +3789,11 @@ SCREEN_DEEPLINK_ALIASES = {
     "my_checklists": "mine",
     "my": "mine",
     "checklists": "checklists",
-    "region": "region",
     "cache": "cache",
     "maintenance": "maintenance",
     "gallery": "gallery",
+    "settings": "settings",
+    "config": "settings",
 }
 
 
@@ -3589,7 +3842,7 @@ def apply_screen_deeplink() -> None:
     if _gallery_deeplink_pending():
         return
     screen = normalize_screen_deeplink(_query_param_raw(SCREEN_QUERY))
-    if not screen:
+    if not screen or screen == "settings":
         return
     if screen == "gallery":
         if st.session_state.get("gallery_birds"):
@@ -3613,16 +3866,23 @@ def close_gallery() -> None:
 def current_dashboard() -> str:
     """Which home-section screen to show (not a widget key — survives navigation)."""
     value = st.session_state.get("dashboard_pref")
+    if value in {"region", "location"}:
+        value = "place"
+        st.session_state.dashboard_pref = value
     if value == "gallery" and st.session_state.get("gallery_birds"):
         return "gallery"
     if value not in DASHBOARD_SCREENS:
         legacy = st.session_state.get("dashboard_screen")
+        if legacy in {"region", "location"}:
+            legacy = "place"
         value = legacy if legacy in DASHBOARD_SCREENS else HOME_SCREEN
         st.session_state.dashboard_pref = value
     return value
 
 
 def go_dashboard(screen: str) -> None:
+    if screen in {"region", "location"}:
+        screen = "place"
     if screen == "gallery":
         if st.session_state.get("gallery_birds"):
             st.session_state.dashboard_pref = "gallery"
@@ -3649,8 +3909,8 @@ def render_app_nav_buttons(*, current: str, key_prefix: str) -> None:
         ):
             go_dashboard("gallery")
     for key, label in DASHBOARD_SCREENS.items():
-        if key in {"region", "location"}:
-            # Region / location are chosen via header chips, not the nav menu.
+        if key == "place":
+            # Region & location are chosen via header chips, not the nav menu.
             continue
         if st.button(
             label,
@@ -3775,11 +4035,13 @@ def render_region_chip(*, screen: str) -> None:
     code = selected_region_code()
     short, long_name = region_display_names(code, allow_api=True)
     if code and long_name and long_name != code:
-        help_text = f"{long_name} · {code}. Open the region screen to change it."
+        help_text = (
+            f"{long_name} · {code}. Open Region & location to change it."
+        )
     elif code:
-        help_text = f"{code}. Open the region screen to change it."
+        help_text = f"{code}. Open Region & location to change it."
     else:
-        help_text = "Open the region screen to choose an eBird region."
+        help_text = "Open Region & location to choose an eBird region."
     if st.button(
         long_name or short or "Select region",
         type="tertiary",
@@ -3787,12 +4049,12 @@ def render_region_chip(*, screen: str) -> None:
         help=help_text,
         use_container_width=True,
     ):
-        st.session_state.dashboard_before_region = screen
-        go_dashboard("region")
+        st.session_state.dashboard_before_place = screen
+        go_dashboard("place")
 
 
 def render_location_chip(*, screen: str) -> None:
-    """Header control showing the current drive origin; opens Location."""
+    """Header control showing the current drive origin; opens Region & location."""
     address = (configured_home_address() or "").strip()
     coords = configured_home_coordinates()
     if address:
@@ -3804,14 +4066,15 @@ def render_location_chip(*, screen: str) -> None:
     if address and coords:
         help_text = (
             f"{address} · {format_home_coordinates(coords)}. "
-            "Open Location to change it."
+            "Open Region & location to change it."
         )
     elif coords:
         help_text = (
-            f"{format_home_coordinates(coords)}. Open Location to change it."
+            f"{format_home_coordinates(coords)}. "
+            "Open Region & location to change it."
         )
     else:
-        help_text = "Open Location to set the drive origin."
+        help_text = "Open Region & location to set the drive origin."
     if st.button(
         label,
         type="tertiary",
@@ -3819,7 +4082,8 @@ def render_location_chip(*, screen: str) -> None:
         help=help_text,
         use_container_width=True,
     ):
-        go_dashboard("location")
+        st.session_state.dashboard_before_place = screen
+        go_dashboard("place")
 
 
 def _any_cache_background_active(region_code: str) -> bool:
@@ -3886,7 +4150,7 @@ def render_cache_refresh_config_icon() -> None:
 
 
 def render_header_place_chips(*, screen: str) -> None:
-    """Region and current location stacked in the header (opens Region / Location)."""
+    """Region and current location stacked in the header (opens Region & location)."""
     render_region_chip(screen=screen)
     render_location_chip(screen=screen)
 
@@ -4364,6 +4628,257 @@ def render_own_checklists_latest_caption(summaries: list[dict]) -> None:
         st.caption(f"Latest local file: {saved}")
 
 
+def _own_hotspot_date_range(
+    value: Any, default_lo: date, default_hi: date
+) -> tuple[date, date]:
+    """Normalize ``st.date_input`` single/range values to ``(start, end)``."""
+    if isinstance(value, (list, tuple)) and len(value) >= 2:
+        a, b = value[0], value[1]
+        if isinstance(a, date) and isinstance(b, date):
+            return (min(a, b), max(a, b))
+    if isinstance(value, date):
+        return (value, value)
+    return (default_lo, default_hi)
+
+
+def _own_hotspot_summary_rows(summaries: list[dict]) -> list[dict[str, Any]]:
+    """Aggregate cached own checklists into one row per hotspot."""
+    by_loc: dict[str, dict[str, Any]] = {}
+    for row in summaries:
+        if not isinstance(row, dict):
+            continue
+        loc_id = str(row.get("locId") or "").strip()
+        if not loc_id:
+            continue
+        entry = by_loc.get(loc_id)
+        if entry is None:
+            entry = {
+                "locId": loc_id,
+                "hotspot": str(row.get("locName") or loc_id).strip() or loc_id,
+                "region": str(row.get("regionCode") or row.get("_region") or "").strip(),
+                "visits": 0,
+                "first_day": None,
+                "last_day": None,
+                "species_codes": set(),
+            }
+            by_loc[loc_id] = entry
+        loc_name = str(row.get("locName") or "").strip()
+        if loc_name and (
+            not entry["hotspot"]
+            or entry["hotspot"] == loc_id
+            or len(loc_name) > len(str(entry["hotspot"]))
+        ):
+            entry["hotspot"] = loc_name
+        region = str(row.get("regionCode") or row.get("_region") or "").strip()
+        if region and not entry["region"]:
+            entry["region"] = region
+        entry["visits"] += 1
+        day = _checklist_obs_day_iso(row)
+        if len(day) == 10 and day[4] == "-" and day[7] == "-":
+            if entry["first_day"] is None or day < entry["first_day"]:
+                entry["first_day"] = day
+            if entry["last_day"] is None or day > entry["last_day"]:
+                entry["last_day"] = day
+        entry["species_codes"].update(_species_codes_in_checklist(row))
+
+    # One pass over master own-sightings for unique species at each hotspot.
+    for code, items in build_own_recent_sightings_index().items():
+        species = str(code or "").strip()
+        if not species or not isinstance(items, list):
+            continue
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            loc_id = str(item.get("locId") or "").strip()
+            entry = by_loc.get(loc_id)
+            if entry is None:
+                continue
+            entry["species_codes"].add(species)
+
+    rows: list[dict[str, Any]] = []
+    for entry in by_loc.values():
+        region_code = str(entry.get("region") or "")
+        region_label = (
+            region_display_names(region_code, allow_api=False)[0] if region_code else ""
+        )
+        rows.append(
+            {
+                "Hotspot": entry["hotspot"],
+                "Region": region_label or region_code or "—",
+                "Visits": int(entry["visits"]),
+                "First visit": entry["first_day"] or "",
+                "Last visit": entry["last_day"] or "",
+                "Unique species": len(entry["species_codes"]),
+                "locId": entry["locId"],
+            }
+        )
+    rows.sort(
+        key=lambda r: (
+            -int(r.get("Visits") or 0),
+            str(r.get("Last visit") or ""),
+            str(r.get("Hotspot") or "").lower(),
+        )
+    )
+    return rows
+
+
+def _render_own_hotspot_summary(summaries: list[dict]) -> None:
+    """Summary table of all hotspots in own-checklist cache, with column filters."""
+    rows = _own_hotspot_summary_rows(summaries)
+    st.markdown("#### Hotspots in your cache")
+    if not rows:
+        st.caption("No hotspots found in cached personal checklists.")
+        return
+
+    regions = sorted(
+        {
+            str(r.get("Region") or "").strip()
+            for r in rows
+            if str(r.get("Region") or "").strip() and str(r.get("Region")) != "—"
+        }
+    )
+    visits_vals = [int(r.get("Visits") or 0) for r in rows]
+    species_vals = [int(r.get("Unique species") or 0) for r in rows]
+    first_days = sorted(
+        str(r.get("First visit") or "") for r in rows if r.get("First visit")
+    )
+    last_days = sorted(
+        str(r.get("Last visit") or "") for r in rows if r.get("Last visit")
+    )
+    min_first = date.fromisoformat(first_days[0]) if first_days else date.today()
+    max_first = date.fromisoformat(first_days[-1]) if first_days else date.today()
+    min_last = date.fromisoformat(last_days[0]) if last_days else date.today()
+    max_last = date.fromisoformat(last_days[-1]) if last_days else date.today()
+    v_min = int(min(visits_vals) if visits_vals else 0)
+    v_max = int(max(visits_vals) if visits_vals else 1)
+    if v_max <= v_min:
+        v_max = v_min + 1
+    s_min = int(min(species_vals) if species_vals else 0)
+    s_max = int(max(species_vals) if species_vals else 1)
+    if s_max <= s_min:
+        s_max = s_min + 1
+
+    f1, f2, f3 = st.columns(3)
+    with f1:
+        name_q = st.text_input(
+            "Hotspot",
+            value="",
+            key="own_hs_filter_name",
+            placeholder="Filter by name…",
+        )
+    with f2:
+        region_sel = st.multiselect(
+            "Region",
+            options=regions,
+            default=[],
+            key="own_hs_filter_region",
+            placeholder="All regions",
+        )
+    with f3:
+        visits_range = st.slider(
+            "Visits",
+            min_value=v_min,
+            max_value=v_max,
+            value=(v_min, v_max),
+            key="own_hs_filter_visits",
+        )
+    f4, f5, f6 = st.columns(3)
+    with f4:
+        species_range = st.slider(
+            "Unique species",
+            min_value=s_min,
+            max_value=s_max,
+            value=(s_min, s_max),
+            key="own_hs_filter_species",
+        )
+    with f5:
+        first_range = st.date_input(
+            "First visit",
+            value=(min_first, max_first),
+            min_value=min_first,
+            max_value=max_first,
+            key="own_hs_filter_first",
+        )
+    with f6:
+        last_range = st.date_input(
+            "Last visit",
+            value=(min_last, max_last),
+            min_value=min_last,
+            max_value=max_last,
+            key="own_hs_filter_last",
+        )
+
+    name_needle = str(name_q or "").strip().lower()
+    first_start, first_end = _own_hotspot_date_range(first_range, min_first, max_first)
+    last_start, last_end = _own_hotspot_date_range(last_range, min_last, max_last)
+    v_lo, v_hi = visits_range
+    s_lo, s_hi = species_range
+
+    filtered: list[dict[str, Any]] = []
+    for row in rows:
+        if name_needle and name_needle not in str(row.get("Hotspot") or "").lower():
+            continue
+        if region_sel and str(row.get("Region") or "") not in region_sel:
+            continue
+        visits = int(row.get("Visits") or 0)
+        if visits < v_lo or visits > v_hi:
+            continue
+        species = int(row.get("Unique species") or 0)
+        if species < s_lo or species > s_hi:
+            continue
+        first_s = str(row.get("First visit") or "")
+        if first_s:
+            try:
+                first_d = date.fromisoformat(first_s)
+            except ValueError:
+                first_d = None
+            if first_d is not None and (first_d < first_start or first_d > first_end):
+                continue
+        elif first_days:
+            continue
+        last_s = str(row.get("Last visit") or "")
+        if last_s:
+            try:
+                last_d = date.fromisoformat(last_s)
+            except ValueError:
+                last_d = None
+            if last_d is not None and (last_d < last_start or last_d > last_end):
+                continue
+        elif last_days:
+            continue
+        filtered.append(row)
+
+    display = [
+        {
+            "Hotspot": r["Hotspot"],
+            "Region": r["Region"],
+            "Visits": r["Visits"],
+            "First visit": r["First visit"] or "—",
+            "Last visit": r["Last visit"] or "—",
+            "Unique species": r["Unique species"],
+        }
+        for r in filtered
+    ]
+    st.caption(f"{len(filtered):,} of {len(rows):,} hotspot(s)")
+    st.dataframe(
+        display,
+        use_container_width=True,
+        hide_index=True,
+        height=_dataframe_height(len(display), min_rows=12),
+        column_config={
+            "Hotspot": st.column_config.TextColumn("Hotspot", width="large"),
+            "Region": st.column_config.TextColumn("Region", width="medium"),
+            "Visits": st.column_config.NumberColumn("Visits", width="small"),
+            "First visit": st.column_config.TextColumn("First visit", width="small"),
+            "Last visit": st.column_config.TextColumn("Last visit", width="small"),
+            "Unique species": st.column_config.NumberColumn(
+                "Unique species", width="small"
+            ),
+        },
+    )
+    st.divider()
+
+
 def render_own_checklists() -> None:
     """Browse the user's eBird checklists from downloads and My eBird data."""
     render_page_header("My checklists", screen="mine")
@@ -4397,6 +4912,20 @@ def render_own_checklists() -> None:
         )
         return
 
+    if not summaries:
+        missing = []
+        if export_path is None:
+            missing.append("a MyBirdData.csv export in `requiredData/`")
+        if names:
+            missing.append(
+                "downloaded checklists matching "
+                + ", ".join(f"`{name}`" for name in names)
+            )
+        st.info("No checklists found. Add " + " or ".join(missing) + ".")
+        return
+
+    _render_own_hotspot_summary(summaries)
+
     refresh_col, expand_col, _ = st.columns([1, 1, 3])
     with refresh_col:
         if st.button("Refresh", use_container_width=True, key="own_checklists_refresh"):
@@ -4415,18 +4944,6 @@ def render_own_checklists() -> None:
         f"Photo frames · {novelty_legend_html(sighting=True)}",
         unsafe_allow_html=True,
     )
-
-    if not summaries:
-        missing = []
-        if export_path is None:
-            missing.append("a MyBirdData.csv export in `requiredData/`")
-        if names:
-            missing.append(
-                "downloaded checklists matching "
-                + ", ".join(f"`{name}`" for name in names)
-            )
-        st.info("No checklists found. Add " + " or ".join(missing) + ".")
-        return
 
     shown = int(st.session_state.get("own_checklists_shown") or 0)
     if shown <= 0:
@@ -4567,6 +5084,7 @@ def _sync_life_list_scope_pref() -> None:
         st.session_state.life_list_scope_pref = [
             item for item in value if item in LIFE_LIST_SCOPES
         ]
+    _remember_gallery_chrome_prefs()
 
 
 def current_life_list_scopes(*, region_code: str | None = None) -> list[str]:
@@ -4704,6 +5222,7 @@ def _on_gallery_sort_change() -> None:
         st.session_state.gallery_sort = value
         st.session_state.gallery_sort_pref = value
     st.session_state.pop("gallery_summary_page", None)
+    _remember_gallery_chrome_prefs()
 
 
 def render_gallery_sort_controls() -> None:
@@ -4793,16 +5312,19 @@ def render_gallery_config_controls(
         "Show legends",
         key="gallery_show_legends",
         help="Also shows the Image 1/200 counter.",
+        on_change=_on_gallery_chrome_pref_change,
     )
     st.checkbox(
         "Show remove from gallery",
         key="gallery_show_remove",
         help="Shows the × buttons that remove a bird from this gallery.",
+        on_change=_on_gallery_chrome_pref_change,
     )
     st.checkbox(
         "Show hide-photo control",
         key="gallery_show_hide_photo",
         help="Shows a trash icon on the upper left of Standard and Compare photos. Hidden photos are dropped from every view.",
+        on_change=_on_gallery_chrome_pref_change,
     )
     hidden_n = len(hidden_photo_keys())
     if hidden_n:
@@ -4818,6 +5340,7 @@ def render_gallery_config_controls(
         "Show bird and photo buttons",
         key="gallery_show_nav_buttons",
         help="◀ ▶ change birds and ← → change photos. When off, swipe the image instead.",
+        on_change=_on_gallery_chrome_pref_change,
     )
     st.checkbox(
         "Show bird info",
@@ -4825,6 +5348,8 @@ def render_gallery_config_controls(
         on_change=_sync_gallery_info_default,
         help="When on, Standard view opens the About this bird panel. Tap the bird name to hide or show it.",
     )
+    st.divider()
+    render_frame_style_controls()
     st.divider()
     render_image_size_controls()
 
@@ -4852,6 +5377,302 @@ def render_gallery_view_toggle() -> None:
         st.rerun()
 
 
+CONFIG_FRAME_STYLE_PREFS_KEY = "_config_frame_style_prefs"
+CONFIG_IMAGE_SIZE_PREFS_KEY = "_config_image_size_prefs"
+CONFIG_GALLERY_CHROME_PREFS_KEY = "_config_gallery_chrome_prefs"
+GALLERY_CHROME_WIDGET_KEYS = (
+    "gallery_show_legends",
+    "gallery_show_remove",
+    "gallery_show_hide_photo",
+    "gallery_show_nav_buttons",
+    "gallery_show_info_default",
+)
+
+
+def _frame_styles_from_session(*, base: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Merge present ``frame_style_*`` widget keys onto disk/base styles.
+
+    Missing widget keys keep the base value so a partial dialog remount cannot
+    clobber saved config with hardcoded defaults.
+    """
+    styles = dict(base if isinstance(base, dict) else load_frame_styles())
+    for scope in FRAME_SCOPES:
+        photo_key = f"photo_border_width_{scope}"
+        legend_key = f"legend_border_width_{scope}"
+        photo_session = f"frame_style_{photo_key}"
+        legend_session = f"frame_style_{legend_key}"
+        if photo_session in st.session_state:
+            styles[photo_key] = _clamp_border_width(
+                st.session_state.get(photo_session),
+                default=int(styles.get(photo_key, DEFAULT_FRAME_STYLES[photo_key])),
+            )
+        if legend_session in st.session_state:
+            styles[legend_key] = _clamp_border_width(
+                st.session_state.get(legend_session),
+                default=int(styles.get(legend_key, DEFAULT_FRAME_STYLES[legend_key])),
+            )
+    for key, fallback in (
+        ("color_world", FRAME_COLOR_WORLD),
+        ("color_region", FRAME_COLOR_REGION),
+        ("color_seen", FRAME_COLOR_SEEN),
+    ):
+        session_key = f"frame_style_{key}"
+        if session_key in st.session_state:
+            styles[key] = _normalize_hex_color(
+                st.session_state.get(session_key),
+                str(styles.get(key, fallback)),
+            )
+    for key, fallback in (
+        ("pattern_world_lifer", "solid"),
+        ("pattern_region_lifer", "solid"),
+        ("pattern_world_foy", "dashed"),
+        ("pattern_region_foy", "dashed"),
+        ("pattern_seen", "solid"),
+    ):
+        session_key = f"frame_style_{key}"
+        if session_key in st.session_state:
+            styles[key] = _normalize_border_pattern(
+                st.session_state.get(session_key),
+                str(styles.get(key, fallback)),
+            )
+    return normalize_frame_styles(styles)
+
+
+def _remember_frame_style_prefs(styles: dict[str, Any]) -> None:
+    st.session_state[CONFIG_FRAME_STYLE_PREFS_KEY] = {
+        key: value
+        for key, value in normalize_frame_styles(styles).items()
+        if key != "version"
+    }
+
+
+def _remember_image_size_prefs(by_layout: dict[str, dict[str, int]]) -> None:
+    st.session_state[CONFIG_IMAGE_SIZE_PREFS_KEY] = {
+        layout: _normalize_layout_sizes(sizes, layout=layout)
+        for layout, sizes in by_layout.items()
+        if layout in IMAGE_SIZE_LAYOUTS
+    }
+
+
+def _remember_gallery_chrome_prefs() -> None:
+    prefs = dict(st.session_state.get(CONFIG_GALLERY_CHROME_PREFS_KEY) or {})
+    for key in GALLERY_CHROME_WIDGET_KEYS:
+        if key in st.session_state:
+            prefs[key] = bool(st.session_state.get(key))
+    if "life_list_scopes" in st.session_state:
+        prefs["life_list_scopes"] = list(st.session_state.get("life_list_scopes") or [])
+    if "gallery_sort_radio" in st.session_state:
+        sort = st.session_state.get("gallery_sort_radio")
+        if sort in GALLERY_SORT_OPTIONS:
+            prefs["gallery_sort"] = sort
+    st.session_state[CONFIG_GALLERY_CHROME_PREFS_KEY] = prefs
+    try:
+        GALLERY_CHROME_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        GALLERY_CHROME_CONFIG_PATH.write_text(
+            json.dumps(prefs, indent=2) + "\n",
+            encoding="utf-8",
+        )
+    except OSError:
+        pass
+
+
+def load_gallery_chrome_prefs_from_disk() -> dict[str, Any]:
+    try:
+        raw = json.loads(GALLERY_CHROME_CONFIG_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        return {}
+    return raw if isinstance(raw, dict) else {}
+
+
+def sync_config_from_disk() -> None:
+    """Reload shared settings files into this browser session.
+
+    The settings UI opens in a separate window (its own Streamlit session), so
+    the main window picks up changes from disk on each rerun.
+    """
+    invalidate_frame_styles_cache()
+    styles = load_frame_styles()
+    _remember_frame_style_prefs(styles)
+    st.session_state._frame_styles = styles
+
+    by_layout = load_image_sizes_by_layout()
+    _remember_image_size_prefs(by_layout)
+    _apply_image_sizes_to_session(by_layout)
+
+    chrome = load_gallery_chrome_prefs_from_disk()
+    if not chrome:
+        return
+    st.session_state[CONFIG_GALLERY_CHROME_PREFS_KEY] = chrome
+    for key in GALLERY_CHROME_WIDGET_KEYS:
+        if key in chrome:
+            st.session_state[key] = bool(chrome[key])
+    scopes = chrome.get("life_list_scopes")
+    if isinstance(scopes, list):
+        st.session_state.life_list_scopes = list(scopes)
+        st.session_state.life_list_scope_pref = list(scopes)
+    sort = chrome.get("gallery_sort")
+    if sort in GALLERY_SORT_OPTIONS:
+        st.session_state.gallery_sort_radio = sort
+        st.session_state.gallery_sort = sort
+        st.session_state.gallery_sort_pref = sort
+
+
+def persist_config_dialog_state() -> None:
+    """Snapshot config widgets into durable prefs and on-disk files."""
+    _remember_gallery_chrome_prefs()
+    styles = None
+    if any(str(key).startswith("frame_style_") for key in st.session_state):
+        styles = _frame_styles_from_session()
+        _remember_frame_style_prefs(styles)
+    else:
+        prefs = st.session_state.get(CONFIG_FRAME_STYLE_PREFS_KEY)
+        if isinstance(prefs, dict) and prefs:
+            styles = normalize_frame_styles(prefs)
+    if isinstance(styles, dict):
+        try:
+            save_frame_styles(styles)
+        except OSError:
+            pass
+        invalidate_frame_styles_cache()
+        st.session_state._frame_styles = normalize_frame_styles(styles)
+    # Image-size widget keys may already be gone after dialog unmount; prefer prefs.
+    by_layout = None
+    if any(str(key).startswith("image_size_") for key in st.session_state):
+        by_layout = session_image_sizes_by_layout()
+    elif isinstance(st.session_state.get(CONFIG_IMAGE_SIZE_PREFS_KEY), dict):
+        by_layout = st.session_state[CONFIG_IMAGE_SIZE_PREFS_KEY]
+    if isinstance(by_layout, dict):
+        _remember_image_size_prefs(by_layout)
+        try:
+            save_image_sizes_by_layout(
+                by_layout,
+                path=IMAGE_SIZE_LOCAL_CONFIG_PATH,
+            )
+        except OSError:
+            pass
+
+
+def restore_config_dialog_widgets() -> None:
+    """Re-seed dialog widget keys from durable prefs or on-disk config."""
+    frame_prefs = st.session_state.get(CONFIG_FRAME_STYLE_PREFS_KEY)
+    if isinstance(frame_prefs, dict) and frame_prefs:
+        styles = normalize_frame_styles(frame_prefs)
+    else:
+        styles = load_frame_styles()
+        _remember_frame_style_prefs(styles)
+    for key, value in styles.items():
+        if key == "version":
+            continue
+        st.session_state[f"frame_style_{key}"] = value
+
+    image_prefs = st.session_state.get(CONFIG_IMAGE_SIZE_PREFS_KEY)
+    if isinstance(image_prefs, dict) and image_prefs:
+        by_layout = image_prefs
+    else:
+        by_layout = load_image_sizes_by_layout()
+        _remember_image_size_prefs(by_layout)
+    _apply_image_sizes_to_session(by_layout)
+
+    chrome = st.session_state.get(CONFIG_GALLERY_CHROME_PREFS_KEY)
+    if not isinstance(chrome, dict) or not chrome:
+        chrome = load_gallery_chrome_prefs_from_disk()
+        if chrome:
+            st.session_state[CONFIG_GALLERY_CHROME_PREFS_KEY] = chrome
+    if isinstance(chrome, dict):
+        for key in GALLERY_CHROME_WIDGET_KEYS:
+            if key in chrome:
+                st.session_state[key] = bool(chrome[key])
+        scopes = chrome.get("life_list_scopes")
+        if isinstance(scopes, list):
+            st.session_state.life_list_scopes = list(scopes)
+            st.session_state.life_list_scope_pref = list(scopes)
+        sort = chrome.get("gallery_sort")
+        if sort in GALLERY_SORT_OPTIONS:
+            st.session_state.gallery_sort_radio = sort
+            st.session_state.gallery_sort = sort
+            st.session_state.gallery_sort_pref = sort
+
+
+def _on_gallery_chrome_pref_change() -> None:
+    _remember_gallery_chrome_prefs()
+
+
+def is_settings_popup_request() -> bool:
+    """True when this browser window should show only the Settings UI."""
+    return normalize_screen_deeplink(_query_param_raw(SCREEN_QUERY)) == "settings"
+
+
+def settings_config_context() -> str:
+    raw = str(_query_param_raw("config") or "").strip().casefold()
+    if raw in {"gallery", "saved", "mine"}:
+        return raw
+    return "default"
+
+
+def render_settings_config_body(
+    *,
+    screen: str,
+    region_code: str = "",
+    birds: list[dict] | None = None,
+) -> None:
+    """Shared settings controls (popup window or legacy callers)."""
+    if screen == "gallery":
+        render_gallery_config_controls(
+            region_code=region_code,
+            birds=birds,
+        )
+    elif screen in {"saved", "mine"}:
+        render_gallery_sort_controls()
+        st.divider()
+        render_frame_style_controls()
+        st.divider()
+        render_image_size_controls()
+    else:
+        render_frame_style_controls()
+        st.divider()
+        render_image_size_controls()
+
+
+def render_settings_popup_page() -> None:
+    """Standalone Settings window content (opened via window.open)."""
+    st.markdown(
+        """
+<style>
+section.main > div { max-width: 42rem; margin: 0 auto; }
+header[data-testid="stHeader"] { display: none; }
+#MainMenu { visibility: hidden; }
+footer { visibility: hidden; }
+</style>
+        """,
+        unsafe_allow_html=True,
+    )
+    context = settings_config_context()
+    region_code = str(_query_param_raw("region") or selected_region_code() or "")
+    restore_config_dialog_widgets()
+    st.title("Settings")
+    st.caption(
+        "This is a separate browser window — drag or resize it freely. "
+        "Changes save locally and apply in the main window on the next refresh."
+    )
+    render_settings_config_body(screen=context, region_code=region_code, birds=None)
+    if st.button("Done", type="primary", use_container_width=True, key="settings_done"):
+        persist_config_dialog_state()
+        components.html(
+            """
+<script>
+try {
+  if (window.opener && !window.opener.closed) {
+    window.opener.location.reload();
+  }
+} catch (err) {}
+window.close();
+</script>
+            """,
+            height=0,
+        )
+        st.caption("You can close this window.")
+
+
 def render_config_icon(
     *,
     screen: str,
@@ -4859,24 +5680,20 @@ def render_config_icon(
     region_code: str = "",
     birds: list[dict] | None = None,
 ) -> None:
-    """Upper-left settings control for filter, sort, and display options."""
+    """Upper-left settings control — opens an independent popup window."""
+    del saved_id, birds  # popup loads filters without the in-memory bird list
     help_text = {
-        "gallery": "Filter, sort, show options, and image sizes",
-        "saved": "Sort order and image sizes",
-        "mine": "Sort order and image sizes",
-    }.get(screen, "Image sizes and display options")
-    with st.popover(":material/settings:", help=help_text):
-        if screen == "gallery":
-            render_gallery_config_controls(
-                region_code=region_code,
-                birds=birds,
-            )
-        elif screen in {"saved", "mine"}:
-            render_gallery_sort_controls()
-            st.divider()
-            render_image_size_controls()
-        else:
-            render_image_size_controls()
+        "gallery": "Filter, sort, show options, frame styles, and image sizes",
+        "saved": "Sort order, frame styles, and image sizes",
+        "mine": "Sort order, frame styles, and image sizes",
+    }.get(screen, "Frame styles, image sizes, and display options")
+    region = str(region_code or selected_region_code() or "").strip()
+    settings_opener(
+        screen=screen,
+        region=region,
+        help_text=help_text,
+        key=f"header_config_open_{screen}",
+    )
 
 
 def ebird_taxon_order_maps() -> tuple[dict[str, float], dict[str, float]]:
@@ -4904,7 +5721,7 @@ def ebird_taxon_order_maps() -> tuple[dict[str, float], dict[str, float]]:
                     by_sci[binomial_sci_name(sci)] = order
         _TAXON_ORDER_BY_CODE = by_code
         _TAXON_ORDER_BY_SCI = by_sci
-    return _TAXON_ORDER_BY_CODE, _TAXON_ORDER_BY_SCI
+    return _TAXON_ORDER_BY_CODE or {}, _TAXON_ORDER_BY_SCI or {}
 
 
 def gallery_taxon_order(bird: dict) -> float:
@@ -5001,31 +5818,73 @@ def _normalize_layout_sizes(
     return sizes
 
 
-def load_image_sizes_by_layout() -> dict[str, dict[str, int]]:
-    """Read deployable per-layout image sizes; migrate flat configs."""
+def _read_image_sizes_file(path: Path) -> dict[str, dict[str, int]] | None:
+    """Parse a desktop/mobile image-size JSON file, or ``None`` if missing/invalid."""
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        return None
+    if not isinstance(raw, dict):
+        return None
     by_layout = {
         layout: dict(defaults)
         for layout, defaults in DEFAULT_IMAGE_SIZES_BY_LAYOUT.items()
     }
-    try:
-        raw = json.loads(IMAGE_SIZE_CONFIG_PATH.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return by_layout
-    if not isinstance(raw, dict):
-        return by_layout
-
-    # New shape: {"desktop": {...}, "mobile": {...}}
     if any(layout in raw for layout in IMAGE_SIZE_LAYOUTS):
         for layout in IMAGE_SIZE_LAYOUTS:
             by_layout[layout] = _normalize_layout_sizes(
                 raw.get(layout), layout=layout
             )
         return by_layout
-
     # Legacy flat shape: treat values as desktop; keep mobile defaults.
     if any(key in raw for key in DEFAULT_IMAGE_SIZES):
         by_layout["desktop"] = _normalize_layout_sizes(raw, layout="desktop")
-    return by_layout
+        return by_layout
+    return None
+
+
+def _merge_image_size_layers(
+    *layers: dict[str, dict[str, int]] | None,
+) -> dict[str, dict[str, int]]:
+    merged = {
+        layout: dict(defaults)
+        for layout, defaults in DEFAULT_IMAGE_SIZES_BY_LAYOUT.items()
+    }
+    for layer in layers:
+        if not isinstance(layer, dict):
+            continue
+        for layout in IMAGE_SIZE_LAYOUTS:
+            overlay = layer.get(layout)
+            if not isinstance(overlay, dict):
+                continue
+            for key, value in overlay.items():
+                if key in merged[layout]:
+                    merged[layout][key] = clamp_image_size(key, value)
+    return merged
+
+
+def load_image_size_defaults_by_layout() -> dict[str, dict[str, int]]:
+    """Built-in defaults merged with tracked ``ui_image_sizes.json``."""
+    return _merge_image_size_layers(
+        {
+            layout: dict(defaults)
+            for layout, defaults in DEFAULT_IMAGE_SIZES_BY_LAYOUT.items()
+        },
+        _read_image_sizes_file(IMAGE_SIZE_CONFIG_PATH),
+    )
+
+
+def load_image_size_local_by_layout() -> dict[str, dict[str, int]] | None:
+    """Local overrides from ``ui_image_sizes.local.json``, if present."""
+    return _read_image_sizes_file(IMAGE_SIZE_LOCAL_CONFIG_PATH)
+
+
+def load_image_sizes_by_layout() -> dict[str, dict[str, int]]:
+    """Effective sizes: code → project defaults → local overrides."""
+    return _merge_image_size_layers(
+        load_image_size_defaults_by_layout(),
+        load_image_size_local_by_layout(),
+    )
 
 
 def load_image_sizes(*, layout: str | None = None) -> dict[str, int]:
@@ -5036,8 +5895,13 @@ def load_image_sizes(*, layout: str | None = None) -> dict[str, int]:
     return dict(load_image_sizes_by_layout()[wanted])
 
 
-def save_image_sizes_by_layout(by_layout: dict[str, dict[str, int]]) -> None:
-    """Persist desktop and mobile sizes so they deploy with the app."""
+def save_image_sizes_by_layout(
+    by_layout: dict[str, dict[str, int]],
+    *,
+    path: Path | None = None,
+) -> None:
+    """Persist desktop and mobile sizes to ``path`` (defaults file when omitted)."""
+    target = path or IMAGE_SIZE_CONFIG_PATH
     payload = {
         layout: _normalize_layout_sizes(
             by_layout.get(layout) or DEFAULT_IMAGE_SIZES_BY_LAYOUT[layout],
@@ -5045,20 +5909,40 @@ def save_image_sizes_by_layout(by_layout: dict[str, dict[str, int]]) -> None:
         )
         for layout in IMAGE_SIZE_LAYOUTS
     }
-    IMAGE_SIZE_CONFIG_PATH.write_text(
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
         json.dumps(payload, indent=2) + "\n",
         encoding="utf-8",
     )
 
 
 def save_image_sizes(sizes: dict[str, int], *, layout: str | None = None) -> None:
-    """Persist one layout's sizes into the shared config file."""
+    """Persist one layout's sizes into the local overrides file."""
     wanted = (layout or current_ui_layout() or "desktop").strip().casefold()
     if wanted not in IMAGE_SIZE_LAYOUTS:
         wanted = "desktop"
     by_layout = load_image_sizes_by_layout()
     by_layout[wanted] = _normalize_layout_sizes(sizes, layout=wanted)
-    save_image_sizes_by_layout(by_layout)
+    save_image_sizes_by_layout(by_layout, path=IMAGE_SIZE_LOCAL_CONFIG_PATH)
+
+
+def session_image_sizes_by_layout() -> dict[str, dict[str, int]]:
+    """Current widget values for both layouts (falls back to effective sizes)."""
+    ensure_image_size_session()
+    effective = load_image_sizes_by_layout()
+    out: dict[str, dict[str, int]] = {}
+    for layout in IMAGE_SIZE_LAYOUTS:
+        sizes: dict[str, int] = {}
+        for key in DEFAULT_IMAGE_SIZES_BY_LAYOUT[layout]:
+            session_key = image_size_session_key(layout, key)
+            sizes[key] = clamp_image_size(
+                key,
+                st.session_state.get(
+                    session_key, effective[layout].get(key)
+                ),
+            )
+        out[layout] = sizes
+    return out
 
 
 def image_size_session_key(layout: str, key: str) -> str:
@@ -5079,36 +5963,64 @@ def image_size(key: str) -> int:
 
 
 def ensure_image_size_session() -> None:
-    """Seed widget session state from disk for both layouts."""
-    by_layout = load_image_sizes_by_layout()
+    """Seed widget session state from durable prefs or disk for both layouts."""
+    prefs = st.session_state.get(CONFIG_IMAGE_SIZE_PREFS_KEY)
+    if isinstance(prefs, dict) and prefs:
+        by_layout = prefs
+    else:
+        by_layout = load_image_sizes_by_layout()
+        _remember_image_size_prefs(by_layout)
     for layout, sizes in by_layout.items():
+        if layout not in IMAGE_SIZE_LAYOUTS or not isinstance(sizes, dict):
+            continue
         for key, value in sizes.items():
             session_key = image_size_session_key(layout, key)
             if session_key not in st.session_state:
-                st.session_state[session_key] = value
+                st.session_state[session_key] = clamp_image_size(key, value)
+
+
+def _apply_image_sizes_to_session(by_layout: dict[str, dict[str, int]]) -> None:
+    for layout, sizes in by_layout.items():
+        if layout not in IMAGE_SIZE_LAYOUTS or not isinstance(sizes, dict):
+            continue
+        for key, value in sizes.items():
+            st.session_state[image_size_session_key(layout, key)] = clamp_image_size(
+                key, value
+            )
 
 
 def _on_image_size_change(layout: str, key: str) -> None:
+    """Keep editing in session, durable prefs, and local config file."""
     session_key = image_size_session_key(layout, key)
-    sizes = load_image_sizes(layout=layout)
-    sizes[key] = clamp_image_size(
+    st.session_state[session_key] = clamp_image_size(
         key,
         st.session_state.get(
             session_key, DEFAULT_IMAGE_SIZES_BY_LAYOUT[layout][key]
         ),
     )
-    save_image_sizes(sizes, layout=layout)
+    by_layout = session_image_sizes_by_layout()
+    _remember_image_size_prefs(by_layout)
+    try:
+        save_image_sizes_by_layout(
+            by_layout,
+            path=IMAGE_SIZE_LOCAL_CONFIG_PATH,
+        )
+    except OSError:
+        pass
 
 
 def render_image_size_controls() -> None:
-    """Per-layout size steppers; saves to config/ui_image_sizes.json for deploy."""
+    """Per-layout size steppers with local save and set-as-defaults actions."""
     ensure_image_size_session()
     active = current_ui_layout()
+    has_local = IMAGE_SIZE_LOCAL_CONFIG_PATH.is_file()
     st.markdown("**Image sizes**")
     st.caption(
         "Desktop and mobile each have their own sizes. The app uses the set for "
-        f"the current layout (**{active}**). Values save to `config/ui_image_sizes.json` "
-        "and ship with deploy."
+        f"the current layout (**{active}**). "
+        "**Save local** writes `config/ui_image_sizes.local.json` (gitignored). "
+        "**Set as defaults** updates tracked `config/ui_image_sizes.json` for deploy."
+        + (" · Local overrides are active." if has_local else "")
     )
     for layout in IMAGE_SIZE_LAYOUTS:
         label = "Desktop" if layout == "desktop" else "Mobile"
@@ -5128,6 +6040,67 @@ def render_image_size_controls() -> None:
                     on_change=_on_image_size_change,
                     args=(layout, key),
                 )
+    action_cols = st.columns(3)
+    with action_cols[0]:
+        if st.button(
+            "Save local",
+            key="image_sizes_save_local",
+            use_container_width=True,
+            help="Save current sizes to config/ui_image_sizes.local.json",
+        ):
+            try:
+                current = session_image_sizes_by_layout()
+                save_image_sizes_by_layout(
+                    current,
+                    path=IMAGE_SIZE_LOCAL_CONFIG_PATH,
+                )
+                _remember_image_size_prefs(current)
+                st.success("Saved local image sizes.")
+            except OSError as exc:
+                st.error(f"Could not save local sizes: {exc}")
+    with action_cols[1]:
+        if st.button(
+            "Set as defaults",
+            key="image_sizes_set_defaults",
+            use_container_width=True,
+            type="primary",
+            help=(
+                "Write current sizes to config/ui_image_sizes.json "
+                "(project defaults for deploy)"
+            ),
+        ):
+            try:
+                current = session_image_sizes_by_layout()
+                save_image_sizes_by_layout(
+                    current,
+                    path=IMAGE_SIZE_CONFIG_PATH,
+                )
+                # Local file would still override; remove it so defaults apply.
+                if IMAGE_SIZE_LOCAL_CONFIG_PATH.is_file():
+                    IMAGE_SIZE_LOCAL_CONFIG_PATH.unlink()
+                _apply_image_sizes_to_session(current)
+                _remember_image_size_prefs(current)
+                st.success("Saved as project defaults.")
+                st.rerun()
+            except OSError as exc:
+                st.error(f"Could not save defaults: {exc}")
+    with action_cols[2]:
+        if st.button(
+            "Reset to defaults",
+            key="image_sizes_reset_defaults",
+            use_container_width=True,
+            help="Clear local overrides and reload project defaults",
+        ):
+            try:
+                if IMAGE_SIZE_LOCAL_CONFIG_PATH.is_file():
+                    IMAGE_SIZE_LOCAL_CONFIG_PATH.unlink()
+                defaults = load_image_size_defaults_by_layout()
+                _apply_image_sizes_to_session(defaults)
+                _remember_image_size_prefs(defaults)
+                st.success("Reset to project defaults.")
+                st.rerun()
+            except OSError as exc:
+                st.error(f"Could not reset sizes: {exc}")
 
 
 def gallery_chrome_visible_default() -> bool:
@@ -5143,6 +6116,11 @@ def apply_gallery_chrome_defaults() -> None:
     changes or the gallery is closed.
     """
     st.session_state.setdefault("gallery_show_info_default", False)
+    chrome_prefs = st.session_state.get(CONFIG_GALLERY_CHROME_PREFS_KEY) or {}
+    if isinstance(chrome_prefs, dict):
+        for key in GALLERY_CHROME_WIDGET_KEYS:
+            if key not in st.session_state and key in chrome_prefs:
+                st.session_state[key] = bool(chrome_prefs[key])
     show = gallery_chrome_visible_default()
     layout = current_ui_layout()
     if st.session_state.get("gallery_chrome_layout") != layout:
@@ -5151,6 +6129,7 @@ def apply_gallery_chrome_defaults() -> None:
         st.session_state.gallery_show_hide_photo = show
         st.session_state.gallery_show_nav_buttons = show
         st.session_state.gallery_chrome_layout = layout
+        _remember_gallery_chrome_prefs()
         return
     st.session_state.setdefault("gallery_show_legends", show)
     st.session_state.setdefault("gallery_show_remove", show)
@@ -5165,6 +6144,7 @@ def gallery_info_visible_default() -> bool:
 
 def _sync_gallery_info_default() -> None:
     st.session_state.gallery_show_info = gallery_info_visible_default()
+    _remember_gallery_chrome_prefs()
 
 
 def reset_gallery_info_to_default() -> None:
@@ -5322,6 +6302,293 @@ def apply_compare_swipe(action: str, *, bird_count: int, image_count: int) -> bo
 FRAME_COLOR_WORLD = "#0d9488"
 FRAME_COLOR_REGION = "#d97706"
 FRAME_COLOR_SEEN = "#94a3b8"
+FRAME_BORDER_PATTERNS = ("solid", "dashed", "dotted", "double")
+FRAME_SCOPES = ("world", "region")
+DEFAULT_FRAME_STYLES: dict[str, Any] = {
+    "version": FRAME_STYLE_CONFIG_VERSION,
+    "photo_border_width_world": 3,
+    "photo_border_width_region": 3,
+    "legend_border_width_world": 3,
+    "legend_border_width_region": 3,
+    "color_world": FRAME_COLOR_WORLD,
+    "color_region": FRAME_COLOR_REGION,
+    "color_seen": FRAME_COLOR_SEEN,
+    "pattern_world_lifer": "solid",
+    "pattern_region_lifer": "solid",
+    "pattern_world_foy": "dashed",
+    "pattern_region_foy": "dashed",
+    "pattern_seen": "solid",
+}
+
+
+def _normalize_hex_color(value: object, fallback: str) -> str:
+    text = str(value or "").strip()
+    if re.fullmatch(r"#[0-9A-Fa-f]{6}", text):
+        return text.lower()
+    if re.fullmatch(r"#[0-9A-Fa-f]{3}", text):
+        return "#" + "".join(ch * 2 for ch in text[1:]).lower()
+    return fallback
+
+
+def _normalize_border_pattern(value: object, fallback: str) -> str:
+    text = str(value or "").strip().casefold()
+    if text in FRAME_BORDER_PATTERNS:
+        return text
+    return fallback if fallback in FRAME_BORDER_PATTERNS else "solid"
+
+
+def _clamp_border_width(value: object, *, default: int = 3) -> int:
+    try:
+        width = int(round(float(value)))
+    except (TypeError, ValueError):
+        width = default
+    return max(1, min(12, width))
+
+
+def default_frame_styles() -> dict[str, Any]:
+    return dict(DEFAULT_FRAME_STYLES)
+
+
+def normalize_frame_styles(raw: object) -> dict[str, Any]:
+    """Merge a config payload onto defaults with validated values."""
+    base = default_frame_styles()
+    if not isinstance(raw, dict):
+        return base
+    # Legacy single widths apply to both world and region when scoped keys are absent.
+    legacy_photo = raw.get("photo_border_width")
+    legacy_legend = raw.get("legend_border_width")
+    for scope in FRAME_SCOPES:
+        photo_key = f"photo_border_width_{scope}"
+        legend_key = f"legend_border_width_{scope}"
+        photo_raw = raw.get(photo_key, legacy_photo)
+        legend_raw = raw.get(legend_key, legacy_legend)
+        base[photo_key] = _clamp_border_width(
+            photo_raw if photo_raw is not None else base[photo_key],
+            default=int(base[photo_key]),
+        )
+        base[legend_key] = _clamp_border_width(
+            legend_raw if legend_raw is not None else base[legend_key],
+            default=int(base[legend_key]),
+        )
+    base["color_world"] = _normalize_hex_color(
+        raw.get("color_world"), str(base["color_world"])
+    )
+    base["color_region"] = _normalize_hex_color(
+        raw.get("color_region"), str(base["color_region"])
+    )
+    base["color_seen"] = _normalize_hex_color(
+        raw.get("color_seen"), str(base["color_seen"])
+    )
+    for key, fallback in (
+        ("pattern_world_lifer", "solid"),
+        ("pattern_region_lifer", "solid"),
+        ("pattern_world_foy", "dashed"),
+        ("pattern_region_foy", "dashed"),
+        ("pattern_seen", "solid"),
+    ):
+        base[key] = _normalize_border_pattern(raw.get(key), fallback)
+    base["version"] = FRAME_STYLE_CONFIG_VERSION
+    return base
+
+
+def load_frame_styles() -> dict[str, Any]:
+    """Load photo-frame / legend styles from ``config/ui_frame_styles.json``."""
+    try:
+        raw = json.loads(FRAME_STYLE_CONFIG_PATH.read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        return default_frame_styles()
+    return normalize_frame_styles(raw)
+
+
+def save_frame_styles(styles: dict[str, Any]) -> None:
+    """Persist frame styles to ``config/ui_frame_styles.json``."""
+    payload = normalize_frame_styles(styles)
+    FRAME_STYLE_CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    FRAME_STYLE_CONFIG_PATH.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+
+
+def frame_styles() -> dict[str, Any]:
+    """Session-cached frame styles (reload after config edits)."""
+    cached = st.session_state.get("_frame_styles")
+    if isinstance(cached, dict) and cached.get("version") == FRAME_STYLE_CONFIG_VERSION:
+        return cached
+    styles = load_frame_styles()
+    st.session_state._frame_styles = styles
+    return styles
+
+
+def invalidate_frame_styles_cache() -> None:
+    st.session_state.pop("_frame_styles", None)
+
+
+def ensure_frame_style_session() -> None:
+    """Seed Streamlit widgets from durable prefs or on-disk frame style config."""
+    prefs = st.session_state.get(CONFIG_FRAME_STYLE_PREFS_KEY)
+    if isinstance(prefs, dict) and prefs:
+        styles = normalize_frame_styles(prefs)
+    else:
+        styles = frame_styles()
+        _remember_frame_style_prefs(styles)
+    for key, value in styles.items():
+        if key == "version":
+            continue
+        session_key = f"frame_style_{key}"
+        if session_key not in st.session_state:
+            st.session_state[session_key] = value
+
+
+def _on_frame_style_change() -> None:
+    styles = _frame_styles_from_session()
+    try:
+        save_frame_styles(styles)
+    except OSError:
+        pass
+    invalidate_frame_styles_cache()
+    st.session_state._frame_styles = styles
+    _remember_frame_style_prefs(styles)
+    # Keep widget values in sync with normalized save.
+    for key, value in styles.items():
+        if key == "version":
+            continue
+        st.session_state[f"frame_style_{key}"] = value
+    # Drop legacy single-width widget keys if a prior session still has them.
+    for legacy in ("frame_style_photo_border_width", "frame_style_legend_border_width"):
+        st.session_state.pop(legacy, None)
+
+
+def render_frame_style_controls() -> None:
+    """Border width, colors, and patterns for novelty frames / legends."""
+    ensure_frame_style_session()
+    styles = frame_styles()
+    st.markdown("**Photo frame & legend styles**")
+    st.caption(
+        "Colors and border patterns for lifers / FoY frames. "
+        "World (life) and region thicknesses are independent. "
+        "Saved to `config/ui_frame_styles.json`."
+    )
+    preview = novelty_legend_html(sighting=True)
+    st.markdown(f"Preview · {preview}", unsafe_allow_html=True)
+    st.caption("Border thickness (px)")
+    width_cols = st.columns(2)
+    with width_cols[0]:
+        st.number_input(
+            "Photo · world / lifer",
+            min_value=1,
+            max_value=12,
+            step=1,
+            key="frame_style_photo_border_width_world",
+            help="Outline thickness for world lifer / FoY world photo frames.",
+            on_change=_on_frame_style_change,
+        )
+        st.number_input(
+            "Legend · world / lifer",
+            min_value=1,
+            max_value=12,
+            step=1,
+            key="frame_style_legend_border_width_world",
+            help="Swatch border thickness for world / lifer legend items.",
+            on_change=_on_frame_style_change,
+        )
+    with width_cols[1]:
+        st.number_input(
+            "Photo · region",
+            min_value=1,
+            max_value=12,
+            step=1,
+            key="frame_style_photo_border_width_region",
+            help="Outline thickness for region lifer / FoY region photo frames.",
+            on_change=_on_frame_style_change,
+        )
+        st.number_input(
+            "Legend · region",
+            min_value=1,
+            max_value=12,
+            step=1,
+            key="frame_style_legend_border_width_region",
+            help="Swatch border thickness for region legend items.",
+            on_change=_on_frame_style_change,
+        )
+    color_cols = st.columns(3)
+    with color_cols[0]:
+        st.color_picker(
+            "World / lifer",
+            key="frame_style_color_world",
+            help="Color for world lifers and FoY world frames.",
+            on_change=_on_frame_style_change,
+        )
+    with color_cols[1]:
+        st.color_picker(
+            "Region",
+            key="frame_style_color_region",
+            help="Color for region lifers and FoY region frames.",
+            on_change=_on_frame_style_change,
+        )
+    with color_cols[2]:
+        st.color_picker(
+            "Already counted",
+            key="frame_style_color_seen",
+            help="Color used for already-counted birds in opportunity legends.",
+            on_change=_on_frame_style_change,
+        )
+    pattern_labels = {
+        "solid": "Solid",
+        "dashed": "Dashed",
+        "dotted": "Dotted",
+        "double": "Double",
+    }
+    st.caption("Border patterns")
+    pattern_cols = st.columns(2)
+    with pattern_cols[0]:
+        st.selectbox(
+            "World lifer",
+            options=list(FRAME_BORDER_PATTERNS),
+            format_func=lambda value: pattern_labels.get(value, value),
+            key="frame_style_pattern_world_lifer",
+            on_change=_on_frame_style_change,
+        )
+        st.selectbox(
+            "FoY world",
+            options=list(FRAME_BORDER_PATTERNS),
+            format_func=lambda value: pattern_labels.get(value, value),
+            key="frame_style_pattern_world_foy",
+            on_change=_on_frame_style_change,
+        )
+    with pattern_cols[1]:
+        st.selectbox(
+            "Region lifer",
+            options=list(FRAME_BORDER_PATTERNS),
+            format_func=lambda value: pattern_labels.get(value, value),
+            key="frame_style_pattern_region_lifer",
+            on_change=_on_frame_style_change,
+        )
+        st.selectbox(
+            "FoY region",
+            options=list(FRAME_BORDER_PATTERNS),
+            format_func=lambda value: pattern_labels.get(value, value),
+            key="frame_style_pattern_region_foy",
+            on_change=_on_frame_style_change,
+        )
+    if st.button(
+        "Reset frame styles to defaults",
+        key="frame_style_reset",
+        use_container_width=True,
+    ):
+        defaults = default_frame_styles()
+        try:
+            save_frame_styles(defaults)
+        except OSError:
+            pass
+        invalidate_frame_styles_cache()
+        st.session_state._frame_styles = defaults
+        _remember_frame_style_prefs(defaults)
+        for key, value in defaults.items():
+            if key == "version":
+                continue
+            st.session_state[f"frame_style_{key}"] = value
+        st.rerun()
 
 
 def gallery_bird_is_new_region(bird: dict) -> bool:
@@ -5424,22 +6691,36 @@ def gallery_filter_count_lines(
     return lines
 
 
+def gallery_legend_scope(bird: dict) -> str:
+    """Novelty scope for thickness/color: ``world``, ``region``, or ``seen``."""
+    if gallery_bird_is_new_world(bird):
+        return "world"
+    if gallery_bird_is_new_region(bird):
+        return "region"
+    if gallery_bird_is_foy_world(bird):
+        return "world"
+    if gallery_bird_is_foy_region(bird):
+        return "region"
+    return "seen"
+
+
 def gallery_legend_frame(bird: dict) -> tuple[str, str]:
     """Legend color and line style for a bird.
 
-    Priority: new world (teal solid), new region (amber solid), missing FoY
-    world (teal dashed), missing FoY region (amber dashed). When both FoY
-    flags are set, world wins.
+    Priority: world lifer, region lifer, FoY world, FoY region, then seen.
+    Colors and patterns come from ``config/ui_frame_styles.json``.
     """
-    if gallery_bird_is_new_world(bird):
-        return FRAME_COLOR_WORLD, "solid"
-    if gallery_bird_is_new_region(bird):
-        return FRAME_COLOR_REGION, "solid"
-    if gallery_bird_is_foy_world(bird):
-        return FRAME_COLOR_WORLD, "dashed"
-    if gallery_bird_is_foy_region(bird):
-        return FRAME_COLOR_REGION, "dashed"
-    return FRAME_COLOR_SEEN, "solid"
+    styles = frame_styles()
+    scope = gallery_legend_scope(bird)
+    if scope == "world":
+        if gallery_bird_is_new_world(bird):
+            return str(styles["color_world"]), str(styles["pattern_world_lifer"])
+        return str(styles["color_world"]), str(styles["pattern_world_foy"])
+    if scope == "region":
+        if gallery_bird_is_new_region(bird):
+            return str(styles["color_region"]), str(styles["pattern_region_lifer"])
+        return str(styles["color_region"]), str(styles["pattern_region_foy"])
+    return str(styles["color_seen"]), str(styles["pattern_seen"])
 
 
 def gallery_frame_color(bird: dict) -> str:
@@ -5448,43 +6729,74 @@ def gallery_frame_color(bird: dict) -> str:
 
 
 def gallery_frame_style(bird: dict) -> str:
-    """Solid border for new birds; dashed for missing-FoY-only."""
+    """Border pattern for new birds / missing-FoY frames."""
     return gallery_legend_frame(bird)[1]
 
 
-def gallery_frame_outline_css(bird: dict, *, width: int = 3) -> str:
-    color = gallery_frame_color(bird)
-    if color == FRAME_COLOR_SEEN:
+def gallery_frame_outline_css(bird: dict, *, width: int | None = None) -> str:
+    styles = frame_styles()
+    scope = gallery_legend_scope(bird)
+    if scope == "seen":
         return ""
+    default_w = int(styles[f"photo_border_width_{scope}"])
+    border_w = (
+        _clamp_border_width(width, default=default_w)
+        if width is not None
+        else default_w
+    )
     return (
-        f"outline:{width}px {gallery_frame_style(bird)} {color};"
-        f"outline-offset:-{width}px;"
+        f"outline:{border_w}px {gallery_frame_style(bird)} {gallery_frame_color(bird)};"
+        f"outline-offset:-{border_w}px;"
     )
 
 
-def _legend_swatch(color: str, style: str) -> str:
+def _legend_swatch(
+    color: str,
+    style: str,
+    *,
+    scope: str = "world",
+    border_width: int | None = None,
+) -> str:
+    # Tiny squares hide CSS ``dashed``/``dotted`` segments; non-solid swatches
+    # are wider so the pattern is visible.
+    styles = frame_styles()
+    scope_key = scope if scope in FRAME_SCOPES else "world"
+    default_w = int(styles[f"legend_border_width_{scope_key}"])
+    width_px = (
+        _clamp_border_width(border_width, default=default_w)
+        if border_width is not None
+        else default_w
+    )
+    box_w = "1.25em" if style in {"dashed", "dotted", "double"} else "0.82em"
+    box_h = "0.82em"
     return (
-        "<span style='display:inline-block;width:0.72em;height:0.72em;"
-        f"box-sizing:border-box;border:2px {style} {color};"
-        "vertical-align:-0.1em;margin:0 0.12em 0 0.05em'></span>"
+        "<span style='display:inline-block;"
+        f"width:{box_w};height:{box_h};"
+        f"box-sizing:border-box;border:{width_px}px {style} {color};"
+        "border-radius:1px;background:transparent;"
+        "vertical-align:-0.12em;margin:0 0.14em 0 0.06em'></span>"
     )
 
 
 def novelty_legend_html(*, sighting: bool | None = None) -> str:
     use_sighting = gallery_sighting_novelty() if sighting is None else sighting
+    styles = frame_styles()
+    world = str(styles["color_world"])
+    region = str(styles["color_region"])
+    seen = str(styles["color_seen"])
     if use_sighting:
         return (
-            f"{_legend_swatch(FRAME_COLOR_WORLD, 'solid')} lifer · "
-            f"{_legend_swatch(FRAME_COLOR_REGION, 'solid')} region lifer · "
-            f"{_legend_swatch(FRAME_COLOR_WORLD, 'dashed')} FoY world · "
-            f"{_legend_swatch(FRAME_COLOR_REGION, 'dashed')} FoY region"
+            f"{_legend_swatch(world, str(styles['pattern_world_lifer']), scope='world')} lifer · "
+            f"{_legend_swatch(region, str(styles['pattern_region_lifer']), scope='region')} region lifer · "
+            f"{_legend_swatch(world, str(styles['pattern_world_foy']), scope='world')} FoY world · "
+            f"{_legend_swatch(region, str(styles['pattern_region_foy']), scope='region')} FoY region"
         )
     return (
-        f"{_legend_swatch(FRAME_COLOR_WORLD, 'solid')} new to world · "
-        f"{_legend_swatch(FRAME_COLOR_REGION, 'solid')} new to region · "
-        f"{_legend_swatch(FRAME_COLOR_WORLD, 'dashed')} missing FoY world · "
-        f"{_legend_swatch(FRAME_COLOR_REGION, 'dashed')} missing FoY region · "
-        f"{_legend_swatch(FRAME_COLOR_SEEN, 'solid')} already counted"
+        f"{_legend_swatch(world, str(styles['pattern_world_lifer']), scope='world')} new to world · "
+        f"{_legend_swatch(region, str(styles['pattern_region_lifer']), scope='region')} new to region · "
+        f"{_legend_swatch(world, str(styles['pattern_world_foy']), scope='world')} missing FoY world · "
+        f"{_legend_swatch(region, str(styles['pattern_region_foy']), scope='region')} missing FoY region · "
+        f"{_legend_swatch(seen, str(styles['pattern_seen']), scope='world')} already counted"
     )
 
 
@@ -7847,24 +9159,26 @@ def render_region_code_input(
     return str(st.session_state.get(session_key) or "").strip()
 
 
-def leave_region_select() -> None:
+def leave_place_select() -> None:
     """Save the chosen region and return to the previous screen."""
     apply_region_code(selected_region_code())
-    previous = st.session_state.pop("dashboard_before_region", None)
+    previous = st.session_state.pop("dashboard_before_place", None)
+    if previous is None:
+        previous = st.session_state.pop("dashboard_before_region", None)
     if previous == "gallery":
         go_dashboard("gallery")
-    elif previous in DASHBOARD_SCREENS and previous != "region":
+    elif previous in DASHBOARD_SCREENS and previous != "place":
         go_dashboard(previous)
     else:
         go_dashboard("checklists")
 
 
-def render_region_select() -> None:
-    """Dedicated screen for choosing the eBird region."""
-    render_page_header("Region", screen="region")
+def render_region_select_body() -> None:
+    """Region picker controls (no page header)."""
+    st.markdown("#### eBird region")
     st.caption(
-        "This region is used by Checklists, Checklist cache, Cache maintenance, "
-        "and gallery filters."
+        "Used by Checklists, Hot Spot Finder, Hotspots, Checklist cache, "
+        "Cache maintenance, and gallery filters."
     )
     code = selected_region_code()
     short, long_name = region_display_names(code, allow_api=True)
@@ -7895,13 +9209,223 @@ def render_region_select() -> None:
         ),
         lookup_in_expander=False,
     )
+
+
+def render_location_config_body() -> None:
+    """Drive-origin controls (no page header)."""
+    st.markdown("#### Drive origin")
+    st.caption(
+        "Origin used for Hot Spot Finder and Hotspots drive times. "
+        "Drop a pin on the map, use browser GPS, or look up a street address."
+    )
+    home_coords = configured_home_coordinates()
+    home_address = configured_home_address()
+    ors_key_ready = bool(get_ors_api_key())
+
+    pending_address = st.session_state.pop("_location_address_pending", None)
+    if pending_address is not None:
+        st.session_state.location_address_input = str(pending_address)
+
+    st.subheader("Current origin")
+    if home_address:
+        st.write(home_address)
+    st.caption(f"Coordinates: **{format_home_coordinates(home_coords)}**")
+    render_home_location_map(home_coords, address=home_address)
+    render_recent_locations_list(home_coords)
+    if not ors_key_ready:
+        st.warning(
+            "Set `OPENROUTESERVICE_API_KEY` in `config/.env` to enable address "
+            "lookup and drive times."
+        )
+
+    st.subheader("Use current GPS location")
+    st.caption("Asks the browser for your location (permission prompt).")
+    gps_result = current_location_button(
+        label="Use GPS location",
+        key="location_config_gps",
+    )
+    if isinstance(gps_result, dict) and gps_result.get("t") is not None:
+        gps_t = gps_result.get("t")
+        if gps_t != st.session_state.get("location_config_gps_t"):
+            st.session_state.location_config_gps_t = gps_t
+            apply_ors_gps_result(gps_result)
+
+    st.subheader("Set from street address")
+    if "location_address_input" not in st.session_state:
+        st.session_state.location_address_input = home_address or ""
+
+    with st.form("location_address_form", clear_on_submit=False):
+        address_text = st.text_input(
+            "Street address",
+            key="location_address_input",
+            placeholder="123 Main St, City, ST 33401",
+            help=(
+                "Looked up with OpenRouteService / Pelias. If the exact house "
+                "number is missing, the closest number on that street is offered."
+            ),
+            disabled=not ors_key_ready,
+        )
+        lookup = st.form_submit_button(
+            "Look up address",
+            type="primary",
+            disabled=not ors_key_ready,
+            use_container_width=True,
+        )
+
+    if lookup:
+        query = str(address_text or "").strip()
+        if not query:
+            st.warning("Enter a street address first.")
+            st.session_state.pop("location_geocode_matches", None)
+            st.session_state.pop("location_geocode_street_found", None)
+        else:
+            with st.spinner("Looking up address…"):
+                try:
+                    matches = OpenRouteServiceClient().geocode_address(query, size=5)
+                except Exception as exc:
+                    st.error(f"Address lookup failed: {exc}")
+                    matches = []
+            street_found = any(geocode_match_is_street_level(m) for m in matches)
+            closest_used = any(
+                str(match.get("match_quality") or "") == "closest_housenumber"
+                for match in matches
+                if isinstance(match, dict)
+            )
+            st.session_state.location_geocode_matches = matches
+            st.session_state.location_geocode_query = query
+            st.session_state.location_geocode_street_found = street_found
+            st.session_state.location_geocode_closest = closest_used
+            st.session_state.pop("location_geocode_choice", None)
+            if not matches:
+                st.warning(
+                    "Street address not found. No geocoder matches — try a fuller "
+                    "address with city and state, or use GPS instead."
+                )
+
+    matches = st.session_state.get("location_geocode_matches") or []
+    if not isinstance(matches, list) or not matches:
+        return
+
+    query_label = str(st.session_state.get("location_geocode_query") or "address")
+    street_found = bool(st.session_state.get("location_geocode_street_found", True))
+    closest_used = bool(st.session_state.get("location_geocode_closest", False))
+    if closest_used:
+        st.info(
+            "Exact house number was not in the geocoder. Showing the closest "
+            "available number(s) on the same street — usually within a door or two."
+        )
+    elif not street_found:
+        st.warning(
+            "House number was not found. The geocoder matched a street, city, or "
+            "area instead, so the pin is not the address you typed. Use GPS for "
+            "an accurate origin, or pick a fallback below knowing it may be "
+            "miles off."
+        )
+    st.caption(f"Matches for **{query_label}** — pick one and save:")
+
+    options: list[str] = []
+    option_meta: dict[str, dict] = {}
+    for index, match in enumerate(matches):
+        if not isinstance(match, dict):
+            continue
+        label = str(match.get("label") or f"Match {index + 1}").strip()
+        lat = match.get("lat")
+        lng = match.get("lng")
+        try:
+            lat_f = float(lat)
+            lng_f = float(lng)
+        except (TypeError, ValueError):
+            continue
+        layer = str(match.get("layer") or "").strip()
+        quality = str(match.get("match_quality") or "").strip()
+        if quality == "closest_housenumber":
+            suffix = " · closest number"
+        elif layer and not geocode_match_is_street_level(match):
+            suffix = f" · {layer}"
+        else:
+            suffix = ""
+        option = f"{label} ({format_home_coordinates((lat_f, lng_f))}){suffix}"
+        # Keep labels unique for the radio widget.
+        if option in option_meta:
+            option = f"{option} [{index + 1}]"
+        options.append(option)
+        option_meta[option] = {
+            "label": label,
+            "lat": lat_f,
+            "lng": lng_f,
+        }
+
+    if not options:
+        st.warning("Street address not found — matches had no usable coordinates.")
+        return
+
+    choice = st.radio(
+        "Address match",
+        options=options,
+        key="location_geocode_choice",
+        label_visibility="collapsed",
+    )
+    selected = option_meta.get(str(choice or ""))
+    if st.button(
+        "Save as home location",
+        type="primary",
+        key="location_geocode_save",
+        use_container_width=True,
+        disabled=selected is None,
+    ):
+        if not selected:
+            st.warning("Select a match first.")
+            return
+        try:
+            persist_home_location(
+                float(selected["lat"]),
+                float(selected["lng"]),
+                address=str(selected["label"]),
+            )
+            st.session_state.pop("hotspot_finder_result", None)
+            st.session_state.pop("location_geocode_matches", None)
+            st.session_state.pop("location_geocode_choice", None)
+            st.session_state.pop("location_geocode_street_found", None)
+            st.session_state["_location_address_pending"] = str(selected["label"])
+            st.success(f"Location set to {selected['label']}.")
+            st.rerun()
+        except Exception as exc:
+            st.error(f"Could not save address: {exc}")
+
+
+def render_place_config() -> None:
+    """Combined eBird region and drive-origin settings."""
+    render_page_header("Region & location", screen="place")
+    st.caption(
+        "Choose the eBird region for birding tools and the drive origin used "
+        "for travel times."
+    )
+    render_region_select_body()
+    st.divider()
+    render_location_config_body()
+    st.divider()
     if st.button(
         "Done",
         type="primary",
         use_container_width=True,
-        key="region_select_done",
+        key="place_select_done",
     ):
-        leave_region_select()
+        leave_place_select()
+
+
+def leave_region_select() -> None:
+    """Backward-compatible alias for ``leave_place_select``."""
+    leave_place_select()
+
+
+def render_region_select() -> None:
+    """Backward-compatible entry point for the combined place screen."""
+    render_place_config()
+
+
+def render_location_config() -> None:
+    """Backward-compatible entry point for the combined place screen."""
+    render_place_config()
 
 
 def _checklist_sub_id(row: dict) -> str:
@@ -8492,8 +10016,96 @@ def render_general_cache_maintenance() -> None:
             else:
                 st.info("Nothing missing for this cache and region list.")
 
+    render_recent_obs_cache_maintenance()
     render_drive_metrics_cache_maintenance()
     render_similar_cache_media_maintenance()
+
+
+def render_recent_obs_cache_maintenance() -> None:
+    """Show, confirm-reset, and summarize the recent-observations cache."""
+    st.subheader("eBird recent observations cache")
+    st.caption(
+        "Hot Spot Finder stores per-hotspot recent-observation responses in "
+        "`cache/shared/ebird_recent_obs/` (24h TTL). Prior fetches keep their "
+        "timestamp and days-back window. Reset only after confirming."
+    )
+    stats = recent_obs_cache_stats()
+    entries = int(stats.get("entries") or 0)
+    size = _format_bytes(int(stats.get("bytes") or 0))
+    last_loaded = str(
+        stats.get("last_fetched_at") or stats.get("updated_at") or ""
+    ).strip() or "—"
+    ttl_hours = max(1, int(stats.get("ttl_seconds") or 0) // 3600)
+    cols = st.columns([1, 1, 2, 1.2])
+    with cols[0]:
+        st.metric("Cached queries", f"{entries:,}")
+    with cols[1]:
+        st.metric("Size", size)
+    with cols[2]:
+        st.caption(f"TTL: **{ttl_hours}h** · Last loaded: **{last_loaded}**")
+    with cols[3]:
+        confirm = bool(st.session_state.get("confirm_clear_recent_obs_cache"))
+        if not confirm:
+            if st.button(
+                "Reset recent-obs cache",
+                key="clear_ebird_recent_obs_cache",
+                disabled=entries <= 0,
+                use_container_width=True,
+                help="Ask before deleting cached recent-observation responses",
+            ):
+                st.session_state.confirm_clear_recent_obs_cache = True
+                st.rerun()
+        else:
+            st.warning(
+                f"Last cache load: **{last_loaded}**. "
+                "Clearing forces Hot Spot Finder to call eBird again."
+            )
+            action_cols = st.columns(2)
+            with action_cols[0]:
+                if st.button(
+                    "Keep using cache",
+                    key="keep_ebird_recent_obs_cache",
+                    use_container_width=True,
+                ):
+                    st.session_state.confirm_clear_recent_obs_cache = False
+                    st.info("Keeping cached recent observations.")
+                    st.rerun()
+            with action_cols[1]:
+                if st.button(
+                    "Clear and force refresh",
+                    key="confirm_clear_ebird_recent_obs_cache",
+                    type="primary",
+                    use_container_width=True,
+                ):
+                    removed = clear_recent_obs_cache()
+                    st.session_state.confirm_clear_recent_obs_cache = False
+                    st.success(
+                        f"Cleared recent-observations cache ({removed:,} file"
+                        f"{'' if removed == 1 else 's'})."
+                    )
+                    st.rerun()
+
+    calls = stats.get("calls") or []
+    if calls:
+        with st.expander(f"Prior / current calls ({len(calls)})", expanded=False):
+            display_rows = []
+            for row in calls[:40]:
+                when = str(row.get("fetched_at") or "").strip()
+                back = row.get("back")
+                display_rows.append(
+                    {
+                        "When": when,
+                        "Days back": back if back is not None else "—",
+                        "Observations": (
+                            row.get("observation_count")
+                            if row.get("observation_count") is not None
+                            else "—"
+                        ),
+                        "Location": row.get("region_code") or "—",
+                        "Current": "yes" if row.get("current") else "",
+                    }
+                )
+            st.dataframe(display_rows, use_container_width=True, hide_index=True)
 
 
 def render_drive_metrics_cache_maintenance() -> None:
@@ -9626,6 +11238,83 @@ def _merge_cache_status_parts(parts: list[dict]) -> dict:
     }
 
 
+def _years_before_date(day: date, years: int) -> date:
+    try:
+        return day.replace(year=day.year - years)
+    except ValueError:
+        return day.replace(month=2, day=28, year=day.year - years)
+
+
+def resolve_cache_chart_date_bounds(
+    page_start: date,
+    page_end: date,
+) -> tuple[date, date]:
+    """Chart From/To from the preset dropdown (or custom date input)."""
+    if page_start > page_end:
+        page_start, page_end = page_end, page_start
+    if "cache_chart_date_range" not in st.session_state:
+        st.session_state.cache_chart_date_range = (page_start, page_end)
+    if "cache_chart_range_preset" not in st.session_state:
+        st.session_state.cache_chart_range_preset = "Page range"
+
+    preset_choice = str(st.session_state.get("cache_chart_range_preset") or "Page range")
+    if preset_choice == "1 previous year":
+        preset_choice = "Last 1 year"
+        st.session_state.cache_chart_range_preset = preset_choice
+    if preset_choice == "Page range":
+        return page_start, page_end
+    if preset_choice == "This year":
+        start_day = date(int(page_end.year), 1, 1)
+        end_day = page_end
+        return (end_day, start_day) if start_day > end_day else (start_day, end_day)
+    if preset_choice == "Last year":
+        year = int(page_end.year) - 1
+        return date(year, 1, 1), date(year, 12, 31)
+    years_map = {
+        "Last 1 year": 1,
+        "Last 2 years": 2,
+        "Last 3 years": 3,
+        "Last 4 years": 4,
+        "Last 5 years": 5,
+        "Last 10 years": 10,
+    }
+    if preset_choice in years_map:
+        end_day = page_end
+        start_day = _years_before_date(end_day, years_map[preset_choice])
+        return (end_day, start_day) if start_day > end_day else (start_day, end_day)
+
+    chart_bounds = parse_streamlit_date_range(
+        st.session_state.get("cache_chart_date_range")
+    )
+    if chart_bounds is None:
+        return page_start, page_end
+    return chart_bounds
+
+
+def coalesce_cache_status_windows(
+    windows: list[tuple[int, date, date]],
+) -> list[tuple[int, date, date]]:
+    """Merge overlapping / adjacent per-year slices so each year is scanned once."""
+    by_year: dict[int, list[tuple[date, date]]] = {}
+    for year, start, end in windows:
+        if start > end:
+            start, end = end, start
+        by_year.setdefault(int(year), []).append((start, end))
+    merged: list[tuple[int, date, date]] = []
+    for year in sorted(by_year):
+        spans = sorted(by_year[year], key=lambda pair: (pair[0], pair[1]))
+        cur_start, cur_end = spans[0]
+        for start, end in spans[1:]:
+            if start <= cur_end + timedelta(days=1):
+                if end > cur_end:
+                    cur_end = end
+            else:
+                merged.append((year, cur_start, cur_end))
+                cur_start, cur_end = start, end
+        merged.append((year, cur_start, cur_end))
+    return merged
+
+
 def _render_cache_status_body(
     region_code: str,
     windows: list[tuple[int, date, date]],
@@ -9636,10 +11325,33 @@ def _render_cache_status_body(
     """Render checklist cache metrics, download controls, and day/hotspot tables."""
     render_running_background_loads(highlight_region=region_code)
     render_live_checklist_fetch_progress(region_code)
+
+    if page_range is None and windows:
+        _y, _ws, _we = windows[-1]
+        page_range = (_ws, _we, 0)
+    elif page_range is None:
+        today = date.today()
+        page_range = (date(today.year, 1, 1), today, 0)
+    page_start, page_end, page_prior = page_range
+    chart_start, chart_end = resolve_cache_chart_date_bounds(page_start, page_end)
+
+    # Status must cover both the page download windows and the chart range;
+    # otherwise chart presets like "This year" / "Last 3 years" fill with fake 0%.
+    status_windows = coalesce_cache_status_windows(
+        list(windows)
+        + download_window_slices(chart_start, chart_end, prior_years=0)
+    )
+    years = sorted({int(year) for year, _s, _e in status_windows if int(year) > 0})
+    download_active = any(
+        _checklist_download_active(region_code, int(year)) for year in years
+    )
+    # While a load is running, always rescan so charts track new files on disk.
+    scan_refresh = bool(force_refresh or download_active)
+
     parts: list[dict] = []
-    if force_refresh:
+    if scan_refresh:
         with st.spinner("Scanning checklist cache…"):
-            for _year, window_start, window_end in windows:
+            for _year, window_start, window_end in status_windows:
                 parts.append(
                     build_checklist_cache_status_window(
                         region_code,
@@ -9649,7 +11361,7 @@ def _render_cache_status_body(
                     )
                 )
     else:
-        for _year, window_start, window_end in windows:
+        for _year, window_start, window_end in status_windows:
             parts.append(
                 build_checklist_cache_status_window(
                     region_code,
@@ -9663,13 +11375,13 @@ def _render_cache_status_body(
     years = sorted(
         {
             int(year)
-            for year, _start, _end in windows
+            for year, _start, _end in status_windows
             if int(year) > 0
         }
         | {int(y) for y in (status.get("years") or []) if int(y or 0) > 0}
     )
-    if not years and windows:
-        years = sorted({int(year) for year, _s, _e in windows})
+    if not years and status_windows:
+        years = sorted({int(year) for year, _s, _e in status_windows})
 
     expected = int(status.get("expected_total") or 0)
     downloaded = int(status.get("downloaded_total") or 0)
@@ -9717,20 +11429,16 @@ def _render_cache_status_body(
     if updated:
         st.caption(f"Status index updated {updated}")
     st.caption(f"Coverage window: **{format_download_windows(windows)}**.")
+    if (chart_start, chart_end) != (page_start, page_end) or page_prior:
+        st.caption(
+            f"Chart data window: **{chart_start.isoformat()} → {chart_end.isoformat()}**"
+            + (" · includes page prior-year slices" if page_prior else "")
+            + (" · live rescan while download runs" if download_active else "")
+        )
 
     days = status.get("days") or []
     hotspots = status.get("hotspots") or []
     primary_year = years[-1] if years else date.today().year
-    if page_range is None and windows:
-        _y, _ws, _we = windows[-1]
-        page_range = (_ws, _we, 0)
-    elif page_range is None:
-        today = date.today()
-        page_range = (date(today.year, 1, 1), today, 0)
-
-    download_active = any(
-        _checklist_download_active(region_code, int(year)) for year in years
-    ) or _checklist_download_active(region_code, int(primary_year))
 
     if status.get("feed_cache_exists"):
         st.subheader("Downloads")
@@ -9820,18 +11528,54 @@ def _render_cache_status_body(
             for row in days
         ]
 
-        page_start, page_end, _page_prior = page_range
-        if "cache_chart_date_range" not in st.session_state:
-            st.session_state.cache_chart_date_range = (page_start, page_end)
-        chart_picked = st.date_input(
-            "Chart date range",
-            key="cache_chart_date_range",
-            help="Date range for the checklists-per-day and coverage charts only.",
-        )
-        chart_bounds = parse_streamlit_date_range(chart_picked)
-        if chart_bounds is None:
-            chart_bounds = (page_start, page_end)
-        chart_start, chart_end = chart_bounds
+        chart_preset_options = [
+            "Custom",
+            "Page range",
+            "This year",
+            "Last year",
+            "Last 1 year",
+            "Last 2 years",
+            "Last 3 years",
+            "Last 4 years",
+            "Last 5 years",
+            "Last 10 years",
+        ]
+
+        def _on_cache_chart_preset_change() -> None:
+            applied = resolve_cache_chart_date_bounds(page_start, page_end)
+            st.session_state.cache_chart_date_range = applied
+
+        # Keep non-custom presets in sync before the date_input mounts.
+        preset_choice = st.session_state.get("cache_chart_range_preset")
+        if str(preset_choice) != "Custom":
+            st.session_state.cache_chart_date_range = (chart_start, chart_end)
+
+        preset_col, range_col = st.columns([1.2, 2.2], vertical_alignment="bottom")
+        with preset_col:
+            st.selectbox(
+                "Chart date range",
+                options=chart_preset_options,
+                key="cache_chart_range_preset",
+                help=(
+                    "Quick ranges for the checklists-per-day and coverage charts. "
+                    "Wider presets also load feed/download counts for that span "
+                    "so bars stay accurate. Choose Custom for exact From/To dates."
+                ),
+                on_change=_on_cache_chart_preset_change,
+            )
+        with range_col:
+            chart_picked = st.date_input(
+                "From / to",
+                key="cache_chart_date_range",
+                help="Date range for the checklists-per-day and coverage charts only.",
+                disabled=str(preset_choice) != "Custom",
+            )
+        if str(preset_choice) == "Custom":
+            chart_bounds = parse_streamlit_date_range(chart_picked)
+            if chart_bounds is None:
+                chart_bounds = (chart_start, chart_end)
+            chart_start, chart_end = chart_bounds
+        # else keep chart_start/end resolved before the status scan
 
         def _day_in_chart_range(day_value: object) -> bool:
             try:
@@ -9843,13 +11587,33 @@ def _render_cache_status_body(
         chart_day_rows = [
             row for row in day_rows if _day_in_chart_range(row["Day"])
         ]
+        by_chart_day = {str(row["Day"]): row for row in chart_day_rows}
+        # Include every calendar day in the chart range (0 when feed/downloads
+        # have nothing for that day), so the x-axis never skips dates.
+        filled_chart_day_rows: list[dict] = []
+        cursor = chart_start
+        while cursor <= chart_end:
+            day_key = cursor.isoformat()
+            existing = by_chart_day.get(day_key)
+            if existing is not None:
+                filled_chart_day_rows.append(existing)
+            else:
+                filled_chart_day_rows.append(
+                    {
+                        "Day": day_key,
+                        "Downloaded": 0,
+                        "Expected": 0,
+                        "Coverage %": 0.0,
+                    }
+                )
+            cursor += timedelta(days=1)
         chart_rows = [
             {
                 "Day": row["Day"],
                 "Downloaded": row["Downloaded"],
                 "Expected": row["Expected"],
             }
-            for row in chart_day_rows
+            for row in filled_chart_day_rows
         ]
         coverage_chart_rows = [
             {
@@ -9860,7 +11624,7 @@ def _render_cache_status_body(
                     else 0.0
                 ),
             }
-            for row in chart_day_rows
+            for row in filled_chart_day_rows
         ]
         st.subheader("Checklists per day")
         if chart_rows:
@@ -9875,7 +11639,7 @@ def _render_cache_status_body(
         st.subheader("Coverage % per day")
         st.caption(
             "Downloaded ÷ expected from the regional daily feed "
-            "(0% when expected is unknown)."
+            "(0% when expected is unknown or the day has no feed data)."
         )
         if coverage_chart_rows:
             st.bar_chart(
@@ -9893,8 +11657,19 @@ def _render_cache_status_body(
         elif not can_download:
             st.caption("Download icons appear after a regional daily-feed cache exists.")
 
+        # Day table stays focused on the page coverage windows (not the wider chart).
+        page_day_keys: set[str] = set()
+        for _year, window_start, window_end in windows:
+            cursor = window_start
+            while cursor <= window_end:
+                page_day_keys.add(cursor.isoformat())
+                cursor += timedelta(days=1)
+        table_day_rows = [
+            row for row in day_rows if str(row["Day"]) in page_day_keys
+        ] or day_rows
+
         _render_cache_action_table(
-            day_rows,
+            table_day_rows,
             columns=[
                 ("Day", "Day"),
                 ("Downloaded", "Downloaded"),
@@ -10102,6 +11877,7 @@ def _hotspot_finder_add_species(
     loc_id: str,
     loc_name: str,
     taxon: dict,
+    checklist_id: str | None = None,
 ) -> None:
     loc = str(loc_id or "").strip()
     if not loc:
@@ -10132,7 +11908,35 @@ def _hotspot_finder_add_species(
             "comName": str(taxon.get("comName") or taxon.get("name") or "").strip(),
             "sciName": str(taxon.get("sciName") or "").strip(),
             "category": str(taxon.get("category") or "species").strip(),
+            "checklist_ids": set(),
         }
+    else:
+        species_map[key].setdefault("checklist_ids", set())
+        if not species_map[key].get("code") and (
+            taxon.get("speciesCode") or taxon.get("code")
+        ):
+            species_map[key]["code"] = str(
+                taxon.get("speciesCode") or taxon.get("code") or ""
+            ).strip()
+        if not species_map[key].get("comName") and (
+            taxon.get("comName") or taxon.get("name")
+        ):
+            species_map[key]["comName"] = str(
+                taxon.get("comName") or taxon.get("name") or ""
+            ).strip()
+        if not species_map[key].get("sciName") and taxon.get("sciName"):
+            species_map[key]["sciName"] = str(taxon.get("sciName") or "").strip()
+    ids = species_map[key]["checklist_ids"]
+    if not isinstance(ids, set):
+        ids = set(ids or [])
+        species_map[key]["checklist_ids"] = ids
+    sub_id = str(checklist_id or "").strip()
+    if sub_id:
+        ids.add(sub_id)
+    for other in taxon.get("checklist_ids") or []:
+        other_id = str(other or "").strip()
+        if other_id:
+            ids.add(other_id)
 
 
 def _hotspot_finder_note_checklist(
@@ -10276,6 +12080,7 @@ def collect_hotspot_finder_species_local(
                 loc_id=loc_id,
                 loc_name=loc_name,
                 taxon=taxon,
+                checklist_id=checklist_id,
             )
     return bucket, stats
 
@@ -10287,6 +12092,8 @@ def collect_hotspot_finder_species_api(
     days_back: int,
     progress=None,
     skip_loc_ids: set[str] | None = None,
+    refresh: bool = False,
+    allow_stale: bool = False,
 ) -> dict[str, dict]:
     """Unique species per hotspot from eBird recent-observations (back ≤ 30).
 
@@ -10318,6 +12125,8 @@ def collect_hotspot_finder_species_api(
                 loc_id,
                 back=days,
                 max_results=None,
+                refresh=refresh,
+                allow_stale=allow_stale,
             )
         except MissingEbirdApiKey:
             raise
@@ -10355,6 +12164,7 @@ def collect_hotspot_finder_species_api(
                 loc_id=obs_loc,
                 loc_name=obs_name,
                 taxon=taxon,
+                checklist_id=checklist_id,
             )
     return bucket
 
@@ -10388,6 +12198,33 @@ def merge_hotspot_finder_species(
     return merged
 
 
+def _hotspot_species_checklist_pct(
+    taxon: dict,
+    total_checklists: int,
+) -> float | None:
+    """Percent of hotspot checklists that include this species."""
+    if total_checklists <= 0:
+        return None
+    ids = taxon.get("checklist_ids") or set()
+    count = len(ids) if isinstance(ids, (set, list, tuple)) else int(ids or 0)
+    if count <= 0:
+        return None
+    return 100.0 * min(count, total_checklists) / total_checklists
+
+
+def _mean_pct(values: list[float]) -> float | None:
+    if not values:
+        return None
+    return sum(values) / len(values)
+
+
+def _expected_from_pcts(values: list[float]) -> float | None:
+    """Expected species count = sum of checklist appearance probabilities."""
+    if not values:
+        return None
+    return sum(float(value) for value in values) / 100.0
+
+
 def build_hotspot_finder_grid(
     species_by_hotspot: dict[str, dict],
     *,
@@ -10398,7 +12235,8 @@ def build_hotspot_finder_grid(
     """Per-hotspot counts for world/region lifers and missing FoY.
 
     World lifers are also counted as region lifers; missing FoY world is also
-    counted as missing FoY region.
+    counted as missing FoY region. Expected counts sum each bird's checklist
+    appearance probability (appearance % / 100) in that bucket.
     """
     this_year = year or date.today().year
     rows: list[dict] = []
@@ -10408,6 +12246,16 @@ def build_hotspot_finder_grid(
         foy_world = 0
         foy_region = 0
         species_total = 0
+        world_lifer_pcts: list[float] = []
+        region_lifer_pcts: list[float] = []
+        foy_world_pcts: list[float] = []
+        foy_region_pcts: list[float] = []
+        checklist_ids = entry.get("checklist_ids") or set()
+        checklist_count = (
+            len(checklist_ids)
+            if isinstance(checklist_ids, set)
+            else int(checklist_ids or 0)
+        )
         for taxon in (entry.get("species") or {}).values():
             match = {
                 "comName": taxon.get("comName") or "",
@@ -10419,6 +12267,7 @@ def build_hotspot_finder_grid(
             if category in {"spuh", "slash", "hybrid", "intergrade"}:
                 continue
             species_total += 1
+            pct = _hotspot_species_checklist_pct(taxon, checklist_count)
             # World lifer ⇒ region lifer; FoY world ⇒ FoY region.
             world_new = is_new_to_life_list(match, world_life) is True
             region_new = (
@@ -10426,8 +12275,12 @@ def build_hotspot_finder_grid(
             )
             if world_new:
                 world_lifer += 1
+                if pct is not None:
+                    world_lifer_pcts.append(pct)
             if region_new:
                 region_lifer += 1
+                if pct is not None:
+                    region_lifer_pcts.append(pct)
             # Evaluate FoY against the life list only (ignore this window's date),
             # so the grid answers “still missing FoY for me”.
             missing_foy_world = is_missing_first_of_year(
@@ -10444,13 +12297,13 @@ def build_hotspot_finder_grid(
             )
             if missing_foy_world:
                 foy_world += 1
+                if pct is not None:
+                    foy_world_pcts.append(pct)
             if missing_foy_region:
                 foy_region += 1
+                if pct is not None:
+                    foy_region_pcts.append(pct)
         interesting = world_lifer + region_lifer + foy_world + foy_region
-        checklist_ids = entry.get("checklist_ids") or set()
-        checklist_count = len(checklist_ids) if isinstance(checklist_ids, set) else int(
-            checklist_ids or 0
-        )
         rows.append(
             {
                 "Hotspot": entry.get("locName") or loc_id,
@@ -10461,6 +12314,14 @@ def build_hotspot_finder_grid(
                 "Region Lifer": region_lifer,
                 "FoY World": foy_world,
                 "FoY Region": foy_region,
+                "World Lifer %": _mean_pct(world_lifer_pcts),
+                "Region Lifer %": _mean_pct(region_lifer_pcts),
+                "FoY World %": _mean_pct(foy_world_pcts),
+                "FoY Region %": _mean_pct(foy_region_pcts),
+                "World Lifer Exp": _expected_from_pcts(world_lifer_pcts),
+                "Region Lifer Exp": _expected_from_pcts(region_lifer_pcts),
+                "FoY World Exp": _expected_from_pcts(foy_world_pcts),
+                "FoY Region Exp": _expected_from_pcts(foy_region_pcts),
                 "Interesting": interesting,
             }
         )
@@ -10474,6 +12335,83 @@ def build_hotspot_finder_grid(
             -int(row["Checklists"]),
             -int(row["Species"]),
             str(row["Hotspot"]).casefold(),
+        )
+    )
+    return rows
+
+
+def hotspot_opportunity_species_rows(
+    entry: dict,
+    *,
+    region_life: dict[str, set[str]] | None,
+    world_life: dict[str, set[str]] | None,
+    year: int | None = None,
+) -> list[dict[str, Any]]:
+    """Lifer / FoY species at one hotspot with checklist frequency."""
+    this_year = year or date.today().year
+    checklist_ids = entry.get("checklist_ids") or set()
+    checklist_count = (
+        len(checklist_ids) if isinstance(checklist_ids, set) else int(checklist_ids or 0)
+    )
+    rows: list[dict[str, Any]] = []
+    for taxon in (entry.get("species") or {}).values():
+        if not isinstance(taxon, dict):
+            continue
+        match = {
+            "comName": taxon.get("comName") or "",
+            "sciName": taxon.get("sciName") or "",
+            "category": taxon.get("category") or "species",
+        }
+        category = str(match["category"] or "species").strip().casefold()
+        if category in {"spuh", "slash", "hybrid", "intergrade"}:
+            continue
+        world_new = is_new_to_life_list(match, world_life) is True
+        region_new = world_new or is_new_to_life_list(match, region_life) is True
+        missing_foy_world = is_missing_first_of_year(
+            match,
+            year=this_year,
+            life=world_life,
+            obs_day=None,
+        )
+        missing_foy_region = missing_foy_world or is_missing_first_of_year(
+            match,
+            year=this_year,
+            life=region_life,
+            obs_day=None,
+        )
+        if not (world_new or region_new or missing_foy_world or missing_foy_region):
+            continue
+        ids = taxon.get("checklist_ids") or set()
+        times = len(ids) if isinstance(ids, (set, list, tuple)) else int(ids or 0)
+        pct = _hotspot_species_checklist_pct(taxon, checklist_count)
+        tags: list[str] = []
+        if world_new:
+            tags.append("World lifer")
+        elif region_new:
+            tags.append("Region lifer")
+        if missing_foy_world:
+            tags.append("FoY world")
+        elif missing_foy_region:
+            tags.append("FoY region")
+        rows.append(
+            {
+                "Species": str(
+                    taxon.get("comName") or taxon.get("code") or ""
+                ).strip(),
+                "Opportunity": " · ".join(tags),
+                "Checklists": int(times),
+                "Checklist %": (
+                    float(round(pct)) if pct is not None else None
+                ),
+                "_pct": pct if pct is not None else -1.0,
+                "_times": times,
+            }
+        )
+    rows.sort(
+        key=lambda row: (
+            -float(row.get("_pct") or -1),
+            -int(row.get("_times") or 0),
+            str(row.get("Species") or "").casefold(),
         )
     )
     return rows
@@ -10520,8 +12458,9 @@ def browse_hotspot_windowed_species(
     if start > end:
         start, end = end, start
     prior = max(0, int(prior_years or 0))
+    # v2: per-species checklist_ids for frequency %.
     token = (
-        f"{region}|{start.isoformat()}|{end.isoformat()}|{prior}|"
+        f"v2|{region}|{start.isoformat()}|{end.isoformat()}|{prior}|"
         f"{_browse_opportunity_cache_token(region)}"
     )
     stored = st.session_state.get("_browse_hs_windowed_species")
@@ -10553,15 +12492,15 @@ def browse_hotspot_opportunity_counts(
     start: date,
     end: date,
     prior_years: int = 0,
-) -> dict[str, dict[str, int]]:
+) -> dict[str, dict[str, Any]]:
     """Lifer / FoY opportunity counts for species seen in the date window."""
     region = str(region_code or "").strip()
     if start > end:
         start, end = end, start
     prior = max(0, int(prior_years or 0))
-    # v3: windowed species only; world lifer/FoY implies region.
+    # v5: windowed species; world implies region; avg % + expected counts.
     token = (
-        f"v3|{region}|{start.isoformat()}|{end.isoformat()}|{prior}|"
+        f"v5|{region}|{start.isoformat()}|{end.isoformat()}|{prior}|"
         f"{_browse_opportunity_cache_token(region)}"
     )
     stored = st.session_state.get("_browse_hs_opportunity")
@@ -10584,7 +12523,7 @@ def browse_hotspot_opportunity_counts(
         region_life=load_life_list(region) if region else None,
         world_life=load_life_list(WORLD_LIFE_LIST_CODE),
     )
-    counts: dict[str, dict[str, int]] = {}
+    counts: dict[str, dict[str, Any]] = {}
     for row in grid:
         loc_id = str(row.get("locId") or "").strip()
         if not loc_id:
@@ -10600,6 +12539,14 @@ def browse_hotspot_opportunity_counts(
             "foy_world": foy_world,
             "foy_region": foy_region,
             "foy": foy_world + foy_region,
+            "world_lifer_pct": row.get("World Lifer %"),
+            "region_lifer_pct": row.get("Region Lifer %"),
+            "foy_world_pct": row.get("FoY World %"),
+            "foy_region_pct": row.get("FoY Region %"),
+            "world_lifer_exp": row.get("World Lifer Exp"),
+            "region_lifer_exp": row.get("Region Lifer Exp"),
+            "foy_world_exp": row.get("FoY World Exp"),
+            "foy_region_exp": row.get("FoY Region Exp"),
         }
     st.session_state._browse_hs_opportunity = {
         "region": region,
@@ -10732,7 +12679,7 @@ def attach_drive_metrics_to_hotspot_rows(
         reason = "home not set"
         for row in rows:
             _mark_drive_error(row, reason)
-        return rows, "Set a home location (Location screen) for drive times."
+        return rows, "Set a home location (Region & location) for drive times."
 
     destinations: list[tuple[float, float]] = []
     row_indices: list[int] = []
@@ -10819,7 +12766,7 @@ def filter_hotspots_by_max_drive_miles(
         return hotspots, None
     home = configured_home_coordinates()
     if home is None:
-        return hotspots, "Set a home location (Location screen) to filter by drive distance."
+        return hotspots, "Set a home location (Region & location) to filter by drive distance."
     max_m = limit * 1609.344
     coords = hotspot_coords_by_loc(hotspots)
     prefiltered: list[dict] = []
@@ -10992,188 +12939,6 @@ def render_home_location_map(
         st.caption(f"Map pin: **{label}** · `{format_home_coordinates(coords)}`")
     else:
         st.caption("No location yet — click the map to drop a pin.")
-
-
-def render_location_config() -> None:
-    """Configure the drive-time origin via GPS, map pin, or street address."""
-    render_page_header("Location", screen="location")
-    st.caption(
-        "Set the origin used for Hot Spot Finder drive times. "
-        "Drop a pin on the map, use browser GPS, or look up a street address."
-    )
-    home_coords = configured_home_coordinates()
-    home_address = configured_home_address()
-    ors_key_ready = bool(get_ors_api_key())
-
-    pending_address = st.session_state.pop("_location_address_pending", None)
-    if pending_address is not None:
-        st.session_state.location_address_input = str(pending_address)
-
-    st.subheader("Current origin")
-    if home_address:
-        st.write(home_address)
-    st.caption(f"Coordinates: **{format_home_coordinates(home_coords)}**")
-    render_home_location_map(home_coords, address=home_address)
-    render_recent_locations_list(home_coords)
-    if not ors_key_ready:
-        st.warning(
-            "Set `OPENROUTESERVICE_API_KEY` in `config/.env` to enable address "
-            "lookup and drive times."
-        )
-
-    st.subheader("Use current GPS location")
-    st.caption("Asks the browser for your location (permission prompt).")
-    gps_result = current_location_button(
-        label="Use GPS location",
-        key="location_config_gps",
-    )
-    if isinstance(gps_result, dict) and gps_result.get("t") is not None:
-        gps_t = gps_result.get("t")
-        if gps_t != st.session_state.get("location_config_gps_t"):
-            st.session_state.location_config_gps_t = gps_t
-            apply_ors_gps_result(gps_result)
-
-    st.subheader("Set from street address")
-    if "location_address_input" not in st.session_state:
-        st.session_state.location_address_input = home_address or ""
-
-    with st.form("location_address_form", clear_on_submit=False):
-        address_text = st.text_input(
-            "Street address",
-            key="location_address_input",
-            placeholder="123 Main St, City, ST 33401",
-            help=(
-                "Looked up with OpenRouteService / Pelias. If the exact house "
-                "number is missing, the closest number on that street is offered."
-            ),
-            disabled=not ors_key_ready,
-        )
-        lookup = st.form_submit_button(
-            "Look up address",
-            type="primary",
-            disabled=not ors_key_ready,
-            use_container_width=True,
-        )
-
-    if lookup:
-        query = str(address_text or "").strip()
-        if not query:
-            st.warning("Enter a street address first.")
-            st.session_state.pop("location_geocode_matches", None)
-            st.session_state.pop("location_geocode_street_found", None)
-        else:
-            with st.spinner("Looking up address…"):
-                try:
-                    matches = OpenRouteServiceClient().geocode_address(query, size=5)
-                except Exception as exc:
-                    st.error(f"Address lookup failed: {exc}")
-                    matches = []
-            street_found = any(geocode_match_is_street_level(m) for m in matches)
-            closest_used = any(
-                str(match.get("match_quality") or "") == "closest_housenumber"
-                for match in matches
-                if isinstance(match, dict)
-            )
-            st.session_state.location_geocode_matches = matches
-            st.session_state.location_geocode_query = query
-            st.session_state.location_geocode_street_found = street_found
-            st.session_state.location_geocode_closest = closest_used
-            st.session_state.pop("location_geocode_choice", None)
-            if not matches:
-                st.warning(
-                    "Street address not found. No geocoder matches — try a fuller "
-                    "address with city and state, or use GPS instead."
-                )
-
-    matches = st.session_state.get("location_geocode_matches") or []
-    if not isinstance(matches, list) or not matches:
-        return
-
-    query_label = str(st.session_state.get("location_geocode_query") or "address")
-    street_found = bool(st.session_state.get("location_geocode_street_found", True))
-    closest_used = bool(st.session_state.get("location_geocode_closest", False))
-    if closest_used:
-        st.info(
-            "Exact house number was not in the geocoder. Showing the closest "
-            "available number(s) on the same street — usually within a door or two."
-        )
-    elif not street_found:
-        st.warning(
-            "House number was not found. The geocoder matched a street, city, or "
-            "area instead, so the pin is not the address you typed. Use GPS for "
-            "an accurate origin, or pick a fallback below knowing it may be "
-            "miles off."
-        )
-    st.caption(f"Matches for **{query_label}** — pick one and save:")
-
-    options: list[str] = []
-    option_meta: dict[str, dict] = {}
-    for index, match in enumerate(matches):
-        if not isinstance(match, dict):
-            continue
-        label = str(match.get("label") or f"Match {index + 1}").strip()
-        lat = match.get("lat")
-        lng = match.get("lng")
-        try:
-            lat_f = float(lat)
-            lng_f = float(lng)
-        except (TypeError, ValueError):
-            continue
-        layer = str(match.get("layer") or "").strip()
-        quality = str(match.get("match_quality") or "").strip()
-        if quality == "closest_housenumber":
-            suffix = " · closest number"
-        elif layer and not geocode_match_is_street_level(match):
-            suffix = f" · {layer}"
-        else:
-            suffix = ""
-        option = f"{label} ({format_home_coordinates((lat_f, lng_f))}){suffix}"
-        # Keep labels unique for the radio widget.
-        if option in option_meta:
-            option = f"{option} [{index + 1}]"
-        options.append(option)
-        option_meta[option] = {
-            "label": label,
-            "lat": lat_f,
-            "lng": lng_f,
-        }
-
-    if not options:
-        st.warning("Street address not found — matches had no usable coordinates.")
-        return
-
-    choice = st.radio(
-        "Address match",
-        options=options,
-        key="location_geocode_choice",
-        label_visibility="collapsed",
-    )
-    selected = option_meta.get(str(choice or ""))
-    if st.button(
-        "Save as home location",
-        type="primary",
-        key="location_geocode_save",
-        use_container_width=True,
-        disabled=selected is None,
-    ):
-        if not selected:
-            st.warning("Select a match first.")
-            return
-        try:
-            persist_home_location(
-                float(selected["lat"]),
-                float(selected["lng"]),
-                address=str(selected["label"]),
-            )
-            st.session_state.pop("hotspot_finder_result", None)
-            st.session_state.pop("location_geocode_matches", None)
-            st.session_state.pop("location_geocode_choice", None)
-            st.session_state.pop("location_geocode_street_found", None)
-            st.session_state["_location_address_pending"] = str(selected["label"])
-            st.success(f"Location set to {selected['label']}.")
-            st.rerun()
-        except Exception as exc:
-            st.error(f"Could not save address: {exc}")
 
 
 BROWSE_MAP_LABEL_LIMIT = 80
@@ -11730,7 +13495,12 @@ def render_hotspots_labeled_map(
     return None
 
 
-def render_hotspot_browse_detail(region_code: str, hotspot: dict) -> None:
+def render_hotspot_browse_detail(
+    region_code: str,
+    hotspot: dict,
+    *,
+    use_all_cache: bool = False,
+) -> None:
     """Drive metrics, own sightings, and cached JSON for one hotspot."""
     loc_id = str(hotspot.get("locId") or "").strip()
     name = str(hotspot.get("locName") or loc_id or "Hotspot").strip()
@@ -11809,7 +13579,12 @@ def render_hotspot_browse_detail(region_code: str, hotspot: dict) -> None:
         st.metric("Distance", distance)
 
     if loc_id:
-        render_hotspot_browse_sightings(region_code, loc_id, hotspot_name=name)
+        render_hotspot_browse_sightings(
+            region_code,
+            loc_id,
+            hotspot_name=name,
+            use_all_cache=use_all_cache,
+        )
 
     st.subheader("Cached call JSON")
     st.caption(
@@ -12106,37 +13881,194 @@ def _species_sighting_rows(
     return rows_out
 
 
+def _species_rows_from_own_master_sightings(
+    master_rows: list[dict],
+) -> list[dict]:
+    """Aggregate master own-sightings rows into Species / Times / Last seen."""
+    tallies: dict[str, dict[str, Any]] = {}
+    for row in master_rows:
+        code = str(row.get("speciesCode") or row.get("code") or "").strip()
+        if not code:
+            continue
+        day = str(row.get("obsDay") or "").strip()[:10]
+        if not day:
+            parsed = parse_ebird_obs_day(str(row.get("obsDt") or ""))
+            day = parsed.isoformat() if parsed else ""
+        sub_id = str(row.get("subId") or "").strip()
+        entry = tallies.setdefault(
+            code,
+            {
+                "code": code,
+                "checklist_ids": set(),
+                "last_seen": "",
+            },
+        )
+        if sub_id:
+            entry["checklist_ids"].add(sub_id)
+        else:
+            # Fall back to counting sighting rows when subId is missing.
+            entry["checklist_ids"].add(f"row:{len(entry['checklist_ids'])}:{day}")
+        if day and day >= str(entry["last_seen"] or ""):
+            entry["last_seen"] = day
+
+    codes = list(tallies.keys())
+    taxa = load_cached_taxa(codes) if codes else {}
+    rows_out: list[dict] = []
+    for code, entry in tallies.items():
+        taxon = taxa.get(code) or {}
+        name = str(taxon.get("comName") or code).strip() or code
+        times = len(entry["checklist_ids"])
+        rows_out.append(
+            {
+                "Species": name,
+                "Times": times,
+                "Our times": times,
+                "Last seen": entry["last_seen"] or "—",
+                "code": code,
+            }
+        )
+    rows_out.sort(
+        key=lambda item: (
+            -int(item["Times"]),
+            str(item["Species"]).casefold(),
+        )
+    )
+    return rows_out
+
+
+def load_own_hotspot_browse_checklists(
+    region_code: str,
+    loc_id: str,
+    *,
+    use_all_cache: bool = False,
+) -> tuple[list[dict], date | None, int]:
+    """Own checklists for Hotspots: master sightings first, then newer disk files.
+
+    When ``use_all_cache`` is True, return every own checklist available from
+    the local cache / My eBird export for this hotspot (no master-day cutoff).
+
+    Returns ``(checklists, master_latest_day, supplemental_count)``.
+    """
+    location = str(loc_id or "").strip()
+    region = str(region_code or "").strip()
+    names = configured_observer_names()
+    master_latest = own_hotspot_master_latest_day(location)
+
+    if use_all_cache:
+        own_all = [
+            row
+            for row in load_local_checklists_for_hotspot(region, location)
+            if _is_own_checklist_row(row, names)
+            or str(row.get("_source") or "") == "my_ebird_data"
+        ]
+        return own_all, master_latest, 0
+
+    master_rows = local_own_recent_sightings_for_hotspot(location)
+
+    by_id: dict[str, dict] = {}
+    for row in master_rows:
+        sub_id = str(row.get("subId") or "").strip()
+        if not sub_id or sub_id in by_id:
+            continue
+        day = str(row.get("obsDay") or "").strip()[:10]
+        if not day:
+            parsed = parse_ebird_obs_day(str(row.get("obsDt") or ""))
+            day = parsed.isoformat() if parsed else ""
+        by_id[sub_id] = {
+            "subId": sub_id,
+            "subID": sub_id,
+            "locId": location,
+            "locName": str(row.get("locName") or ""),
+            "obsDt": str(row.get("obsDt") or day),
+            "isoObsDate": day,
+            "numSpecies": row.get("numSpecies"),
+            "regionCode": str(row.get("regionCode") or region),
+            "_source": str(row.get("source") or "own_recent"),
+            "_obs_day": day,
+            "_from_master": True,
+        }
+
+    supplemental = 0
+    if region:
+        for row in load_local_checklists_for_hotspot(
+            region,
+            location,
+        ):
+            if not _is_own_checklist_row(row, names):
+                continue
+            sub_id = str(row.get("subId") or row.get("subID") or "").strip()
+            if not sub_id:
+                continue
+            day = _checklist_obs_day_iso(row)
+            day_parsed = parse_ebird_obs_day(day)
+            # Master list is primary; only add disk checklists newer than it.
+            if master_latest is not None:
+                if day_parsed is None or day_parsed <= master_latest:
+                    # Prefer richer on-disk detail for an already-known checklist.
+                    if sub_id in by_id and row.get("_detail"):
+                        by_id[sub_id]["_detail"] = row["_detail"]
+                        if row.get("_path"):
+                            by_id[sub_id]["_path"] = row["_path"]
+                    continue
+            if sub_id not in by_id:
+                supplemental += 1
+            tagged = dict(row)
+            tagged["_from_master"] = False
+            by_id[sub_id] = tagged
+
+    checklists = sorted(
+        by_id.values(),
+        key=lambda row: str(row.get("isoObsDate") or row.get("obsDt") or ""),
+        reverse=True,
+    )
+    return checklists, master_latest, supplemental
+
+
 def render_hotspot_browse_sightings(
     region_code: str,
     loc_id: str,
     *,
     hotspot_name: str = "",
+    use_all_cache: bool = False,
 ) -> None:
     """Own checklist links plus all-time and time-range species tables."""
     names = configured_observer_names()
 
-    # ---- All-time own checklists (cache / My eBird only) ----
+    # ---- All-time own checklists (master sightings + newer disk, or all cache) ----
     st.subheader("Our checklists")
-    if not names:
-        st.info(
-            "Set `EBIRD_USER_DISPLAY_NAME` in `config/.env` to identify your checklists."
-        )
-        own_all: list[dict] = []
-    else:
-        own_all = [
-            row
-            for row in load_local_checklists_for_hotspot(region_code, loc_id)
-            if _is_own_checklist_row(row, names)
-        ]
+    master_rows = local_own_recent_sightings_for_hotspot(loc_id)
+    own_all, master_latest, supplemental = load_own_hotspot_browse_checklists(
+        region_code,
+        loc_id,
+        use_all_cache=use_all_cache,
+    )
 
-    if not own_all and names:
-        st.caption("No cached checklists of yours at this hotspot yet.")
-    elif own_all:
-        st.caption(
-            f"**{len(own_all):,}** of our checklist"
-            f"{'' if len(own_all) == 1 else 's'} on file"
-            + (f" at **{hotspot_name}**" if hotspot_name else "")
+    if not names and not master_rows and not own_all:
+        st.info(
+            "Set `EBIRD_USER_DISPLAY_NAME` in `config/.env`, or add "
+            "`requiredData/MyBirdData.csv`, to identify your checklists."
         )
+    elif not own_all:
+        st.caption("No sightings of yours at this hotspot in the master list or cache.")
+    else:
+        source_bits = [
+            f"**{len(own_all):,}** of our checklist"
+            f"{'' if len(own_all) == 1 else 's'}"
+        ]
+        if hotspot_name:
+            source_bits.append(f"at **{hotspot_name}**")
+        if use_all_cache:
+            source_bits.append("all cached checklists")
+        elif master_latest is not None:
+            source_bits.append(
+                f"master list through **{master_latest.isoformat()}**"
+            )
+        if supplemental:
+            source_bits.append(
+                f"**{supplemental:,}** newer cached checklist"
+                f"{'' if supplemental == 1 else 's'}"
+            )
+        st.caption(" · ".join(source_bits))
         link_bits: list[str] = []
         for row in own_all[:40]:
             sub_id = str(row.get("subId") or row.get("subID") or "").strip()
@@ -12157,16 +14089,79 @@ def render_hotspot_browse_sightings(
                 st.caption(f"Showing 40 of {len(own_all):,} checklist links.")
 
     st.subheader("Birds we've seen here")
-    own_species = _species_sighting_rows(own_all, own_only=True) if own_all else []
-    if not own_species:
-        st.caption("No species details in our cached checklists for this hotspot.")
+    if use_all_cache:
+        own_species = (
+            _species_sighting_rows(own_all, own_only=True) if own_all else []
+        )
+        for row in own_species:
+            row["Times"] = int(row.get("Our times") or row.get("Times") or 0)
     else:
-        st.caption("Times = number of our checklists that include the species.")
+        # Species primarily from the master sightings list; merge any newer disk-only
+        # checklist details so recent visits still appear.
+        own_species = _species_rows_from_own_master_sightings(master_rows)
+        if supplemental:
+            newer = [
+                row
+                for row in own_all
+                if not row.get("_from_master")
+            ]
+            extra = _species_sighting_rows(newer, own_only=True) if newer else []
+            if extra:
+                by_name = {row["Species"]: dict(row) for row in own_species}
+                for row in extra:
+                    existing = by_name.get(row["Species"])
+                    if existing is None:
+                        by_name[row["Species"]] = {
+                            "Species": row["Species"],
+                            "Times": int(row.get("Our times") or row.get("Times") or 0),
+                            "Our times": int(row.get("Our times") or 0),
+                            "Last seen": row.get("Last seen") or "—",
+                        }
+                        continue
+                    existing["Times"] = int(existing["Times"]) + int(
+                        row.get("Our times") or row.get("Times") or 0
+                    )
+                    existing["Our times"] = int(existing.get("Our times") or 0) + int(
+                        row.get("Our times") or 0
+                    )
+                    other_last = str(row.get("Last seen") or "")
+                    if other_last and other_last >= str(existing.get("Last seen") or ""):
+                        existing["Last seen"] = other_last
+                own_species = sorted(
+                    by_name.values(),
+                    key=lambda item: (
+                        -int(item["Times"]),
+                        str(item["Species"]).casefold(),
+                    ),
+                )
+    if not own_species:
+        st.caption(
+            "No species for this hotspot in cache."
+            if use_all_cache
+            else "No species for this hotspot in the master sightings list."
+        )
+    else:
+        if use_all_cache:
+            species_caption = (
+                "From all cached own checklists and My eBird data. "
+                "Times = number of our checklists that include the species."
+            )
+        else:
+            species_caption = (
+                "From the master own-sightings list"
+                + (
+                    f", plus checklists after {master_latest.isoformat()}"
+                    if master_latest is not None and supplemental
+                    else ""
+                )
+                + ". Times = number of our checklists that include the species."
+            )
+        st.caption(species_caption)
         st.dataframe(
             [
                 {
                     "Species": row["Species"],
-                    "Times": row["Our times"],
+                    "Times": row["Times"],
                     "Last seen": row["Last seen"],
                 }
                 for row in own_species
@@ -12185,16 +14180,20 @@ def render_hotspot_browse_sightings(
     st.subheader("Sightings in a date range")
     today = date.today()
     default_start = today - timedelta(days=29)
-    live = st.checkbox(
-        "Allow live eBird calls for this range",
-        value=False,
-        key=f"browse_hotspot_live_{loc_id}",
-        help=(
-            "Off (default): use only cached checklist JSON. "
-            "On: fetch missing day lists and checklist details from eBird "
-            "(saved into the cache) with a progress indicator."
-        ),
-    )
+    live = False
+    if not use_all_cache:
+        live = st.checkbox(
+            "Allow live eBird calls for this range",
+            value=False,
+            key=f"browse_hotspot_live_{loc_id}",
+            help=(
+                "Off (default): use only cached checklist JSON. "
+                "On: fetch missing day lists and checklist details from eBird "
+                "(saved into the cache) with a progress indicator."
+            ),
+        )
+    else:
+        st.caption("Using all cached checklist data only (live eBird calls off).")
     sight_cols = st.columns([1, 10])
     with sight_cols[0]:
         start_day, end_day, _prior = render_date_range_popover(
@@ -12220,7 +14219,7 @@ def render_hotspot_browse_sightings(
             use_container_width=True,
         )
 
-    range_id = f"{loc_id}|{start_day}|{end_day}"
+    range_id = f"{loc_id}|{start_day}|{end_day}|allcache:{int(use_all_cache)}"
     cached_key = str(st.session_state.get("_browse_hs_window_key") or "")
     need_load = (
         cached_key.split("|live:")[0] != range_id
@@ -12229,7 +14228,7 @@ def render_hotspot_browse_sightings(
     )
 
     if need_load:
-        do_live = bool(live and fetch_clicked)
+        do_live = bool(live and fetch_clicked and not use_all_cache)
         progress = (
             st.progress(0.0, text="Loading date-range checklists…")
             if do_live
@@ -12267,9 +14266,7 @@ def render_hotspot_browse_sightings(
                 st.success(
                     f"Loaded {len(window_checklists):,} checklist(s) for the range."
                 )
-        st.session_state._browse_hs_window_key = (
-            f"{loc_id}|{start_day}|{end_day}|live:0"
-        )
+        st.session_state._browse_hs_window_key = f"{range_id}|live:0"
         st.session_state._browse_hs_window_rows = window_checklists
     else:
         window_checklists = list(st.session_state.get("_browse_hs_window_rows") or [])
@@ -12333,6 +14330,18 @@ def render_browse_hotspots() -> None:
     if not region_code:
         st.info("Select a region first (tap the region name upper right).")
         return
+
+    use_all_cache = st.checkbox(
+        "Use all data from cache",
+        value=bool(st.session_state.get("browse_hotspots_all_cache", False)),
+        key="browse_hotspots_all_cache",
+        help=(
+            "On: Our checklists / birds use every own checklist in the local "
+            "cache and My eBird export (no master-list cutoff), and date-range "
+            "sightings stay cache-only. Off: master own-sightings list first, "
+            "plus only newer cached checklists."
+        ),
+    )
 
     hotspots = sort_hotspots(load_cached_hotspots(region_code))
     load_label = "Load additional hotspots" if hotspots else "Load hotspots"
@@ -12613,6 +14622,15 @@ def render_browse_hotspots() -> None:
 
     table_rows = []
     coords_by_loc = hotspot_coords_by_loc(filtered)
+
+    def _exp_value(raw: object) -> float | None:
+        if raw is None:
+            return None
+        try:
+            return round(float(raw), 1)
+        except (TypeError, ValueError):
+            return None
+
     for row in filtered:
         loc_id = str(row.get("locId") or "")
         scores = opportunity.get(loc_id) or {}
@@ -12625,49 +14643,72 @@ def render_browse_hotspots() -> None:
             "locId": loc_id,
             "Hotspot": str(row.get("locName") or row.get("locId") or ""),
             "Species": int(act.get("species") or 0),
-            "Region Lifers / FoY": f"{region_lifer} / {region_foy}",
-            "World Lifers / FoY": f"{world_lifer} / {world_foy}",
-            "_region_lifer": region_lifer,
-            "_region_foy": region_foy,
-            "_world_lifer": world_lifer,
-            "_world_foy": world_foy,
+            "Region Lifer": region_lifer,
+            "Region Lifer Exp": _exp_value(scores.get("region_lifer_exp")),
+            "Region FoY": region_foy,
+            "Region FoY Exp": _exp_value(scores.get("foy_region_exp")),
+            "World Lifer": world_lifer,
+            "World Lifer Exp": _exp_value(scores.get("world_lifer_exp")),
+            "World FoY": world_foy,
+            "World FoY Exp": _exp_value(scores.get("foy_world_exp")),
             "Checklists": int(act.get("checklists") or 0),
             "Latest": str(act.get("latest") or "—"),
         }
         table_rows.append(item)
     table_rows.sort(
         key=lambda item: (
-            -int(item.get("_world_lifer") or 0),
-            -int(item.get("_region_lifer") or 0),
-            -int(item.get("_world_foy") or 0),
-            -int(item.get("_region_foy") or 0),
+            -float(item.get("World Lifer Exp") or 0),
+            -int(item.get("World Lifer") or 0),
+            -float(item.get("Region Lifer Exp") or 0),
+            -int(item.get("Region Lifer") or 0),
+            -float(item.get("World FoY Exp") or 0),
+            -int(item.get("World FoY") or 0),
+            -float(item.get("Region FoY Exp") or 0),
+            -int(item.get("Region FoY") or 0),
             -int(item.get("Species") or 0),
             -int(item.get("Checklists") or 0),
             str(item.get("Hotspot") or "").casefold(),
         )
     )
-    if configured_home_coordinates() and len(table_rows) <= 250:
-        table_rows, _drive_err = attach_drive_metrics_to_hotspot_rows(
+    drive_err: str | None = None
+    with st.spinner("Loading drive times from home…"):
+        table_rows, drive_err = attach_drive_metrics_to_hotspot_rows(
             table_rows,
             coords_by_loc,
         )
+    if drive_err and not configured_home_coordinates():
+        st.caption(
+            f"{drive_err} Set a drive origin under **Region & location**."
+        )
+    elif drive_err and not get_ors_api_key():
+        st.caption(
+            f"{drive_err} Miles still show straight-line distance when coordinates "
+            "are available."
+        )
     display_rows = [
         {
-            key: value
-            for key, value in item.items()
-            if key
-            not in {
-                "locId",
-                "_drive_s",
-                "_distance_m",
-                "_region_lifer",
-                "_region_foy",
-                "_world_lifer",
-                "_world_foy",
-            }
+            "Hotspot": item.get("Hotspot") or "",
+            "Drive": item.get("Drive") or "—",
+            "Miles": item.get("Miles") or "—",
+            "Species": item.get("Species"),
+            "Region Lifer": item.get("Region Lifer"),
+            "Region Lifer Exp": item.get("Region Lifer Exp"),
+            "Region FoY": item.get("Region FoY"),
+            "Region FoY Exp": item.get("Region FoY Exp"),
+            "World Lifer": item.get("World Lifer"),
+            "World Lifer Exp": item.get("World Lifer Exp"),
+            "World FoY": item.get("World FoY"),
+            "World FoY Exp": item.get("World FoY Exp"),
+            "Checklists": item.get("Checklists"),
+            "Latest": item.get("Latest"),
         }
         for item in table_rows
     ]
+    _count_help = "Unique opportunity species in the activity window"
+    _exp_help = (
+        "Expected count on a random checklist: sum of each bird's checklist "
+        "appearance rate in the activity window"
+    )
     table_event = st.dataframe(
         display_rows,
         hide_index=True,
@@ -12675,26 +14716,75 @@ def render_browse_hotspots() -> None:
         height=min(420, 38 + min(len(display_rows), 12) * 35),
         column_config={
             "Hotspot": st.column_config.TextColumn("Hotspot", width="large"),
+            "Drive": st.column_config.TextColumn(
+                "Drive",
+                help=(
+                    "Driving time from your Region & location origin via "
+                    "OpenRouteService. Failure reasons: no coordinates, no route, "
+                    "no API key, home not set, ORS error."
+                ),
+                width="small",
+            ),
+            "Miles": st.column_config.TextColumn(
+                "Miles",
+                help=(
+                    "Driving distance from home when available; otherwise "
+                    "straight-line miles. Same failure reasons as Drive."
+                ),
+                width="small",
+            ),
             "Species": st.column_config.NumberColumn(
                 "Species",
                 help="Unique species in the activity window (cached checklists)",
                 width="small",
             ),
-            "Region Lifers / FoY": st.column_config.TextColumn(
-                "Region Lifers / FoY",
-                help=(
-                    "Region lifer / missing FoY region among species seen in "
-                    "the activity window"
-                ),
-                width="medium",
+            "Region Lifer": st.column_config.NumberColumn(
+                "Region Lifer",
+                help=f"Region lifers. {_count_help}",
+                width="small",
+                format="%d",
             ),
-            "World Lifers / FoY": st.column_config.TextColumn(
-                "World Lifers / FoY",
-                help=(
-                    "World lifer / missing FoY world among species seen in "
-                    "the activity window"
-                ),
-                width="medium",
+            "Region Lifer Exp": st.column_config.NumberColumn(
+                "Region Lifer Exp",
+                help=f"Expected region lifers. {_exp_help}",
+                width="small",
+                format="%.1f",
+            ),
+            "Region FoY": st.column_config.NumberColumn(
+                "Region FoY",
+                help=f"Missing FoY region. {_count_help}",
+                width="small",
+                format="%d",
+            ),
+            "Region FoY Exp": st.column_config.NumberColumn(
+                "Region FoY Exp",
+                help=f"Expected missing FoY region. {_exp_help}",
+                width="small",
+                format="%.1f",
+            ),
+            "World Lifer": st.column_config.NumberColumn(
+                "World Lifer",
+                help=f"World lifers. {_count_help}",
+                width="small",
+                format="%d",
+            ),
+            "World Lifer Exp": st.column_config.NumberColumn(
+                "World Lifer Exp",
+                help=f"Expected world lifers. {_exp_help}",
+                width="small",
+                format="%.1f",
+            ),
+            "World FoY": st.column_config.NumberColumn(
+                "World FoY",
+                help=f"Missing FoY world. {_count_help}",
+                width="small",
+                format="%d",
+            ),
+            "World FoY Exp": st.column_config.NumberColumn(
+                "World FoY Exp",
+                help=f"Expected missing FoY world. {_exp_help}",
+                width="small",
+                format="%.1f",
             ),
             "Checklists": st.column_config.NumberColumn(
                 "Checklists",
@@ -12706,8 +14796,6 @@ def render_browse_hotspots() -> None:
                 help="Most recent observation day in the activity window",
                 width="medium",
             ),
-            "Drive": st.column_config.TextColumn("Drive", width="small"),
-            "Miles": st.column_config.TextColumn("Miles", width="small"),
         },
         on_select="rerun",
         selection_mode="single-row",
@@ -12756,7 +14844,66 @@ def render_browse_hotspots() -> None:
     if not hotspot:
         return
 
-    render_hotspot_browse_detail(region_code, hotspot)
+    windowed = browse_hotspot_windowed_species(
+        region_code,
+        start=activity_start,
+        end=activity_end,
+        prior_years=prior_years,
+    )
+    opportunity_birds = hotspot_opportunity_species_rows(
+        windowed.get(chosen) or {},
+        region_life=load_life_list(region_code) if region_code else None,
+        world_life=load_life_list(WORLD_LIFE_LIST_CODE),
+    )
+    if opportunity_birds:
+        st.markdown("#### Lifer / FoY in the activity window")
+        st.caption(
+            "Checklist % is the share of cached checklists at this hotspot in the "
+            "activity window that included that bird."
+        )
+        st.dataframe(
+            [
+                {
+                    "Species": row["Species"],
+                    "Opportunity": row["Opportunity"],
+                    "Checklists": int(row["Checklists"]),
+                    "Checklist %": row["Checklist %"],
+                }
+                for row in opportunity_birds
+            ],
+            hide_index=True,
+            use_container_width=True,
+            height=min(320, 38 + min(len(opportunity_birds), 8) * 35),
+            column_config={
+                "Species": st.column_config.TextColumn("Species", width="large"),
+                "Opportunity": st.column_config.TextColumn(
+                    "Opportunity", width="medium"
+                ),
+                "Checklists": st.column_config.NumberColumn(
+                    "Checklists",
+                    help="Activity-window checklists that include this species",
+                    width="small",
+                    format="%d",
+                ),
+                "Checklist %": st.column_config.NumberColumn(
+                    "Checklist %",
+                    help=(
+                        "Percent of activity-window checklists at this hotspot "
+                        "that include this species"
+                    ),
+                    width="small",
+                    format="%.0f%%",
+                    min_value=0,
+                    max_value=100,
+                ),
+            },
+        )
+
+    render_hotspot_browse_detail(
+        region_code,
+        hotspot,
+        use_all_cache=use_all_cache,
+    )
 
 
 def render_hotspot_finder() -> None:
@@ -12899,13 +15046,105 @@ def render_hotspot_finder() -> None:
         key="hotspot_finder_run",
         use_container_width=True,
     )
+    if run:
+        st.session_state.hotspot_finder_pending_run = cache_key
+        st.session_state.pop("hotspot_finder_recent_obs_choice", None)
+
+    pending_run = str(st.session_state.get("hotspot_finder_pending_run") or "")
+    recent_obs_choice = str(
+        st.session_state.get("hotspot_finder_recent_obs_choice") or ""
+    ).strip()
+    needs_api = (
+        pending_run == cache_key
+        and not cache_only
+        and api_days_back > 0
+    )
+    obs_stats = recent_obs_cache_stats() if needs_api else {}
+    obs_entries = int(obs_stats.get("entries") or 0)
+    obs_ttl = max(0, int(obs_stats.get("ttl_seconds") or 0))
+    last_loaded_raw = str(
+        obs_stats.get("last_fetched_at") or obs_stats.get("updated_at") or ""
+    ).strip()
+    last_loaded_at = None
+    if last_loaded_raw:
+        try:
+            last_loaded_at = datetime.fromisoformat(last_loaded_raw)
+            if last_loaded_at.tzinfo is None:
+                last_loaded_at = last_loaded_at.astimezone()
+        except ValueError:
+            last_loaded_at = None
+    obs_cache_stale = True
+    if last_loaded_at is not None and obs_ttl > 0:
+        age = (datetime.now().astimezone() - last_loaded_at).total_seconds()
+        obs_cache_stale = age < 0 or age > obs_ttl
+
+    if (
+        needs_api
+        and obs_entries > 0
+        and obs_cache_stale
+        and recent_obs_choice not in {"cache", "reload"}
+    ):
+        last_loaded = last_loaded_raw or "unknown time"
+        latest_calls = [
+            row
+            for row in (obs_stats.get("calls") or [])
+            if row.get("current")
+        ][:5]
+        days_bits = sorted(
+            {
+                int(row["back"])
+                for row in latest_calls
+                if row.get("back") is not None
+            }
+        )
+        days_label = (
+            ", ".join(f"{days}d" for days in days_bits)
+            if days_bits
+            else f"{api_days_back}d requested"
+        )
+        st.info(
+            f"Recent observations were last loaded **{last_loaded}** "
+            f"(days back: {days_label}). The cache is past its TTL. "
+            "Use those cached values, or reload from eBird?"
+        )
+        choice_cols = st.columns(2)
+        with choice_cols[0]:
+            if st.button(
+                "Use cached values",
+                key="hotspot_finder_use_recent_obs_cache",
+                use_container_width=True,
+            ):
+                st.session_state.hotspot_finder_recent_obs_choice = "cache"
+                st.rerun()
+        with choice_cols[1]:
+            if st.button(
+                "Reload from eBird",
+                key="hotspot_finder_reload_recent_obs",
+                type="primary",
+                use_container_width=True,
+            ):
+                st.session_state.hotspot_finder_recent_obs_choice = "reload"
+                st.rerun()
+        return
+
     stored = st.session_state.get("hotspot_finder_result")
-    if run or (
+    should_run = pending_run == cache_key and (
+        not needs_api
+        or obs_entries <= 0
+        or not obs_cache_stale
+        or recent_obs_choice in {"cache", "reload"}
+    )
+    if should_run or (
         isinstance(stored, dict)
         and stored.get("cache_key") == cache_key
         and stored.get("rows") is not None
+        and not should_run
     ):
-        if run or stored.get("cache_key") != cache_key:
+        if should_run:
+            st.session_state.pop("hotspot_finder_pending_run", None)
+            allow_stale_obs = recent_obs_choice == "cache"
+            refresh_obs = recent_obs_choice == "reload"
+            st.session_state.pop("hotspot_finder_recent_obs_choice", None)
             region_life = load_life_list(region_code)
             world_life = load_life_list(WORLD_LIFE_LIST_CODE)
             drive_error = None
@@ -12964,6 +15203,8 @@ def render_hotspot_finder() -> None:
                                 days_back=api_days_back,
                                 progress=progress,
                                 skip_loc_ids=cached_loc_ids,
+                                refresh=refresh_obs,
+                                allow_stale=allow_stale_obs,
                             )
                         except MissingEbirdApiKey:
                             ensure_api_key()
@@ -13129,10 +15370,30 @@ def render_hotspot_finder() -> None:
             item["Miles"] = row.get("Miles") or "—"
         item.update(
             {
-                "World Lifer": row["World Lifer"],
-                "Region Lifer": row["Region Lifer"],
-                "FoY World": row["FoY World"],
-                "FoY Region": row["FoY Region"],
+                "World Lifer": int(row["World Lifer"]),
+                "World Lifer Exp": (
+                    round(float(row["World Lifer Exp"]), 1)
+                    if row.get("World Lifer Exp") is not None
+                    else None
+                ),
+                "Region Lifer": int(row["Region Lifer"]),
+                "Region Lifer Exp": (
+                    round(float(row["Region Lifer Exp"]), 1)
+                    if row.get("Region Lifer Exp") is not None
+                    else None
+                ),
+                "FoY World": int(row["FoY World"]),
+                "FoY World Exp": (
+                    round(float(row["FoY World Exp"]), 1)
+                    if row.get("FoY World Exp") is not None
+                    else None
+                ),
+                "FoY Region": int(row["FoY Region"]),
+                "FoY Region Exp": (
+                    round(float(row["FoY Region Exp"]), 1)
+                    if row.get("FoY Region Exp") is not None
+                    else None
+                ),
                 "Species": row["Species"],
             }
         )
@@ -13198,10 +15459,66 @@ def render_hotspot_finder() -> None:
                 ),
                 width="small",
             ),
-            "World Lifer": st.column_config.NumberColumn("World Lifer", width="small"),
-            "Region Lifer": st.column_config.NumberColumn("Region Lifer", width="small"),
-            "FoY World": st.column_config.NumberColumn("FoY World", width="small"),
-            "FoY Region": st.column_config.NumberColumn("FoY Region", width="small"),
+            "World Lifer": st.column_config.NumberColumn(
+                "World Lifer",
+                help="World lifer opportunities in the scanned window",
+                width="small",
+                format="%d",
+            ),
+            "World Lifer Exp": st.column_config.NumberColumn(
+                "World Lifer Exp",
+                help=(
+                    "Expected world lifers on a random checklist (sum of each "
+                    "bird's checklist appearance rate)"
+                ),
+                width="small",
+                format="%.1f",
+            ),
+            "Region Lifer": st.column_config.NumberColumn(
+                "Region Lifer",
+                help="Region lifer opportunities in the scanned window",
+                width="small",
+                format="%d",
+            ),
+            "Region Lifer Exp": st.column_config.NumberColumn(
+                "Region Lifer Exp",
+                help=(
+                    "Expected region lifers on a random checklist (sum of each "
+                    "bird's checklist appearance rate)"
+                ),
+                width="small",
+                format="%.1f",
+            ),
+            "FoY World": st.column_config.NumberColumn(
+                "FoY World",
+                help="Missing FoY world opportunities in the scanned window",
+                width="small",
+                format="%d",
+            ),
+            "FoY World Exp": st.column_config.NumberColumn(
+                "FoY World Exp",
+                help=(
+                    "Expected missing FoY world on a random checklist (sum of "
+                    "each bird's checklist appearance rate)"
+                ),
+                width="small",
+                format="%.1f",
+            ),
+            "FoY Region": st.column_config.NumberColumn(
+                "FoY Region",
+                help="Missing FoY region opportunities in the scanned window",
+                width="small",
+                format="%d",
+            ),
+            "FoY Region Exp": st.column_config.NumberColumn(
+                "FoY Region Exp",
+                help=(
+                    "Expected missing FoY region on a random checklist (sum of "
+                    "each bird's checklist appearance rate)"
+                ),
+                width="small",
+                format="%.1f",
+            ),
             "Species": st.column_config.NumberColumn("Species", width="small"),
         },
     )
@@ -13914,6 +16231,11 @@ st.set_page_config(page_title="Birds", page_icon="🪶", layout="wide")
 ensure_shipped_caches_extracted()
 apply_iphone_mobile_layout()
 apply_ui_layout()
+if is_settings_popup_request():
+    get_api_key()
+    render_settings_popup_page()
+    st.stop()
+sync_config_from_disk()
 apply_gallery_chrome_defaults()
 ensure_image_size_session()
 get_api_key()  # ingest ?EBIRD_API_KEY=… into session when present
@@ -13963,10 +16285,8 @@ elif dashboard == "hotspot_finder":
     render_hotspot_finder()
 elif dashboard == "browse_hotspots":
     render_browse_hotspots()
-elif dashboard == "location":
-    render_location_config()
-elif dashboard == "region":
-    render_region_select()
+elif dashboard == "place":
+    render_place_config()
 elif dashboard == "cache":
     render_cache_status()
 elif dashboard == "maintenance":

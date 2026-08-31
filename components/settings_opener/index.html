@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1"
+    />
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        overflow: hidden;
+        height: 100%;
+      }
+      #wrap {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        height: 40px;
+      }
+      button {
+        appearance: none;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        width: 2.4rem;
+        height: 2.4rem;
+        border-radius: 0.5rem;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(49, 51, 63, 0.85);
+      }
+      button:hover {
+        background: rgba(151, 166, 195, 0.25);
+      }
+      svg {
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="wrap">
+      <button type="button" id="open" aria-label="Open settings" title="Settings">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          height="22"
+          width="22"
+          viewBox="0 -960 960 960"
+          fill="currentColor"
+          aria-hidden="true"
+        >
+          <path
+            d="m370-80-16-128q-13-5-24.5-12T307-235l-122 53-93-160 106-81q-2-8-4-16.5t-2-16.5q0-8 2-16.5t4-16.5L92-594l93-160 122 53q11-8 22.5-15t24.5-12l16-128h220l16 128q13 5 24.5 12t22.5 15l122-53 93 160-106 81q2 8 4 16.5t2 16.5q0 8-2 16.5t-4 16.5l106 81-93 160-122-53q-11 8-22.5 15T606-208L590-80H370Zm110-260q58 0 99-41t41-99q0-58-41-99t-99-41q-58 0-99 41t-41 99q0 58 41 99t99 41Z"
+          />
+        </svg>
+      </button>
+    </div>
+    <script>
+      let screen = "default";
+      let region = "";
+
+      function sendMessage(type, data) {
+        window.parent.postMessage(
+          {
+            isStreamlitMessage: true,
+            type: type,
+            ...data,
+          },
+          "*"
+        );
+      }
+
+      function openSettings() {
+        try {
+          const topWin = window.top || window.parent || window;
+          const url = new URL(topWin.location.href);
+          url.searchParams.set("screen", "settings");
+          url.searchParams.set("config", screen || "default");
+          if (region) {
+            url.searchParams.set("region", region);
+          } else {
+            url.searchParams.delete("region");
+          }
+          ["saved", "checklist", "hotspot", "summary", "EBIRD_API_KEY"].forEach(
+            (key) => {
+              url.searchParams.delete(key);
+            }
+          );
+          topWin.open(
+            url.toString(),
+            "birds_settings",
+            "popup=yes,width=560,height=820,resizable=yes,scrollbars=yes"
+          );
+        } catch (err) {
+          console.error(err);
+        }
+      }
+
+      function onRender(event) {
+        if (!event.data || event.data.type !== "streamlit:render") return;
+        const args = event.data.args || {};
+        screen = String(args.screen || "default");
+        region = String(args.region || "");
+        const help = String(args.help_text || "Settings");
+        const btn = document.getElementById("open");
+        if (btn) {
+          btn.title = help;
+          btn.setAttribute("aria-label", help);
+        }
+        sendMessage("streamlit:setFrameHeight", { height: 44 });
+      }
+
+      document.getElementById("open").addEventListener("click", openSettings);
+      window.addEventListener("message", onRender);
+      sendMessage("streamlit:componentReady", { apiVersion: 1 });
+      sendMessage("streamlit:setFrameHeight", { height: 44 });
+    </script>
+  </body>
+</html>

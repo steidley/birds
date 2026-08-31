@@ -1,13 +1,13 @@
 {
   "desktop": {
-    "gallery_summary": 268,
-    "gallery_standard": 400,
-    "compare": 160,
+    "gallery_summary": 200,
+    "gallery_standard": 300,
+    "compare": 300,
     "similar": 72,
     "checklist_summary": 48,
-    "list_thumbs": 48,
+    "list_thumbs": 150,
     "checklist_species": 32,
-    "hotspots_map": 580
+    "hotspots_map": 200
   },
   "mobile": {
     "gallery_summary": 48,
@@ -17,6 +17,6 @@
     "checklist_summary": 48,
     "list_thumbs": 48,
     "checklist_species": 32,
-    "hotspots_map": 280
+    "hotspots_map": 200
   }
 }

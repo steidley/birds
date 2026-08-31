@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "photo_border_width_world": 9,
+  "photo_border_width_region": 3,
+  "legend_border_width_world": 3,
+  "legend_border_width_region": 3,
+  "color_world": "#0d9488",
+  "color_region": "#eff762",
+  "color_seen": "#94a3b8",
+  "pattern_world_lifer": "solid",
+  "pattern_region_lifer": "solid",
+  "pattern_world_foy": "dotted",
+  "pattern_region_foy": "dotted",
+  "pattern_seen": "solid"
+}
