@@ -1,6 +1,7 @@
 [server]
 address = "0.0.0.0"
-port = 8600
+# Streamlit Community Cloud health-checks localhost:8501 — do not override port here.
+# Local dev on another port: streamlit run app.py --server.port 8600
 headless = true
 # Custom components (gallery swipe) fail to handshake when the app is opened
 # via a LAN IP unless CORS/XSRF are disabled.
