@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import csv
+import io
 import json
 import os
+import zipfile
 from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
@@ -26,6 +28,19 @@ _MY_EBIRD_GLOBS = (
     "MyEbirdData*.csv",
 )
 _SEARCH_DIRS = (REQUIRED_DATA_DIR, ROOT)
+_UPLOAD_CSV_NAME = "MyBirdData.csv"
+_REQUIRED_UPLOAD_COLUMNS = ("Submission ID", "Common Name", "Scientific Name", "Date")
+
+
+def my_ebird_data_destination() -> Path:
+    """Where an uploaded My eBird CSV should be written."""
+    override = (os.environ.get("MY_EBIRD_DATA_PATH") or "").strip()
+    if override:
+        path = Path(override).expanduser()
+        if not path.is_absolute():
+            path = ROOT / path
+        return path
+    return REQUIRED_DATA_DIR / _UPLOAD_CSV_NAME
 
 
 def my_ebird_data_path() -> Path | None:
@@ -55,6 +70,77 @@ def my_ebird_source_signature() -> tuple[str, float]:
         return (str(path), path.stat().st_mtime)
     except OSError:
         return (str(path), 0.0)
+
+
+def invalidate_my_ebird_dataset_cache() -> None:
+    """Drop the parsed-export LRU cache after the on-disk file changes."""
+    load_my_ebird_dataset.cache_clear()
+
+
+def _preferred_csv_member(names: list[str]) -> str | None:
+    csv_names = [
+        name
+        for name in names
+        if name.lower().endswith(".csv")
+        and not Path(name).name.startswith(".")
+        and "__macosx/" not in name.casefold()
+    ]
+    if not csv_names:
+        return None
+    for pattern in _MY_EBIRD_GLOBS:
+        prefix = pattern.replace("*", "").casefold().removesuffix(".csv")
+        for name in csv_names:
+            stem = Path(name).name.casefold().removesuffix(".csv")
+            if stem.startswith(prefix.rstrip(".")) or prefix.rstrip(".") in stem:
+                return name
+    return csv_names[0]
+
+
+def extract_my_ebird_csv_bytes(raw: bytes, filename: str) -> tuple[bytes, str]:
+    """Return CSV bytes from a raw upload (``.csv`` or a zip containing one)."""
+    name = (filename or "").strip() or "upload.csv"
+    lowered = name.casefold()
+    if lowered.endswith(".zip"):
+        try:
+            with zipfile.ZipFile(io.BytesIO(raw)) as archive:
+                member = _preferred_csv_member(archive.namelist())
+                if member is None:
+                    raise ValueError("Zip archive does not contain a CSV file.")
+                return archive.read(member), Path(member).name
+        except zipfile.BadZipFile as exc:
+            raise ValueError("Upload is not a valid zip archive.") from exc
+    if not lowered.endswith(".csv"):
+        raise ValueError("Upload must be a .csv file or a .zip containing one.")
+    return raw, Path(name).name
+
+
+def validate_my_ebird_csv_bytes(raw: bytes) -> None:
+    """Ensure the CSV looks like an eBird My Data export."""
+    try:
+        text = raw.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise ValueError("CSV must be UTF-8 encoded.") from exc
+    reader = csv.DictReader(io.StringIO(text))
+    fields = {str(name or "").strip() for name in (reader.fieldnames or [])}
+    missing = [col for col in _REQUIRED_UPLOAD_COLUMNS if col not in fields]
+    if missing:
+        raise ValueError(
+            "Not an eBird My Data export — missing column"
+            f"{'' if len(missing) == 1 else 's'}: {', '.join(missing)}."
+        )
+
+
+def save_uploaded_my_ebird_data(raw: bytes, *, filename: str = "") -> Path:
+    """Validate an upload and write it to the configured MyBirdData path."""
+    csv_bytes, _inner_name = extract_my_ebird_csv_bytes(raw, filename)
+    validate_my_ebird_csv_bytes(csv_bytes)
+    destination = my_ebird_data_destination()
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    # Normalize to UTF-8 without BOM for consistent reloads.
+    text = csv_bytes.decode("utf-8-sig")
+    destination.write_text(text, encoding="utf-8", newline="")
+    invalidate_my_ebird_dataset_cache()
+    return destination
 
 
 def observation_in_region(region_codes: list[str], target: str) -> bool:

@@ -4879,19 +4879,94 @@ def _render_own_hotspot_summary(summaries: list[dict]) -> None:
     st.divider()
 
 
+def clear_own_checklists_session_cache() -> None:
+    """Drop cached own-checklist rows so a new MyBirdData upload is picked up."""
+    for key in (
+        "own_checklists_rows",
+        "own_checklists_names",
+        "own_checklists_export_sig",
+        "own_checklists_enriched",
+        "own_checklists_shown",
+        "_browse_hs_windowed_species",
+    ):
+        st.session_state.pop(key, None)
+
+
+def render_my_ebird_data_uploader(*, key_prefix: str = "my_ebird") -> None:
+    """File picker that saves an eBird My Data CSV (or zip) for personal lists."""
+    from my_ebird_data import (
+        my_ebird_data_destination,
+        my_ebird_data_path,
+        save_uploaded_my_ebird_data,
+    )
+
+    export_path = my_ebird_data_path()
+    destination = my_ebird_data_destination()
+    flash = st.session_state.pop(f"{key_prefix}_upload_flash", None)
+    if flash:
+        st.success(str(flash))
+    st.markdown(f"[Download my data]({DOWNLOAD_MY_DATA_URL}) on eBird, then upload it here.")
+    if export_path is not None:
+        try:
+            modified = datetime.fromtimestamp(export_path.stat().st_mtime).astimezone().strftime(
+                "%Y-%m-%d %H:%M"
+            )
+        except OSError:
+            modified = "unknown"
+        st.caption(
+            f"Using `{export_path.name}` (saved {modified}) for life lists, last seen, "
+            "and your checklists."
+        )
+    else:
+        st.caption(
+            f"No My eBird export yet — upload a CSV (or the zip from eBird) to save as "
+            f"`{destination.name}`."
+        )
+
+    uploaded = st.file_uploader(
+        "Upload MyBirdData",
+        type=["csv", "zip"],
+        accept_multiple_files=False,
+        help=(
+            "Choose the CSV from eBird’s Download My Data, or the zip that contains it. "
+            f"It will be saved as `{destination}`."
+        ),
+        key=f"{key_prefix}_data_upload",
+    )
+    if uploaded is None:
+        return
+
+    file_token = f"{uploaded.name}:{uploaded.size}"
+    if st.session_state.get(f"{key_prefix}_upload_token") == file_token:
+        return
+
+    try:
+        with st.spinner(f"Saving `{uploaded.name}`…"):
+            saved = save_uploaded_my_ebird_data(
+                uploaded.getvalue(),
+                filename=str(uploaded.name or ""),
+            )
+    except ValueError as exc:
+        st.error(str(exc))
+        return
+    except OSError as exc:
+        st.error(f"Could not save upload: {exc}")
+        return
+
+    st.session_state[f"{key_prefix}_upload_token"] = file_token
+    st.session_state[f"{key_prefix}_upload_flash"] = f"Saved `{saved.name}`."
+    clear_own_checklists_session_cache()
+    st.rerun()
+
+
 def render_own_checklists() -> None:
     """Browse the user's eBird checklists from downloads and My eBird data."""
     render_page_header("My checklists", screen="mine")
     render_life_list_gallery_links()
-    st.markdown(f"[Download my data]({DOWNLOAD_MY_DATA_URL}) on eBird")
+    render_my_ebird_data_uploader(key_prefix="own_checklists")
     from my_ebird_data import my_ebird_data_path
 
     export_path = my_ebird_data_path()
-    if export_path is not None:
-        st.caption(
-            f"Using `{export_path.name}` for life lists, last seen, and your checklists. "
-            "Replace this file after downloading a newer export from eBird."
-        )
     names = configured_observer_names()
     summaries: list[dict] = []
     cached = (
@@ -4907,7 +4982,7 @@ def render_own_checklists() -> None:
 
     if not names and export_path is None:
         st.warning(
-            "Add a `requiredData/MyBirdData.csv` export from eBird, or set "
+            "Upload a MyBirdData export above, or set "
             "`EBIRD_USER_DISPLAY_NAME` in `config/.env` to the public name on your checklists."
         )
         return
@@ -4915,7 +4990,7 @@ def render_own_checklists() -> None:
     if not summaries:
         missing = []
         if export_path is None:
-            missing.append("a MyBirdData.csv export in `requiredData/`")
+            missing.append("a MyBirdData.csv upload")
         if names:
             missing.append(
                 "downloaded checklists matching "
@@ -4929,11 +5004,7 @@ def render_own_checklists() -> None:
     refresh_col, expand_col, _ = st.columns([1, 1, 3])
     with refresh_col:
         if st.button("Refresh", use_container_width=True, key="own_checklists_refresh"):
-            st.session_state.pop("own_checklists_rows", None)
-            st.session_state.pop("own_checklists_names", None)
-            st.session_state.pop("own_checklists_export_sig", None)
-            st.session_state.pop("own_checklists_enriched", None)
-            st.session_state.pop("own_checklists_shown", None)
+            clear_own_checklists_session_cache()
             st.rerun()
     with expand_col:
         render_expand_all_button(key="own_checklists_expand_all")
@@ -4945,21 +5016,6 @@ def render_own_checklists() -> None:
         unsafe_allow_html=True,
     )
 
-    shown = int(st.session_state.get("own_checklists_shown") or 0)
-    if shown <= 0:
-        shown = min(OWN_CHECKLISTS_PAGE_SIZE, len(summaries))
-        st.session_state.own_checklists_shown = shown
-    shown = min(shown, len(summaries))
-    enriched = st.session_state.get("own_checklists_enriched")
-    if not isinstance(enriched, list):
-        enriched = []
-    if len(enriched) < shown:
-        with st.spinner("Loading species photos…"):
-            enriched = list(enriched) + enrich_own_checklist_page(
-                summaries, len(enriched), shown
-            )
-        st.session_state.own_checklists_enriched = enriched
-
     source_bits: list[str] = []
     if names:
         source_bits.append(
@@ -4968,72 +5024,127 @@ def render_own_checklists() -> None:
     if export_path is not None:
         source_bits.append(f"from `{export_path.name}`")
     source_text = (" · ".join(source_bits) + " · ") if source_bits else ""
+    shown_preview = int(st.session_state.get("own_checklists_shown") or 0)
+    if shown_preview <= 0:
+        shown_preview = min(OWN_CHECKLISTS_PAGE_SIZE, len(summaries))
     st.caption(
         f"{len(summaries)} checklist"
         f"{'' if len(summaries) == 1 else 's'} {source_text}"
-        f"showing {len(enriched)} · newest first. Open a gallery with the photo-library icon or a photo."
+        f"showing up to {min(shown_preview, len(summaries))} · newest first. "
+        "Open a gallery with the photo-library icon or a photo."
     )
 
+    render_paged_own_checklist_galleries(
+        summaries,
+        key_prefix="own_checklists",
+        include_location=True,
+        list_signature=(
+            "v2",
+            tuple(
+                str(row.get("subId") or row.get("subID") or "")
+                for row in summaries
+            ),
+            st.session_state.get("own_checklists_export_sig"),
+        ),
+    )
+
+
+def own_checklist_card_header(
+    row: dict,
+    *,
+    include_location: bool = True,
+    include_observer: bool = False,
+) -> str:
+    """Title line for an own-checklist summary card."""
+    sub_id = str(row.get("subId") or row.get("subID") or "")
+    date_label = checklist_date_label(row) or sub_id
+    location = str(row.get("locName") or row.get("locId") or "").strip()
+    species = row.get("numSpecies", len(row.get("species_rows") or []))
+    region_new = row.get("new_count_region", row.get("new_count"))
+    world_new = row.get("new_count_world")
+    new_bits: list[str] = []
+    species_rows = row.get("species_rows") or []
+    lifer_n = sum(1 for obs in species_rows if obs.get("is_new_world"))
+    region_lifer_n = sum(
+        1
+        for obs in species_rows
+        if obs.get("is_new_region") and not obs.get("is_new_world")
+    )
+    foy_world_n = sum(
+        1
+        for obs in species_rows
+        if obs.get("is_foy_world") and not obs.get("is_new_world")
+    )
+    foy_region_n = sum(
+        1
+        for obs in species_rows
+        if obs.get("is_foy_region")
+        and not obs.get("is_new_world")
+        and not obs.get("is_new_region")
+        and not obs.get("is_foy_world")
+    )
+    if lifer_n:
+        new_bits.append(f"{lifer_n} lifer{'s' if lifer_n != 1 else ''}")
+    if region_lifer_n:
+        new_bits.append(
+            f"{region_lifer_n} region lifer{'s' if region_lifer_n != 1 else ''}"
+        )
+    if foy_world_n:
+        new_bits.append(f"{foy_world_n} FoY world")
+    if foy_region_n:
+        new_bits.append(f"{foy_region_n} FoY region")
+    if not new_bits:
+        if region_new:
+            new_bits.append(f"{region_new} new to region")
+        if world_new:
+            new_bits.append(f"{world_new} new to world")
+    observer = str(row.get("userDisplayName") or "").strip()
+    if include_observer:
+        if _is_own_checklist_row(row):
+            observer = observer or "You"
+        bits = [date_label]
+        if observer:
+            bits.append(observer)
+        if include_location and location:
+            bits.append(location)
+        bits.append(f"{species} species")
+        header = " · ".join(bits)
+    else:
+        header = f"{date_label} · {species} species"
+        if include_location and location:
+            header = f"{date_label} · {location} · {species} species"
+    if new_bits:
+        header = f"{header} · {' · '.join(new_bits)}"
+    return header
+
+
+def render_own_checklist_summary_cards(
+    enriched: list[dict],
+    *,
+    key_prefix: str,
+    include_location: bool = True,
+    include_observer: bool = False,
+) -> None:
+    """Summary thumbnail galleries with full-gallery links for enriched checklists."""
     for index, row in enumerate(enriched):
         sub_id = str(row.get("subId") or row.get("subID") or index)
-        date_label = checklist_date_label(row) or sub_id
-        location = str(row.get("locName") or row.get("locId") or "").strip()
-        species = row.get("numSpecies", len(row.get("species_rows") or []))
-        region_new = row.get("new_count_region", row.get("new_count"))
-        world_new = row.get("new_count_world")
-        new_bits: list[str] = []
-        species_rows = row.get("species_rows") or []
-        lifer_n = sum(1 for obs in species_rows if obs.get("is_new_world"))
-        region_lifer_n = sum(
-            1
-            for obs in species_rows
-            if obs.get("is_new_region") and not obs.get("is_new_world")
+        header = own_checklist_card_header(
+            row,
+            include_location=include_location,
+            include_observer=include_observer,
         )
-        foy_world_n = sum(
-            1
-            for obs in species_rows
-            if obs.get("is_foy_world") and not obs.get("is_new_world")
-        )
-        foy_region_n = sum(
-            1
-            for obs in species_rows
-            if obs.get("is_foy_region")
-            and not obs.get("is_new_world")
-            and not obs.get("is_new_region")
-            and not obs.get("is_foy_world")
-        )
-        if lifer_n:
-            new_bits.append(f"{lifer_n} lifer{'s' if lifer_n != 1 else ''}")
-        if region_lifer_n:
-            new_bits.append(
-                f"{region_lifer_n} region lifer{'s' if region_lifer_n != 1 else ''}"
-            )
-        if foy_world_n:
-            new_bits.append(f"{foy_world_n} FoY world")
-        if foy_region_n:
-            new_bits.append(f"{foy_region_n} FoY region")
-        if not new_bits:
-            if region_new:
-                new_bits.append(f"{region_new} new to region")
-            if world_new:
-                new_bits.append(f"{world_new} new to world")
-        header = f"{date_label} · {species} species"
-        if location:
-            header = f"{date_label} · {location} · {species} species"
-        if new_bits:
-            header = f"{header} · {' · '.join(new_bits)}"
         gallery_birds = checklist_gallery_birds(row, "all")
-        expander_key = f"own_checklist_exp_{sub_id}"
+        expander_key = f"{key_prefix}_exp_{sub_id}"
         href = (
             checklist_gallery_url(sub_id)
-            if gallery_birds and CHECKLIST_SUB_ID_RE.fullmatch(sub_id)
+            if gallery_birds and CHECKLIST_SUB_ID_RE.fullmatch(str(sub_id))
             else None
         )
         with st.container(border=True):
             open_col, name_col = st.columns([1, 16], vertical_alignment="center")
             with open_col:
                 if gallery_birds and render_open_gallery_icon_button(
-                    key=f"open_gallery_icon_own_{sub_id}"
+                    key=f"open_gallery_icon_{key_prefix}_{sub_id}"
                 ):
                     open_checklist_gallery(row, "all")
             with name_col:
@@ -5041,6 +5152,7 @@ def render_own_checklists() -> None:
                     header,
                     expander_key=expander_key,
                     index=index,
+                    href=href,
                 )
             with expander:
                 if gallery_birds:
@@ -5051,17 +5163,62 @@ def render_own_checklists() -> None:
                         width=image_size("list_thumbs"),
                         click_hrefs=[href] * len(thumbs) if href else None,
                     )
+                    if href:
+                        st.markdown(f"[Open full gallery]({href})")
                 else:
-                    st.caption("No species on this downloaded checklist.")
+                    st.caption("No species detail available for this checklist yet.")
                 checklist_url = f"https://ebird.org/checklist/{sub_id}"
                 st.markdown(f"[eBird checklist]({checklist_url})")
-
     clear_list_expander_force()
 
+
+def render_paged_own_checklist_galleries(
+    summaries: list[dict],
+    *,
+    key_prefix: str,
+    include_location: bool = True,
+    include_observer: bool = False,
+    page_size: int = OWN_CHECKLISTS_PAGE_SIZE,
+    list_signature: object | None = None,
+) -> None:
+    """Enrich and page own checklists into summary-gallery cards."""
+    sig_key = f"{key_prefix}_sig"
+    shown_key = f"{key_prefix}_shown"
+    enriched_key = f"{key_prefix}_enriched"
+    if list_signature is not None and st.session_state.get(sig_key) != list_signature:
+        st.session_state[sig_key] = list_signature
+        st.session_state.pop(shown_key, None)
+        st.session_state.pop(enriched_key, None)
+
+    shown = int(st.session_state.get(shown_key) or 0)
+    if shown <= 0:
+        shown = min(page_size, len(summaries))
+        st.session_state[shown_key] = shown
+    shown = min(shown, len(summaries))
+    enriched = st.session_state.get(enriched_key)
+    if not isinstance(enriched, list):
+        enriched = []
+    if len(enriched) < shown:
+        with st.spinner("Loading species photos…"):
+            enriched = list(enriched) + enrich_own_checklist_page(
+                summaries, len(enriched), shown
+            )
+        st.session_state[enriched_key] = enriched
+
+    render_own_checklist_summary_cards(
+        enriched,
+        key_prefix=key_prefix,
+        include_location=include_location,
+        include_observer=include_observer,
+    )
+
     if shown < len(summaries):
-        more = min(OWN_CHECKLISTS_PAGE_SIZE, len(summaries) - shown)
-        if st.button(f"Show more ({more} more)", key="own_checklists_more"):
-            st.session_state.own_checklists_shown = shown + more
+        more = min(page_size, len(summaries) - shown)
+        if st.button(
+            f"Show more ({more} more)",
+            key=f"{key_prefix}_more",
+        ):
+            st.session_state[shown_key] = shown + more
             st.rerun()
 
 
@@ -14009,12 +14166,46 @@ def load_own_hotspot_browse_checklists(
                         by_id[sub_id]["_detail"] = row["_detail"]
                         if row.get("_path"):
                             by_id[sub_id]["_path"] = row["_path"]
+                        if row.get("numSpecies") not in (None, ""):
+                            by_id[sub_id]["numSpecies"] = row.get("numSpecies")
                     continue
             if sub_id not in by_id:
                 supplemental += 1
             tagged = dict(row)
             tagged["_from_master"] = False
             by_id[sub_id] = tagged
+
+    # Fill thin master stubs from the species-level master index when disk
+    # detail is missing (enough for summary galleries without an API fetch).
+    master_obs_by_sub: dict[str, list[dict]] = {}
+    for row in master_rows:
+        sub_id = str(row.get("subId") or "").strip()
+        code = str(row.get("speciesCode") or row.get("code") or "").strip()
+        if not sub_id or not code:
+            continue
+        master_obs_by_sub.setdefault(sub_id, []).append(
+            {
+                "speciesCode": code,
+                "howMany": row.get("howMany"),
+                "howManyStr": row.get("howManyStr"),
+                "howManyAtleast": row.get("howManyAtleast") or row.get("howMany"),
+            }
+        )
+    for sub_id, entry in by_id.items():
+        if entry.get("_detail"):
+            continue
+        obs = master_obs_by_sub.get(sub_id) or []
+        if not obs:
+            continue
+        entry["_detail"] = {
+            "subId": sub_id,
+            "locId": location,
+            "obsDt": entry.get("obsDt") or entry.get("isoObsDate") or "",
+            "obs": obs,
+            "numSpecies": entry.get("numSpecies") or len(obs),
+        }
+        if entry.get("numSpecies") in (None, ""):
+            entry["numSpecies"] = len(obs)
 
     checklists = sorted(
         by_id.values(),
@@ -14031,62 +14222,113 @@ def render_hotspot_browse_sightings(
     hotspot_name: str = "",
     use_all_cache: bool = False,
 ) -> None:
-    """Own checklist links plus all-time and time-range species tables."""
+    """Checklist summary galleries (yours + others) plus species tables."""
     names = configured_observer_names()
 
-    # ---- All-time own checklists (master sightings + newer disk, or all cache) ----
-    st.subheader("Our checklists")
+    # ---- Previous checklists: yours (master/cache) + others from local cache ----
+    st.subheader("Previous checklists")
     master_rows = local_own_recent_sightings_for_hotspot(loc_id)
     own_all, master_latest, supplemental = load_own_hotspot_browse_checklists(
         region_code,
         loc_id,
         use_all_cache=use_all_cache,
     )
+    cached_all: list[dict] = []
+    if region_code and loc_id:
+        cached_all = load_local_checklists_for_hotspot(region_code, loc_id)
+    # Prefer own/master rows when the same checklist appears in both lists.
+    combined = merge_checklist_summaries(own_all, cached_all)
+    own_ids = {
+        str(row.get("subId") or row.get("subID") or "").strip()
+        for row in own_all
+        if str(row.get("subId") or row.get("subID") or "").strip()
+    }
+    own_count = sum(
+        1
+        for row in combined
+        if _is_own_checklist_row(row, names)
+        or str(row.get("subId") or row.get("subID") or "").strip() in own_ids
+    )
+    other_count = max(0, len(combined) - own_count)
 
-    if not names and not master_rows and not own_all:
-        st.info(
-            "Set `EBIRD_USER_DISPLAY_NAME` in `config/.env`, or add "
-            "`requiredData/MyBirdData.csv`, to identify your checklists."
-        )
-    elif not own_all:
-        st.caption("No sightings of yours at this hotspot in the master list or cache.")
+    if not combined:
+        if not names and not master_rows:
+            st.info(
+                "No cached checklists at this hotspot yet. Set "
+                "`EBIRD_USER_DISPLAY_NAME` or upload MyBirdData on **My checklists** "
+                "to identify yours, and download checklists for this region to see others."
+            )
+        else:
+            st.caption(
+                "No checklists for this hotspot in the master list or local cache."
+            )
     else:
         source_bits = [
-            f"**{len(own_all):,}** of our checklist"
-            f"{'' if len(own_all) == 1 else 's'}"
+            f"**{len(combined):,}** checklist"
+            f"{'' if len(combined) == 1 else 's'}"
         ]
         if hotspot_name:
             source_bits.append(f"at **{hotspot_name}**")
+        person_bits: list[str] = []
+        if own_count:
+            person_bits.append(f"**{own_count:,}** yours")
+        if other_count:
+            person_bits.append(f"**{other_count:,}** from others")
+        if person_bits:
+            source_bits.append(", ".join(person_bits))
         if use_all_cache:
             source_bits.append("all cached checklists")
-        elif master_latest is not None:
+        elif master_latest is not None and own_count:
             source_bits.append(
-                f"master list through **{master_latest.isoformat()}**"
+                f"your master list through **{master_latest.isoformat()}**"
             )
         if supplemental:
             source_bits.append(
-                f"**{supplemental:,}** newer cached checklist"
-                f"{'' if supplemental == 1 else 's'}"
+                f"**{supplemental:,}** newer of yours from cache"
             )
         st.caption(" · ".join(source_bits))
-        link_bits: list[str] = []
-        for row in own_all[:40]:
-            sub_id = str(row.get("subId") or row.get("subID") or "").strip()
-            if not sub_id:
-                continue
-            label = checklist_date_label(row) or _checklist_obs_day_iso(row) or sub_id
-            species_n = row.get("numSpecies")
-            try:
-                species_bit = f" · {int(species_n)} spp"
-            except (TypeError, ValueError):
-                species_bit = ""
-            link_bits.append(
-                f"[{label}{species_bit}]({checklist_gallery_url(sub_id)})"
+        expand_col, _ = st.columns([1, 4])
+        with expand_col:
+            render_expand_all_button(key=f"browse_hs_cl_expand_all_{loc_id}")
+        if own_count and other_count:
+            st.markdown(
+                f"Yours · {novelty_legend_html(sighting=True)}",
+                unsafe_allow_html=True,
             )
-        if link_bits:
-            st.markdown(" · ".join(link_bits))
-            if len(own_all) > 40:
-                st.caption(f"Showing 40 of {len(own_all):,} checklist links.")
+            st.markdown(
+                f"Others · {novelty_legend_html(sighting=False)}",
+                unsafe_allow_html=True,
+            )
+        elif own_count:
+            st.markdown(
+                f"Photo frames · {novelty_legend_html(sighting=True)}",
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                f"Photo frames · {novelty_legend_html(sighting=False)}",
+                unsafe_allow_html=True,
+            )
+        st.caption(
+            "Newest first. Open a summary gallery below, or use the photo-library "
+            "icon / Open full gallery for the full checklist."
+        )
+        render_paged_own_checklist_galleries(
+            combined,
+            key_prefix=f"browse_hs_cl_{loc_id}",
+            include_location=False,
+            include_observer=True,
+            list_signature=(
+                "v2-others",
+                str(region_code or ""),
+                str(loc_id or ""),
+                bool(use_all_cache),
+                tuple(
+                    str(row.get("subId") or row.get("subID") or "")
+                    for row in combined
+                ),
+            ),
+        )
 
     st.subheader("Birds we've seen here")
     if use_all_cache:
@@ -14336,10 +14578,11 @@ def render_browse_hotspots() -> None:
         value=bool(st.session_state.get("browse_hotspots_all_cache", False)),
         key="browse_hotspots_all_cache",
         help=(
-            "On: Our checklists / birds use every own checklist in the local "
+            "On: your previous checklists use every own checklist in the local "
             "cache and My eBird export (no master-list cutoff), and date-range "
             "sightings stay cache-only. Off: master own-sightings list first, "
-            "plus only newer cached checklists."
+            "plus only newer cached checklists of yours. Other observers' "
+            "cached checklists are always included in Previous checklists."
         ),
     )
 
